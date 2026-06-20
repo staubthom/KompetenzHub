@@ -14,8 +14,11 @@
     "esModuleInterop": true,
     "sourceMap": true,
     "outDir": "./dist",
-    "incremental": true,
+    // incremental bewusst deaktiviert: nest build löscht dist (deleteOutDir),
+    // wodurch eine veraltete .tsbuildinfo zu unvollständigem Emit führen kann.
+    "incremental": false,
     "skipLibCheck": true,
+
     "strict": true,
     "strictNullChecks": true,
     "noImplicitAny": true,
