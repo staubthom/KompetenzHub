@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, use } from 'react';
 import Link from 'next/link';
-import { use } from 'react';
+import AppShell from '../../../components/AppShell';
 import {
   modules, actionGoals, matrix as matrixApi, descriptors,
   type ModuleDetail, type Band, type ActionGoal, type CompetenceField,
@@ -13,6 +13,7 @@ const LEVEL_LABEL: Record<string, string> = {
   INTERMEDIATE: 'Intermediate (I)',
   ADVANCED: 'Advanced (A)',
 };
+const LEVELS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'] as const;
 
 export default function ModuleDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -97,46 +98,51 @@ export default function ModuleDetailPage({ params }: { params: Promise<{ id: str
     }
   }
 
-  if (error) return <div className="kh-error">{error}</div>;
-  if (!mod) return <div className="kh-loading">Lade Modul…</div>;
+  if (!mod) {
+    return (
+      <AppShell>
+        {error ? <div className="error">{error}</div> : <div className="loading">Lade Modul…</div>}
+      </AppShell>
+    );
+  }
 
   const bands: Band[] = mod.matrix?.bands ?? [];
 
   return (
-    <div className="kh-page">
-      <div className="kh-breadcrumb">
+    <AppShell>
+      <div className="breadcrumb">
         <Link href="/modules">Module</Link> / {mod.number}
       </div>
 
-      <div className="kh-page-head">
+      <div className="page-head">
         <div>
           <h1>Modul {mod.number}</h1>
-          <p className="kh-muted">{mod.title?.de}</p>
+          <p>{mod.title?.de}</p>
         </div>
-        <span className={`kh-badge kh-badge-${mod.status.toLowerCase()}`}>
+        <span className={`badge b-${mod.status.toLowerCase()}`}>
           {mod.status === 'DRAFT' ? 'Entwurf' : 'Veröffentlicht'}
         </span>
       </div>
 
-      {error && <div className="kh-error">{error}</div>}
+      {error && <div className="error">{error}</div>}
 
       {/* Handlungsziele */}
-      <div className="kh-panel">
-        <div className="kh-panel-head">
+      <div className="panel">
+        <div className="panel-head">
           <h2>Handlungsziele</h2>
-          <button className="kh-btn kh-btn-sm" onClick={() => setAddingGoal(true)}>
+          <button className="btn sm" onClick={() => setAddingGoal(true)}>
             + HZ hinzufügen
           </button>
         </div>
 
         {addingGoal && (
-          <form className="kh-form kh-form-inline" onSubmit={(e) => { void handleAddGoal(e); }}>
+          <form className="form-inline" onSubmit={(e) => { void handleAddGoal(e); }}>
             <input
               required
               placeholder="Code (z. B. 1)"
               value={goalForm.code}
               onChange={(e) => setGoalForm((f) => ({ ...f, code: e.target.value }))}
-              style={{ width: 80 }}
+              style={{ width: 90 }}
             />
             <input
               placeholder="Beschreibung (DE)"
@@ -144,28 +150,22 @@ export default function ModuleDetailPage({ params }: { params: Promise<{ id: str
               onChange={(e) => setGoalForm((f) => ({ ...f, text: e.target.value }))}
               style={{ flex: 1 }}
             />
-            <button type="submit" className="kh-btn kh-btn-primary kh-btn-sm">
-              Hinzufügen
-            </button>
-            <button type="button" className="kh-btn kh-btn-sm" onClick={() => setAddingGoal(false)}>
-              ✕
-            </button>
+            <button type="submit" className="btn primary sm">Hinzufügen</button>
+            <button type="button" className="btn sm" onClick={() => setAddingGoal(false)}>✕</button>
           </form>
         )}
 
         {mod.actionGoals.length === 0 ? (
-          <p className="kh-muted kh-empty">Noch keine Handlungsziele. Füge das erste HZ hinzu.</p>
+          <div className="empty">
+            <p>Noch keine Handlungsziele. Füge das erste HZ hinzu.</p>
+          </div>
         ) : (
-          <ul className="kh-hz-list">
+          <ul className="hz-list">
             {mod.actionGoals.map((g: ActionGoal) => (
-              <li key={g.id} className="kh-hz-item">
-                <span className="kh-hz-code">{g.code}</span>
-                <span>{g.text?.de ?? '—'}</span>
-                <button
-                  className="kh-btn-icon"
-                  title="Löschen"
-                  onClick={() => { void handleDeleteGoal(g.id); }}
-                >
+              <li key={g.id} className="hz-item">
+                <span className="hz-code">{g.code}</span>
+                <span style={{ flex: 1 }}>{g.text?.de ?? '—'}</span>
+                <button className="btn-icon" title="Löschen" onClick={() => { void handleDeleteGoal(g.id); }}>
                   ×
                 </button>
               </li>
@@ -175,22 +175,22 @@ export default function ModuleDetailPage({ params }: { params: Promise<{ id: str
       </div>
 
       {/* Matrix-Editor */}
-      <div className="kh-panel">
-        <div className="kh-panel-head">
+      <div className="panel">
+        <div className="panel-head">
           <h2>Kompetenzmatrix</h2>
-          <button className="kh-btn kh-btn-sm" onClick={() => setAddingBand(true)}>
+          <button className="btn sm" onClick={() => setAddingBand(true)}>
             + Band hinzufügen
           </button>
         </div>
 
         {addingBand && (
-          <form className="kh-form kh-form-inline" onSubmit={(e) => { void handleAddBand(e); }}>
+          <form className="form-inline" onSubmit={(e) => { void handleAddBand(e); }}>
             <input
               required
               placeholder="Code (z. B. A1)"
               value={bandForm.code}
               onChange={(e) => setBandForm((f) => ({ ...f, code: e.target.value }))}
-              style={{ width: 100 }}
+              style={{ width: 110 }}
             />
             <input
               placeholder="Beschreibung (DE)"
@@ -198,86 +198,70 @@ export default function ModuleDetailPage({ params }: { params: Promise<{ id: str
               onChange={(e) => setBandForm((f) => ({ ...f, description: e.target.value }))}
               style={{ flex: 1 }}
             />
-            <button type="submit" className="kh-btn kh-btn-primary kh-btn-sm">
-              Anlegen
-            </button>
-            <button type="button" className="kh-btn kh-btn-sm" onClick={() => setAddingBand(false)}>
-              ✕
-            </button>
+            <button type="submit" className="btn primary sm">Anlegen</button>
+            <button type="button" className="btn sm" onClick={() => setAddingBand(false)}>✕</button>
           </form>
         )}
 
         {bands.length === 0 ? (
-          <p className="kh-muted kh-empty">
-            Noch keine Kompetenzbänder. Füge das erste Band hinzu.
-          </p>
+          <div className="empty">
+            <span className="ic">▦</span>
+            <p>Noch keine Kompetenzbänder. Füge das erste Band hinzu.</p>
+          </div>
         ) : (
-          <div className="kh-matrix">
-            {/* Header */}
-            <div className="kh-matrix-header">
-              <div className="kh-matrix-band-col">Band</div>
-              {(['BEGINNER', 'INTERMEDIATE', 'ADVANCED'] as const).map((lvl) => (
-                <div key={lvl} className="kh-matrix-level-col">
-                  {LEVEL_LABEL[lvl]}
-                </div>
+          <div className="matrix">
+            <div className="matrix-header">
+              <div>Band</div>
+              {LEVELS.map((lvl) => (
+                <div key={lvl}>{LEVEL_LABEL[lvl]}</div>
               ))}
-              <div className="kh-matrix-act-col"></div>
+              <div></div>
             </div>
 
             {bands.map((band: Band) => (
-              <div key={band.id} className="kh-matrix-row">
-                <div className="kh-matrix-band-col">
-                  <div className="kh-band-code">{band.code}</div>
-                  {band.description?.de && (
-                    <div className="kh-band-desc kh-muted">{band.description.de}</div>
-                  )}
+              <div key={band.id} className="matrix-row">
+                <div className="band-col">
+                  <div className="band-code">{band.code}</div>
+                  {band.description?.de && <div className="band-desc">{band.description.de}</div>}
                 </div>
 
-                {(['BEGINNER', 'INTERMEDIATE', 'ADVANCED'] as const).map((lvl) => {
+                {LEVELS.map((lvl) => {
                   const field = band.fields.find((f: CompetenceField) => f.level === lvl);
-                  if (!field) return <div key={lvl} className="kh-matrix-level-col" />;
+                  if (!field) return <div key={lvl} className="level-col" />;
                   const isEditing = editingDesc?.fieldId === field.id;
                   return (
-                    <div key={field.id} className="kh-matrix-level-col kh-field-cell">
+                    <div key={field.id} className="level-col">
                       {isEditing ? (
-                        <div className="kh-desc-editor">
+                        <div className="desc-editor">
                           <textarea
                             autoFocus
                             rows={3}
                             value={editingDesc.text}
-                            onChange={(e) =>
-                              setEditingDesc((d) => d && { ...d, text: e.target.value })
-                            }
+                            onChange={(e) => setEditingDesc((d) => d && { ...d, text: e.target.value })}
                             placeholder="Ich kann …"
                           />
-                          <div className="kh-desc-editor-btns">
+                          <div className="desc-editor-btns">
                             <button
-                              className="kh-btn kh-btn-primary kh-btn-sm"
+                              className="btn primary sm"
                               disabled={saving}
                               onClick={() => { void saveDescriptor(); }}
                             >
                               {saving ? '…' : 'Speichern'}
                             </button>
-                            <button
-                              className="kh-btn kh-btn-sm"
-                              onClick={() => setEditingDesc(null)}
-                            >
-                              ✕
-                            </button>
+                            <button className="btn sm" onClick={() => setEditingDesc(null)}>✕</button>
                           </div>
                         </div>
                       ) : (
                         <button
-                          className="kh-field-btn"
+                          className="field-btn"
                           title="Deskriptor bearbeiten"
                           onClick={() => startEditDesc(field)}
                         >
+                          <span className="field-code">{field.code}</span>
                           {field.descriptor?.text?.de ? (
-                            <span className="kh-descriptor-text">
-                              {field.descriptor.text.de}
-                            </span>
+                            <span className="descriptor-text">{field.descriptor.text.de}</span>
                           ) : (
-                            <span className="kh-descriptor-empty">Ich kann …</span>
+                            <span className="descriptor-empty">Ich kann …</span>
                           )}
                         </button>
                       )}
@@ -285,9 +269,9 @@ export default function ModuleDetailPage({ params }: { params: Promise<{ id: str
                   );
                 })}
 
-                <div className="kh-matrix-act-col">
+                <div className="act-col">
                   <button
-                    className="kh-btn-icon"
+                    className="btn-icon"
                     title="Band löschen"
                     onClick={() => { void handleDeleteBand(band.id); }}
                   >
@@ -299,6 +283,6 @@ export default function ModuleDetailPage({ params }: { params: Promise<{ id: str
           </div>
         )}
       </div>
-    </div>
+    </AppShell>
   );
 }

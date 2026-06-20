@@ -1,10 +1,6 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+import { getToken, saveSession, type Role, type SessionUser } from './session';
 
-function getToken(): string | null {
-  if (typeof document === 'undefined') return null;
-  const match = document.cookie.match(/(?:^|;\s*)kh_token=([^;]+)/);
-  return match ? decodeURIComponent(match[1]) : null;
-}
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
 async function apiFetch<T>(
   path: string,
@@ -17,7 +13,11 @@ async function apiFetch<T>(
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`${API_BASE}/api/v1${path}`, { ...options, headers });
+  const res = await fetch(`${API_BASE}/api/v1${path}`, {
+    ...options,
+    headers,
+    credentials: 'include',
+  });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ title: res.statusText }));
     throw Object.assign(new Error(err.title ?? 'API-Fehler'), { status: res.status, body: err });
@@ -26,8 +26,13 @@ async function apiFetch<T>(
   return res.json() as Promise<T>;
 }
 
-// Auth
-export async function devLogin(email: string, role: 'TEACHER' | 'LEARNER' | 'ADMIN') {
+interface AuthResult {
+  token: string;
+  user: SessionUser;
+}
+
+// Auth (Dev-Login für lokale Entwicklung; speichert die Session)
+export async function devLogin(email: string, role: Role): Promise<AuthResult> {
   const res = await fetch(`${API_BASE}/api/v1/auth/dev-login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -35,7 +40,17 @@ export async function devLogin(email: string, role: 'TEACHER' | 'LEARNER' | 'ADM
     credentials: 'include',
   });
   if (!res.ok) throw new Error('Login fehlgeschlagen');
-  return res.json();
+  const result = (await res.json()) as AuthResult;
+  saveSession(result.token, result.user);
+  return result;
+}
+
+export async function logout(): Promise<void> {
+  try {
+    await apiFetch('/auth/logout', { method: 'POST' });
+  } catch {
+    // Auch bei Fehler lokal abmelden
+  }
 }
 
 // Modules (FA-01)
