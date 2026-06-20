@@ -159,9 +159,7 @@ export default function FieldEvidenceModal({
     [next[index], next[j]] = [next[j], next[index]];
     setList(next); // sofortiges visuelles Feedback
     try {
-      await Promise.all(
-        next.map((ev, idx) => evidence.update(ev.id, { sortOrder: idx + 1 })),
-      );
+      await Promise.all(next.map((ev, idx) => evidence.update(ev.id, { sortOrder: idx + 1 })));
       await load();
       onChanged();
     } catch (e: unknown) {
