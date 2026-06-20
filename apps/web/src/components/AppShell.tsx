@@ -18,7 +18,7 @@ interface NavItem {
 const TEACHER_NAV: NavItem[] = [
   { id: 'dashboard', icon: '▦', label: 'Dashboard', href: '/lehrer' },
   { id: 'module', icon: '▤', label: 'Module & Matrizen', href: '/modules' },
-  { id: 'klassen', icon: '◫', label: 'Klassen', href: '/lehrer/klassen' },
+  { id: 'klassen', icon: '◫', label: 'Modulanlässe', href: '/lehrer/klassen' },
   { id: 'bewerten', icon: '✓', label: 'Bewerten', href: '/lehrer/bewerten' },
   { id: 'ki', icon: '⚙', label: 'KI-Einstellungen', href: '/lehrer/ki' },
 ];

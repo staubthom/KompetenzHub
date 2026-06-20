@@ -73,7 +73,7 @@ export default function KlassenPage() {
   }
 
   async function handleDeleteClass(id: string, name: string) {
-    if (!confirm(`Klasse "${name}" wirklich löschen?`)) return;
+    if (!confirm(`Modulanlass "${name}" wirklich löschen?`)) return;
     try {
       await classes.remove(id);
       if (selectedId === id) {
@@ -108,7 +108,7 @@ export default function KlassenPage() {
 
   async function handleRemoveMember(userId: string | null) {
     if (!detail || !userId) return;
-    if (!confirm('Mitglied aus der Klasse entfernen?')) return;
+    if (!confirm('Mitglied aus dem Modulanlass entfernen?')) return;
     try {
       await classes.removeMember(detail.id, userId);
       await Promise.all([loadDetail(detail.id), loadList()]);
@@ -119,14 +119,14 @@ export default function KlassenPage() {
 
   return (
     <AppShell>
-      <div className="breadcrumb">Übersicht / Klassen</div>
+      <div className="breadcrumb">Übersicht / Modulanlässe</div>
       <div className="page-head">
         <div>
-          <h1>Klassen</h1>
-          <p>Lernende verwalten · Module zuweisen · Beitrittscode</p>
+          <h1>Modulanlässe</h1>
+          <p>Lernende verwalten · Modul zuweisen · Beitrittscode</p>
         </div>
         <button className="btn primary" onClick={() => setCreating(true)}>
-          + Neue Klasse
+          + Neuer Modulanlass
         </button>
       </div>
 
@@ -135,7 +135,7 @@ export default function KlassenPage() {
       {creating && (
         <div className="panel">
           <div className="panel-head">
-            <h2>Neue Klasse</h2>
+            <h2>Neuer Modulanlass</h2>
           </div>
           <form
             className="form"
@@ -144,10 +144,10 @@ export default function KlassenPage() {
             }}
           >
             <label>
-              Klassenname *
+              Bezeichnung *
               <input
                 required
-                placeholder="z. B. INF-1a"
+                placeholder="z. B. INF-1a · Modul 293 (HS25)"
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               />
@@ -179,12 +179,12 @@ export default function KlassenPage() {
       )}
 
       {!list ? (
-        <div className="loading">Lade Klassen…</div>
+        <div className="loading">Lade Modulanlässe…</div>
       ) : list.length === 0 ? (
         <div className="panel">
           <div className="empty">
             <span className="ic">◫</span>
-            <p>Noch keine Klassen. Erstelle deine erste Klasse.</p>
+            <p>Noch keine Modulanlässe. Erstelle deinen ersten Modulanlass.</p>
           </div>
         </div>
       ) : (
@@ -220,7 +220,7 @@ export default function KlassenPage() {
                 void handleDeleteClass(detail.id, detail.name);
               }}
             >
-              <TrashIcon /> Klasse löschen
+              <TrashIcon /> Modulanlass löschen
             </button>
           </div>
 
@@ -263,8 +263,8 @@ export default function KlassenPage() {
                 </button>
               </div>
               <p className="kh-muted" style={{ fontSize: 12, marginTop: 6 }}>
-                Lernende treten unter „Klasse beitreten" mit diesem Code bei. Erneuern macht den
-                alten Code ungültig.
+                Lernende treten unter „Modulanlass beitreten" mit diesem Code bei. Erneuern macht
+                den alten Code ungültig.
               </p>
             </div>
           </div>

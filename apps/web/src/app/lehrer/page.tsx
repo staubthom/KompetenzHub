@@ -10,7 +10,7 @@ export default function LehrerDashboardPage() {
       <div className="page-head">
         <div>
           <h1>Dashboard</h1>
-          <p>Willkommen zurück · Übersicht über deine Klassen und Module</p>
+          <p>Willkommen zurück · Übersicht über deine Module und Modulanlässe</p>
         </div>
         <Link href="/modules" className="btn primary">
           + Modul &amp; Matrix
@@ -24,7 +24,7 @@ export default function LehrerDashboardPage() {
           <div className="d">noch keine Daten</div>
         </div>
         <div className="card">
-          <div className="k">Klassen</div>
+          <div className="k">Modulanlässe</div>
           <div className="v">–</div>
           <div className="d">folgt in Sprint 3</div>
         </div>
@@ -42,7 +42,7 @@ export default function LehrerDashboardPage() {
 
       <div className="panel">
         <div className="panel-head">
-          <h2>Klassen-Dashboard</h2>
+          <h2>Modulanlass-Dashboard</h2>
         </div>
         <div className="empty">
           <span className="ic">▦</span>

@@ -105,7 +105,7 @@ export default function LernendeMatrixPage() {
       <div className="page-head">
         <div>
           <h1>Meine Matrix</h1>
-          <p>Deine Kompetenzbänder pro Klasse</p>
+          <p>Deine Kompetenzbänder pro Modulanlass</p>
         </div>
       </div>
 
@@ -216,7 +216,7 @@ export default function LernendeMatrixPage() {
       {/* Klasse beitreten (FA-23) */}
       <div className="panel">
         <div className="panel-head">
-          <h2>{hasClasses ? 'Weitere Klasse beitreten' : 'Klasse beitreten'}</h2>
+          <h2>{hasClasses ? 'Weiterem Modulanlass beitreten' : 'Modulanlass beitreten'}</h2>
         </div>
         <div className="panel-body">
           <p className="kh-muted" style={{ marginTop: 0 }}>
@@ -244,8 +244,8 @@ export default function LernendeMatrixPage() {
 
       {!hasClasses && enrollments !== null && (
         <p className="kh-muted" style={{ textAlign: 'center' }}>
-          Du bist noch keiner Klasse beigetreten. Sobald du beigetreten bist, erscheint hier deine
-          Kompetenzmatrix.
+          Du bist noch keinem Modulanlass beigetreten. Sobald du beigetreten bist, erscheint hier
+          deine Kompetenzmatrix.
         </p>
       )}
 
