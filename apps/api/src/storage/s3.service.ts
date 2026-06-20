@@ -44,7 +44,7 @@ export class S3Service implements OnModuleInit {
 
   /** Erzeugt einen eindeutigen Objekt-Key unter einem Präfix. */
   buildKey(prefix: string, fileName: string): string {
-    const safe = fileName.replace(/[^\w.\-]/g, '_');
+    const safe = fileName.replace(/[^\w.-]/g, '_');
     return `${prefix}/${randomUUID()}-${safe}`;
   }
 
