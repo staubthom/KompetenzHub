@@ -74,10 +74,39 @@ export default function EvidenceSubmitPanel({
     }
   }
 
+  const sub = ev.lastSubmission;
+  const statusText: Record<string, string> = {
+    SUBMITTED: 'Eingereicht – wartet auf Bewertung',
+    GRADED: 'Bewertet',
+    REJECTED: 'Zurückgewiesen – bitte überarbeiten',
+    OPEN: 'Offen',
+  };
+
   return (
     <>
       {error && <div className="error">{error}</div>}
       {status && <div className="join-success">{status}</div>}
+
+      {/* Status der letzten Einreichung (FA-53) */}
+      {sub && (
+        <div className={`sub-status sub-${sub.status.toLowerCase()}`}>
+          <strong>{statusText[sub.status] ?? sub.status}</strong>
+          {sub.status === 'GRADED' && sub.points != null && (
+            <span>
+              {' '}
+              · {sub.points}
+              {ev.maxPoints ? ` / ${ev.maxPoints}` : ''} Punkte
+              {sub.achievedLevel ? ` · ${sub.achievedLevel}` : ''}
+            </span>
+          )}
+          {sub.status === 'GRADED' && sub.feedback && (
+            <div className="sub-feedback">💬 {sub.feedback}</div>
+          )}
+          {sub.status === 'REJECTED' && sub.rejectionReason && (
+            <div className="sub-feedback">↩ {sub.rejectionReason}</div>
+          )}
+        </div>
+      )}
 
       {ev.instructions?.de && (
         <div className="rte-content" dangerouslySetInnerHTML={{ __html: ev.instructions.de }} />

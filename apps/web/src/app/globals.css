@@ -1156,6 +1156,53 @@ a {
   font: inherit;
 }
 
+/* ===== Bewerten (Sprint 5) ===== */
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+}
+.fld {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Status der Einreichung (Lernenden-Sicht, FA-53) */
+.sub-status {
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  font-size: 14px;
+  border: 1px solid var(--border);
+}
+.sub-status.sub-submitted {
+  background: var(--st-submitted-bg);
+  color: var(--st-submitted);
+  border-color: color-mix(in srgb, var(--st-submitted) 30%, var(--border));
+}
+.sub-status.sub-graded {
+  background: var(--st-graded-bg);
+  color: var(--st-graded);
+  border-color: color-mix(in srgb, var(--st-graded) 30%, var(--border));
+}
+.sub-status.sub-rejected {
+  background: var(--st-rejected-bg);
+  color: var(--st-rejected);
+  border-color: color-mix(in srgb, var(--st-rejected) 30%, var(--border));
+}
+.sub-feedback {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--fg);
+}
+
 /* ===== Login ===== */
 .login-wrap {
   min-height: 100vh;

@@ -5,6 +5,21 @@ import AppShell from '../../../components/AppShell';
 import EvidenceSubmitPanel from '../../../components/EvidenceSubmitPanel';
 import { evidence, type StudentEvidence } from '../../../lib/api';
 
+function statusLabel(ev: StudentEvidence): string {
+  const sub = ev.lastSubmission;
+  if (!sub) return 'offen';
+  switch (sub.status) {
+    case 'GRADED':
+      return `✓ bewertet${sub.points != null ? ` · ${sub.points} P` : ''}`;
+    case 'REJECTED':
+      return '↩ zurückgewiesen';
+    case 'SUBMITTED':
+      return '⏳ eingereicht';
+    default:
+      return sub.status.toLowerCase();
+  }
+}
+
 export default function NachweisePage() {
   const [list, setList] = useState<StudentEvidence[] | null>(null);
   const [error, setError] = useState('');
@@ -95,11 +110,7 @@ export default function NachweisePage() {
                 <div>
                   <strong>{ev.title?.de}</strong>
                   <div className="evidence-meta">
-                    {ev.lastSubmission ? (
-                      <span style={{ color: 'var(--st-graded)' }}>✓ eingereicht</span>
-                    ) : (
-                      'offen'
-                    )}
+                    {statusLabel(ev)}
                     {ev.maxPoints ? ` · max. ${ev.maxPoints} Punkte` : ''}
                     {ev.dueAt && (
                       <>
