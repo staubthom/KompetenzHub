@@ -2,13 +2,16 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import AppShell from '../../components/AppShell';
+import EvidenceSubmitPanel from '../../components/EvidenceSubmitPanel';
 import {
   classes,
   matrix as matrixApi,
+  evidence as evidenceApi,
   type MyEnrollment,
   type MatrixResponse,
   type Band,
   type CompetenceField,
+  type StudentEvidence,
 } from '../../lib/api';
 
 const LEVEL_LABEL: Record<string, string> = {
@@ -27,6 +30,18 @@ export default function LernendeMatrixPage() {
   // Beitritt
   const [code, setCode] = useState('');
   const [joining, setJoining] = useState(false);
+
+  // Nachweis öffnen (Einreichen-Modal)
+  const [openEvidence, setOpenEvidence] = useState<StudentEvidence | null>(null);
+
+  async function openEvidenceDetail(evidenceId: string) {
+    try {
+      setOpenEvidence(await evidenceApi.studentGet(evidenceId));
+    } catch (e: unknown) {
+      const err = e as { body?: { title?: string } };
+      setError(err.body?.title ?? 'Nachweis konnte nicht geladen werden.');
+    }
+  }
 
   const loadEnrollments = useCallback(async () => {
     try {
@@ -158,6 +173,7 @@ export default function LernendeMatrixPage() {
                   </div>
                   {LEVELS.map((lvl) => {
                     const field = band.fields.find((f: CompetenceField) => f.level === lvl);
+                    const evidences = field?.evidences ?? [];
                     return (
                       <div key={lvl} className="level-col" style={{ padding: 12 }}>
                         {field?.descriptor?.text?.de ? (
@@ -167,6 +183,25 @@ export default function LernendeMatrixPage() {
                           </>
                         ) : (
                           <span className="descriptor-empty">—</span>
+                        )}
+                        {evidences.length > 0 && (
+                          <div
+                            className="field-evidence"
+                            style={{ borderTop: 'none', padding: '8px 0 0' }}
+                          >
+                            {evidences.map((e) => (
+                              <button
+                                key={e.evidence.id}
+                                className="evidence-chip evidence-chip-btn"
+                                title={`Nachweis öffnen: ${e.evidence.title?.de}`}
+                                onClick={() => {
+                                  void openEvidenceDetail(e.evidence.id);
+                                }}
+                              >
+                                📎 {e.evidence.title?.de}
+                              </button>
+                            ))}
+                          </div>
                         )}
                       </div>
                     );
@@ -212,6 +247,23 @@ export default function LernendeMatrixPage() {
           Du bist noch keiner Klasse beigetreten. Sobald du beigetreten bist, erscheint hier deine
           Kompetenzmatrix.
         </p>
+      )}
+
+      {/* Nachweis einreichen (Modal) */}
+      {openEvidence && (
+        <div className="modal-overlay" onClick={() => setOpenEvidence(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-head">
+              <h2>{openEvidence.title?.de}</h2>
+              <button className="btn-icon" title="Schliessen" onClick={() => setOpenEvidence(null)}>
+                ✕
+              </button>
+            </div>
+            <div className="modal-body">
+              <EvidenceSubmitPanel ev={openEvidence} />
+            </div>
+          </div>
+        </div>
       )}
     </AppShell>
   );

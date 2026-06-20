@@ -1107,6 +1107,14 @@ a {
 .ev-hidden {
   color: var(--fg-muted);
 }
+.evidence-chip-btn {
+  border: none;
+  cursor: pointer;
+  font: inherit;
+}
+.evidence-chip-btn:hover {
+  background: color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
 .evidence-add {
   font-size: 11px;
   padding: 2px 8px;

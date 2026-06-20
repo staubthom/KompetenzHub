@@ -76,6 +76,16 @@ export class MatrixController {
     });
     if (!matrix) throw new NotFoundException('Matrix nicht gefunden.');
 
+    // Lernende sehen nur sichtbare Nachweise (Lehrperson/Admin alle).
+    const isTeacher = user.roles.includes(Role.TEACHER) || user.roles.includes(Role.ADMIN);
+    if (!isTeacher) {
+      for (const band of matrix.bands) {
+        for (const field of band.fields) {
+          field.evidences = field.evidences.filter((e) => e.evidence.isVisible);
+        }
+      }
+    }
+
     return { module, matrix };
   }
 
