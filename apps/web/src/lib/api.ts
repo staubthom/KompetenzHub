@@ -97,6 +97,7 @@ export const descriptors = {
 // Classes (FA-20, 23, 25)
 export const classes = {
   list: () => apiFetch<ClassSummary[]>('/classes'),
+  mine: () => apiFetch<MyEnrollment[]>('/classes/mine'),
   get: (id: string) => apiFetch<ClassDetail>(`/classes/${id}`),
   create: (data: { name: string; moduleId?: string; year?: number; schoolYear?: string }) =>
     apiFetch<ClassSummary>('/classes', { method: 'POST', body: JSON.stringify(data) }),
@@ -231,6 +232,17 @@ export interface JoinCode {
 
 export interface ClassDetail extends ClassSummary {
   activeJoinCode: JoinCode | null;
+}
+
+export interface MyEnrollment {
+  enrollmentId: string;
+  joinedAt: string;
+  class: {
+    id: string;
+    name: string;
+    status: string;
+    module: ClassModuleRef | null;
+  };
 }
 
 export interface Member {

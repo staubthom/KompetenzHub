@@ -25,6 +25,13 @@ export class ClassesController {
     return this.classes.list(user.tenantId, user.userId, user.roles);
   }
 
+  /** Eigene Klassenmitgliedschaften der/des Lernenden (inkl. Modul). */
+  @Get('mine')
+  @Roles(Role.LEARNER, Role.TEACHER, Role.ADMIN)
+  mine(@CurrentUser() user: RequestContext) {
+    return this.classes.listMine(user.tenantId, user.userId);
+  }
+
   @Get(':id')
   @Roles(Role.TEACHER, Role.ADMIN)
   findOne(@Param('id') id: string, @CurrentUser() user: RequestContext) {
