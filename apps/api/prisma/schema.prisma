@@ -64,6 +64,20 @@ enum EnrollmentStatus {
   REMOVED
 }
 
+enum EvidenceType {
+  QUIZ
+  FILE_UPLOAD
+}
+
+enum SubmissionStatus {
+  OPEN
+  SUBMITTED
+  IN_REVIEW
+  GRADED
+  REJECTED
+  EXPIRED
+}
+
 // ============================================================
 // Mandant & Benutzer
 // ============================================================
@@ -171,6 +185,7 @@ model Module {
   matrix      CompetenceMatrix?
   actionGoals ActionGoal[]
   classes     Class[]
+  evidences   CompetenceEvidence[]
 
   @@unique([tenantId, number])
   @@index([tenantId])
@@ -239,8 +254,9 @@ model CompetenceField {
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
 
-  band       CompetenceBand @relation(fields: [bandId], references: [id], onDelete: Cascade)
+  band       CompetenceBand  @relation(fields: [bandId], references: [id], onDelete: Cascade)
   descriptor Descriptor?
+  evidences  EvidenceField[]
 
   @@unique([bandId, level])
   @@index([bandId])
@@ -303,9 +319,69 @@ model Enrollment {
   status      EnrollmentStatus @default(ACTIVE)
   joinedAt    DateTime         @default(now())
 
-  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
-  user  User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  class       Class        @relation(fields: [classId], references: [id], onDelete: Cascade)
+  user        User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  submissions Submission[]
 
   @@unique([classId, userId])
   @@index([classId])
+}
+
+// ============================================================
+// Kompetenznachweise & Einreichungen (Sprint 4)
+// ============================================================
+
+model CompetenceEvidence {
+  id           String           @id @default(uuid())
+  tenantId     String
+  moduleId     String
+  type         EvidenceType
+  title        Json             @default("{}") // i18n
+  instructions Json             @default("{}") // i18n
+  maxPoints    Decimal?         @db.Decimal(6, 2)
+  targetLevel  CompetenceLevel?
+  isVisible    Boolean          @default(false)
+  availableFrom DateTime?
+  dueAt        DateTime?
+  config       Json             @default("{}") // Quizfragen ODER Upload-Constraints
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  module      Module          @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  fields      EvidenceField[]
+  submissions Submission[]
+
+  @@index([tenantId])
+  @@index([moduleId])
+}
+
+model EvidenceField {
+  evidenceId String
+  fieldId    String
+
+  evidence CompetenceEvidence @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+  field    CompetenceField    @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+
+  @@id([evidenceId, fieldId])
+  @@index([fieldId])
+}
+
+model Submission {
+  id           String           @id @default(uuid())
+  evidenceId   String
+  enrollmentId String
+  attempt      Int              @default(1)
+  status       SubmissionStatus @default(OPEN)
+  content      Json             @default("{}") // Quiz-Antworten / Textantworten
+  points       Decimal?         @db.Decimal(6, 2)
+  fileKey      String?
+  fileName     String?
+  submittedAt  DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  evidence   CompetenceEvidence @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+  enrollment Enrollment         @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@index([evidenceId, enrollmentId, attempt])
 }

@@ -846,6 +846,128 @@ a {
   font-weight: 600;
 }
 
+/* ===== Kompetenznachweise / Quiz (Sprint 4) ===== */
+.quiz-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.quiz-q {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  background: var(--surface-2);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.quiz-q-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.quiz-q-head select,
+.quiz-q-head input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+}
+.quiz-q-text {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  padding: 8px 11px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-family: inherit;
+}
+.quiz-opts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 4px;
+}
+.quiz-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.quiz-opt input[type='text'],
+.quiz-opt input:not([type]) {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+/* Quiz lösen (Lernende) */
+.question {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+.question:last-child {
+  border-bottom: none;
+}
+.question .q {
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.opt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 6px;
+  cursor: pointer;
+}
+.opt:hover {
+  background: var(--surface-2);
+}
+.quiz-result {
+  text-align: center;
+  padding: 2rem;
+}
+.quiz-result .score {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--brand-primary);
+}
+.evidence-list {
+  display: flex;
+  flex-direction: column;
+}
+.evidence-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.evidence-item:last-child {
+  border-bottom: none;
+}
+.evidence-meta {
+  font-size: 12px;
+  color: var(--fg-muted);
+  margin-top: 2px;
+}
+.overdue {
+  color: var(--st-rejected);
+  font-weight: 600;
+}
+
 /* ===== Login ===== */
 .login-wrap {
   min-height: 100vh;
