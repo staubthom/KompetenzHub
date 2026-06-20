@@ -1,13 +1,12 @@
-# Kompetenzmatrix
+# KompetenzHub
 
-Planung und interaktive UI-Mockups für eine Software, mit der **Berufsfachschul-Lehrpersonen**
+Planung und interaktive UI-Mockups für **KompetenzHub** – eine Software, mit der **Berufsfachschul-Lehrpersonen**
 die **Kompetenzmatrix** pro Modul abbilden, **Kompetenznachweise** erfassen und den
 **Kompetenzerwerb** ihrer Lernenden begleiten und bewerten können.
 
 Die Lösung orientiert sich am offiziellen Konzept *„Kompetenzmatrix für die berufliche
 Grundbildung in der ICT"* von **ICT-Berufsbildung Schweiz** (in Kraft seit 01.06.2025).
 
-> **Arbeitstitel:** *KompetenzHub* (Platzhalter, frei änderbar)
 
 ---
 

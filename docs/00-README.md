@@ -1,4 +1,4 @@
-# Kompetenzmatrix-Software – Planungsdokumentation
+# KompetenzHub – Planungsdokumentation
 
 Diese Dokumentensammlung beschreibt die detaillierte Planung einer Software, mit der
 Berufsfachschul-Lehrpersonen die **Kompetenzmatrix** pro Modul abbilden, **Lernaufgaben /
@@ -7,7 +7,6 @@ bewerten können. Die Software orientiert sich am offiziellen Konzept *„Kompet
 die berufliche Grundbildung in der ICT"* von ICT-Berufsbildung Schweiz (Stand 18.09.2024,
 aktualisiert 05.08.2025, in Kraft seit 01.06.2025).
 
-> **Arbeitstitel:** *KompetenzHub* (Platzhalter, frei änderbar)
 
 ---
 

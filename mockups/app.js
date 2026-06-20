@@ -82,7 +82,7 @@ function renderHeader(user) {
     <button class="hamburger" aria-label="Menü öffnen" onclick="toggleMenu()">☰</button>
     <a class="brand" href="index.html" style="text-decoration:none;color:inherit">
       <img src="logo.png" alt="Logo Berufsschule Muster" />
-      <span class="name">Kompetenzmatrix</span>
+      <span class="name">KompetenzHub</span>
     </a>
     <div class="appspacer"></div>
 
