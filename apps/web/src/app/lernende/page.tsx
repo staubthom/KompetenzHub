@@ -26,7 +26,7 @@ export default function LernendeMatrixPage() {
       setError(
         err.status === 410
           ? 'Dieser Beitrittscode ist abgelaufen.'
-          : err.body?.title ?? 'Beitritt fehlgeschlagen. Code prüfen.',
+          : (err.body?.title ?? 'Beitritt fehlgeschlagen. Code prüfen.'),
       );
     } finally {
       setJoining(false);
@@ -45,7 +45,9 @@ export default function LernendeMatrixPage() {
 
       {/* Klasse beitreten (FA-23) */}
       <div className="panel">
-        <div className="panel-head"><h2>Klasse beitreten</h2></div>
+        <div className="panel-head">
+          <h2>Klasse beitreten</h2>
+        </div>
         <div className="panel-body">
           {joined ? (
             <div className="join-success">
@@ -60,7 +62,12 @@ export default function LernendeMatrixPage() {
                 Gib den Beitrittscode deiner Lehrperson ein, um einer Klasse beizutreten.
               </p>
               {error && <div className="error">{error}</div>}
-              <form className="join-form" onSubmit={(e) => { void handleJoin(e); }}>
+              <form
+                className="join-form"
+                onSubmit={(e) => {
+                  void handleJoin(e);
+                }}
+              >
                 <input
                   className="join-input"
                   placeholder="z. B. A1B2C3"
@@ -78,7 +85,9 @@ export default function LernendeMatrixPage() {
       </div>
 
       <div className="panel">
-        <div className="panel-head"><h2>Kompetenzbänder</h2></div>
+        <div className="panel-head">
+          <h2>Kompetenzbänder</h2>
+        </div>
         <div className="empty">
           <span className="ic">▦</span>
           <p>

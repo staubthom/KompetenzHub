@@ -2,10 +2,7 @@ import { getToken, saveSession, type Role, type SessionUser } from './session';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
-async function apiFetch<T>(
-  path: string,
-  options: RequestInit = {},
-): Promise<T> {
+async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -57,10 +54,21 @@ export async function logout(): Promise<void> {
 export const modules = {
   list: () => apiFetch<ModuleSummary[]>('/modules'),
   get: (id: string) => apiFetch<ModuleDetail>(`/modules/${id}`),
-  create: (data: { number: string; title: { de: string }; description?: { de: string }; profession?: string }) =>
-    apiFetch<ModuleSummary>('/modules', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: string, data: Partial<{ number: string; title: Record<string,string>; description: Record<string,string>; status: string }>) =>
-    apiFetch<ModuleSummary>(`/modules/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  create: (data: {
+    number: string;
+    title: { de: string };
+    description?: { de: string };
+    profession?: string;
+  }) => apiFetch<ModuleSummary>('/modules', { method: 'POST', body: JSON.stringify(data) }),
+  update: (
+    id: string,
+    data: Partial<{
+      number: string;
+      title: Record<string, string>;
+      description: Record<string, string>;
+      status: string;
+    }>,
+  ) => apiFetch<ModuleSummary>(`/modules/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   remove: (id: string) => apiFetch<void>(`/modules/${id}`, { method: 'DELETE' }),
 };
 
@@ -68,19 +76,35 @@ export const modules = {
 export const actionGoals = {
   list: (moduleId: string) => apiFetch<ActionGoal[]>(`/modules/${moduleId}/action-goals`),
   create: (moduleId: string, data: { code: string; text?: { de: string } }) =>
-    apiFetch<ActionGoal>(`/modules/${moduleId}/action-goals`, { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: string, data: Partial<{ code: string; text: Record<string,string>; sortOrder: number }>) =>
-    apiFetch<ActionGoal>(`/action-goals/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    apiFetch<ActionGoal>(`/modules/${moduleId}/action-goals`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  update: (
+    id: string,
+    data: Partial<{ code: string; text: Record<string, string>; sortOrder: number }>,
+  ) => apiFetch<ActionGoal>(`/action-goals/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   remove: (id: string) => apiFetch<void>(`/action-goals/${id}`, { method: 'DELETE' }),
 };
 
 // Matrix / Bands (FA-03)
 export const matrix = {
   get: (moduleId: string) => apiFetch<MatrixResponse>(`/modules/${moduleId}/matrix`),
-  createBand: (matrixId: string, data: { code: string; description?: { de: string }; actionGoalIds?: string[] }) =>
+  createBand: (
+    matrixId: string,
+    data: { code: string; description?: { de: string }; actionGoalIds?: string[] },
+  ) =>
     apiFetch<Band>(`/matrices/${matrixId}/bands`, { method: 'POST', body: JSON.stringify(data) }),
-  updateBand: (id: string, data: Partial<{ code: string; description: Record<string,string>; weight: number; sortOrder: number; actionGoalIds: string[] }>) =>
-    apiFetch<Band>(`/bands/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  updateBand: (
+    id: string,
+    data: Partial<{
+      code: string;
+      description: Record<string, string>;
+      weight: number;
+      sortOrder: number;
+      actionGoalIds: string[];
+    }>,
+  ) => apiFetch<Band>(`/bands/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   removeBand: (id: string) => apiFetch<void>(`/bands/${id}`, { method: 'DELETE' }),
 };
 

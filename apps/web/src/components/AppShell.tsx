@@ -3,9 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import {
-  getUser, clearSession, isTeacher, initials, type SessionUser,
-} from '../lib/session';
+import { getUser, clearSession, isTeacher, initials, type SessionUser } from '../lib/session';
 import { logout as apiLogout } from '../lib/api';
 
 type Theme = 'light' | 'dark' | 'gray';
@@ -109,11 +107,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
         <div className="seg" role="group" aria-label="Anzeige-Modus">
           {(['light', 'dark', 'gray'] as Theme[]).map((t) => (
-            <button
-              key={t}
-              aria-pressed={theme === t}
-              onClick={() => setTheme(t)}
-            >
+            <button key={t} aria-pressed={theme === t} onClick={() => setTheme(t)}>
               {t === 'light' ? 'Light' : t === 'dark' ? 'Dark' : 'Gray'}
             </button>
           ))}
@@ -138,7 +132,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <button role="menuitem">👤 Profil</button>
             <button role="menuitem">⚙️ Einstellungen</button>
             <div className="sep" />
-            <button role="menuitem" onClick={() => { void handleLogout(); }}>
+            <button
+              role="menuitem"
+              onClick={() => {
+                void handleLogout();
+              }}
+            >
               ⎋ Abmelden
             </button>
           </div>

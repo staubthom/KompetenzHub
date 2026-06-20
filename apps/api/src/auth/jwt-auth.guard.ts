@@ -1,9 +1,4 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
 import { IS_PUBLIC_KEY } from './decorators';
@@ -58,9 +53,7 @@ export class JwtAuthGuard implements CanActivate {
     if (header?.startsWith('Bearer ')) {
       return header.slice('Bearer '.length).trim();
     }
-    const cookie = (req as Request & { cookies?: Record<string, string> }).cookies?.[
-      'kh_token'
-    ];
+    const cookie = (req as Request & { cookies?: Record<string, string> }).cookies?.['kh_token'];
     return cookie ?? null;
   }
 }

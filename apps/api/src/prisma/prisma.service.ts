@@ -97,9 +97,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         case 'delete': {
           // Einzel-Update/Delete per eindeutiger ID: zusätzlich Tenant prüfen,
           // indem wir vorab via findFirst die Ownership sicherstellen.
-          const delegate = (this as unknown as Record<string, { findFirst: (args: unknown) => Promise<unknown> }>)[
-            this.delegateName(model)
-          ];
+          const delegate = (
+            this as unknown as Record<string, { findFirst: (args: unknown) => Promise<unknown> }>
+          )[this.delegateName(model)];
           const existing = await delegate.findFirst({
             where: this.andTenant(params.args.where, tenantId),
             select: { id: true },

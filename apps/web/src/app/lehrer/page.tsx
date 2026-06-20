@@ -52,9 +52,8 @@ export default function LehrerDashboardPage() {
             wird in einem späteren Sprint umgesetzt (FA-90..92).
           </p>
           <p style={{ marginTop: '1rem' }}>
-            Starte jetzt mit{' '}
-            <Link href="/modules">Module &amp; Matrizen</Link>, um eine Kompetenzmatrix
-            anzulegen.
+            Starte jetzt mit <Link href="/modules">Module &amp; Matrizen</Link>, um eine
+            Kompetenzmatrix anzulegen.
           </p>
         </div>
       </div>
