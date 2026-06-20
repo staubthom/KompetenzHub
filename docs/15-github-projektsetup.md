@@ -25,10 +25,23 @@ gh auth login
 (GitHub.com → HTTPS → im Browser bestätigen.)
 
 ### 3. Skript ausführen (aus dem Repo-Verzeichnis)
+
+**Windows (empfohlen, PowerShell-Variante – kein bash nötig):**
+```powershell
+powershell -ExecutionPolicy Bypass -File .github\scripts\setup-project.ps1
+```
+> Öffne dazu **PowerShell** im Repo-Ordner (in VS Code: Terminal → „PowerShell"; oder im
+> Datei-Explorer im Ordner `Umschalt`+Rechtsklick → „PowerShell-Fenster hier öffnen").
+
+**Falls du lieber das bash-Skript nutzt** (Git Bash oder WSL erforderlich):
 ```bash
 bash .github/scripts/setup-project.sh
 ```
-Das Skript ist **idempotent** – ein erneuter Lauf legt nichts doppelt an.
+> Git Bash kommt mit „Git for Windows" und ist meist schon installiert. In Git Bash
+> ins Repo wechseln (`cd /c/Users/staubt/OneDrive/KI_Spielplatz/Kompetenzmatrix`) und obigen
+> Befehl ausführen.
+
+Beide Skripte sind **idempotent** – ein erneuter Lauf legt nichts doppelt an.
 Danach existieren 4 Milestones, alle Labels und ~38 Issues mit `sprint:*`-Labels.
 
 ---
