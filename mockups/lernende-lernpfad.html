@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Lernpfad · Kompetenzmatrix</title>
+<link rel="stylesheet" href="shared.css" />
+<script src="app.js"></script>
+<style>
+  .path { position: relative; padding: 8px 18px 18px 18px; }
+  .step { display: flex; gap: 14px; padding: 4px 0; }
+  .step .line { display: flex; flex-direction: column; align-items: center; }
+  .step .node { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 800; flex-shrink: 0; border: 2px solid var(--border); background: var(--surface); color: var(--fg-muted); }
+  .step.done .node { background: var(--st-graded); border-color: var(--st-graded); color: #fff; }
+  .step.current .node { background: var(--brand-primary); border-color: var(--brand-primary); color: #fff; box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand-primary) 20%, transparent); }
+  .step .connector { flex: 1; width: 2px; background: var(--border); margin: 2px 0; min-height: 18px; }
+  .step.done .connector { background: var(--st-graded); }
+  .step .body { flex: 1; padding-bottom: 16px; }
+  .step .ti { font-weight: 700; font-size: 14px; }
+  .step .meta { font-size: 12px; color: var(--fg-muted); margin: 2px 0 8px; }
+  .step .card-mini { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; background: var(--surface); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .step.locked .body { opacity: .55; }
+</style>
+</head>
+<body>
+  <div id="demobar"></div>
+  <div id="header"></div>
+
+  <div class="app">
+    <div id="sidebar"></div>
+    <main class="main">
+      <div class="breadcrumb"><a href="lernende-matrix.html">Meine Matrix</a> / Lernpfad</div>
+      <div class="page-head">
+        <div>
+          <h1>Mein Lernpfad — Modul 293</h1>
+          <p>Empfohlene Reihenfolge · auf deinen Fortschritt abgestimmt</p>
+        </div>
+        <div class="seg" role="group" aria-label="Ansicht">
+          <a href="lernende-matrix.html" class="btn" style="border-radius:999px 0 0 999px">Matrix</a>
+          <button aria-pressed="true" class="btn primary" style="border-radius:0 999px 999px 0">Lernpfad</button>
+        </div>
+      </div>
+
+      <div class="cards">
+        <div class="card"><div class="k">Nächster Schritt</div><div class="v" style="font-size:18px">C1B überarbeiten</div><div class="d">empfohlen</div></div>
+        <div class="card"><div class="k">Abgeschlossen</div><div class="v" style="color:var(--st-graded)">3 / 9</div><div class="d">Kompetenzen</div></div>
+        <div class="card"><div class="k">Geschätzte Zeit</div><div class="v">~6 Std</div><div class="d">bis Modulziel</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>Pfad-Schritte</h2><span class="badge b-open">KI-empfohlen</span></div>
+        <div class="path">
+          <div class="step done">
+            <div class="line"><div class="node">✓</div><div class="connector"></div></div>
+            <div class="body">
+              <div class="ti">A1B — Komponenten benennen</div>
+              <div class="meta">Abgeschlossen · 18 / 20 Punkte</div>
+              <div class="card-mini"><span class="badge b-graded"><span class="dot" style="background:var(--st-graded)"></span> bewertet</span><span style="font-size:13px; color:var(--fg-muted)">Quiz · 22.05.</span></div>
+            </div>
+          </div>
+          <div class="step done">
+            <div class="line"><div class="node">✓</div><div class="connector"></div></div>
+            <div class="body">
+              <div class="ti">A1I — Gerät zusammenbauen</div>
+              <div class="meta">Abgeschlossen · 15 / 20 Punkte</div>
+              <div class="card-mini"><span class="badge b-graded"><span class="dot" style="background:var(--st-graded)"></span> bewertet</span><span style="font-size:13px; color:var(--fg-muted)">Upload · 30.05.</span></div>
+            </div>
+          </div>
+          <div class="step done">
+            <div class="line"><div class="node">✓</div><div class="connector"></div></div>
+            <div class="body">
+              <div class="ti">B1B — OS installieren</div>
+              <div class="meta">Abgeschlossen · 19 / 20 Punkte</div>
+              <div class="card-mini"><span class="badge b-graded"><span class="dot" style="background:var(--st-graded)"></span> bewertet</span><span style="font-size:13px; color:var(--fg-muted)">Upload · 05.06.</span></div>
+            </div>
+          </div>
+          <div class="step current">
+            <div class="line"><div class="node">4</div><div class="connector"></div></div>
+            <div class="body">
+              <div class="ti">C1B — IP-Adressen vergeben</div>
+              <div class="meta">Dein nächster Schritt · zurückgewiesen, bitte überarbeiten</div>
+              <div class="card-mini">
+                <span class="badge b-rejected"><span class="dot" style="background:var(--st-rejected)"></span> überarbeiten</span>
+                <span style="font-size:13px; color:var(--fg-muted)">„Subnetzmaske fehlt"</span>
+                <a class="btn primary" style="margin-left:auto" href="lernende-nachweis.html">Jetzt bearbeiten →</a>
+              </div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="line"><div class="node">5</div><div class="connector"></div></div>
+            <div class="body">
+              <div class="ti">B1I — OS konfigurieren</div>
+              <div class="meta">In Bewertung · warte auf Rückmeldung</div>
+              <div class="card-mini"><span class="badge b-submitted"><span class="dot" style="background:var(--st-submitted)"></span> eingereicht</span><a class="btn" style="margin-left:auto" href="lernende-fachgespraech.html">Üben</a></div>
+            </div>
+          </div>
+          <div class="step locked">
+            <div class="line"><div class="node">🔒</div><div class="connector"></div></div>
+            <div class="body">
+              <div class="ti">A1A — Fehlerdiagnose</div>
+              <div class="meta">Freigeschaltet · Quiz starten</div>
+              <div class="card-mini"><span class="badge b-open"><span class="dot" style="background:var(--st-open)"></span> offen</span><a class="btn" style="margin-left:auto" href="lernende-quiz.html">Quiz starten</a></div>
+            </div>
+          </div>
+          <div class="step locked">
+            <div class="line"><div class="node">🔒</div></div>
+            <div class="body">
+              <div class="ti">C1I / C1A — Netzwerk dokumentieren &amp; VLANs</div>
+              <div class="meta">Wird freigeschaltet, sobald C1B bewertet ist</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <footer class="note">Mockup · Lernpfad</footer>
+
+  <script>
+    document.getElementById('demobar').innerHTML = renderDemobar('lernende-lernpfad.html');
+    document.getElementById('header').innerHTML = renderHeader({name:'Lara Meier', role:'Lernende · INF-1a', initials:'LM'});
+    document.getElementById('sidebar').innerHTML = renderSidebar('student','lernpfad');
+  </script>
+</body>
+</html>

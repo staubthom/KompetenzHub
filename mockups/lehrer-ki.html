@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>KI-Einstellungen · Kompetenzmatrix</title>
+<link rel="stylesheet" href="shared.css" />
+<script src="app.js"></script>
+<style>
+  .switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink:0; }
+  .switch input { display: none; }
+  .slider { position: absolute; inset: 0; background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; transition: .2s; cursor: pointer; }
+  .slider::before { content: ""; position: absolute; width: 18px; height: 18px; left: 3px; top: 2px; background: var(--surface); border-radius: 50%; transition: .2s; box-shadow: var(--shadow); }
+  .switch input:checked + .slider { background: var(--brand-primary); border-color: transparent; }
+  .switch input:checked + .slider::before { transform: translateX(20px); background: #fff; }
+  .setrow { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .setrow:last-child { border-bottom: 0; }
+  .setrow .txt .t { font-weight: 600; font-size: 14px; }
+  .setrow .txt .d { font-size: 12px; color: var(--fg-muted); }
+  .range { width: 100%; }
+  .modelcard { display:flex; gap:10px; align-items:center; border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px; cursor:pointer; }
+  .modelcard.sel { border-color: var(--brand-primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand-primary) 22%, transparent); }
+</style>
+</head>
+<body>
+  <div id="demobar"></div>
+  <div id="header"></div>
+
+  <div class="app">
+    <div id="sidebar"></div>
+    <main class="main">
+      <div class="breadcrumb"><a href="lehrer-dashboard.html">Dashboard</a> / KI-Einstellungen</div>
+      <div class="page-head">
+        <div><h1>KI-Einstellungen</h1><p>Verhalten der KI für Bewertungsvorschläge, Selbstcheck &amp; Fachgespräch</p></div>
+        <span class="badge b-graded"><span class="dot" style="background:var(--st-graded)"></span> KI aktiv</span>
+      </div>
+
+      <div class="grid2">
+        <div>
+          <div class="panel">
+            <div class="panel-head"><h2>Funktionen</h2></div>
+            <div class="panel-body" style="padding-top:4px">
+              <div class="setrow"><div class="txt"><div class="t">Bewertungsvorschläge</div><div class="d">KI schlägt Punkte X/Y + Begründung vor (nicht verbindlich)</div></div><label class="switch"><input type="checkbox" checked /><span class="slider"></span></label></div>
+              <div class="setrow"><div class="txt"><div class="t">Selbstcheck für Lernende</div><div class="d">KI gibt Feedback vor dem Einreichen</div></div><label class="switch"><input type="checkbox" checked /><span class="slider"></span></label></div>
+              <div class="setrow"><div class="txt"><div class="t">Fachgespräch-Tutor</div><div class="d">KI führt Übungsdialoge mit Lernenden</div></div><label class="switch"><input type="checkbox" checked /><span class="slider"></span></label></div>
+              <div class="setrow"><div class="txt"><div class="t">Quizfragen generieren</div><div class="d">KI erstellt Fragen aus Kompetenzbeschreibungen</div></div><label class="switch"><input type="checkbox" /><span class="slider"></span></label></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h2>Bewertungs-Strenge</h2></div>
+            <div class="panel-body">
+              <p style="margin-top:0; font-size:13px; color:var(--fg-muted)">Wie kritisch soll die KI Punkte vorschlagen?</p>
+              <input type="range" class="range" min="1" max="5" value="3" />
+              <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--fg-muted)"><span>mild</span><span>ausgewogen</span><span>streng</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="panel">
+            <div class="panel-head"><h2>Sprachmodell</h2></div>
+            <div class="panel-body" style="display:flex; flex-direction:column; gap:10px">
+              <label class="modelcard sel"><input type="radio" name="m" checked /> <div><div style="font-weight:600">GPT-4o-mini (Standard)</div><div style="font-size:12px; color:var(--fg-muted)">Schnell &amp; günstig · für die meisten Aufgaben</div></div></label>
+              <label class="modelcard"><input type="radio" name="m" /> <div><div style="font-weight:600">GPT-4o</div><div style="font-size:12px; color:var(--fg-muted)">Höhere Qualität · komplexe Bewertungen</div></div></label>
+              <label class="modelcard"><input type="radio" name="m" /> <div><div style="font-weight:600">Lokales Modell (on-prem)</div><div style="font-size:12px; color:var(--fg-muted)">Datenschutz · keine externen Anfragen</div></div></label>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h2>Datenschutz &amp; Transparenz</h2></div>
+            <div class="panel-body" style="padding-top:4px">
+              <div class="setrow"><div class="txt"><div class="t">KI-Hinweis anzeigen</div><div class="d">„Von KI erstellt" bei allen Vorschlägen</div></div><label class="switch"><input type="checkbox" checked /><span class="slider"></span></label></div>
+              <div class="setrow"><div class="txt"><div class="t">Lernenden-Daten anonymisieren</div><div class="d">Namen entfernen vor KI-Anfrage</div></div><label class="switch"><input type="checkbox" checked /><span class="slider"></span></label></div>
+              <div class="setrow"><div class="txt"><div class="t">Mensch entscheidet immer</div><div class="d">KI-Punkte nie automatisch übernehmen</div></div><label class="switch"><input type="checkbox" checked disabled /><span class="slider"></span></label></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h2>Verbrauch (Monat)</h2></div>
+            <div class="panel-body" style="font-size:13px">
+              <div class="kv"><span class="key">Anfragen</span><span class="val">1'284</span></div>
+              <div class="kv"><span class="key">Bewertungsvorschläge</span><span class="val">312</span></div>
+              <div class="kv"><span class="key">Geschätzte Kosten</span><span class="val">CHF 4.20</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:4px">
+        <button class="btn">Zurücksetzen</button>
+        <button class="btn primary">Einstellungen speichern</button>
+      </div>
+    </main>
+  </div>
+
+  <footer class="note">Mockup · KI-Einstellungen</footer>
+
+  <script>
+    document.getElementById('demobar').innerHTML = renderDemobar('lehrer-ki.html');
+    document.getElementById('header').innerHTML = renderHeader();
+    document.getElementById('sidebar').innerHTML = renderSidebar('teacher','ki');
+  </script>
+</body>
+</html>

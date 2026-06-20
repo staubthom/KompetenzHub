@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Module &amp; Matrizen · Kompetenzmatrix</title>
+<link rel="stylesheet" href="shared.css" />
+<script src="app.js"></script>
+<style>
+  .mtable { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .mtable th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--fg-muted); padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  .mtable td { padding: 12px; border-bottom: 1px solid var(--border); }
+  .mtable tr:hover td { background: var(--surface-2); }
+  .mtable .mod { font-weight: 700; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); color: var(--fg-muted); }
+</style>
+</head>
+<body>
+  <div id="demobar"></div>
+  <div id="header"></div>
+
+  <div class="app">
+    <div id="sidebar"></div>
+    <main class="main">
+      <div class="breadcrumb"><a href="lehrer-dashboard.html">Dashboard</a> / Module &amp; Matrizen</div>
+      <div class="page-head">
+        <div><h1>Module &amp; Matrizen</h1><p>Kompetenzraster verwalten · importieren &amp; zuweisen</p></div>
+        <div style="display:flex; gap:8px">
+          <button class="btn">⬆ Import (PDF/PPTX)</button>
+          <button class="btn primary">+ Neues Modul</button>
+        </div>
+      </div>
+
+      <div class="cards">
+        <div class="card"><div class="k">Module</div><div class="v">4</div><div class="d">aktiv</div></div>
+        <div class="card"><div class="k">Kompetenzen</div><div class="v">37</div><div class="d">gesamt</div></div>
+        <div class="card"><div class="k">Zugewiesen an</div><div class="v">3</div><div class="d">Klassen</div></div>
+        <div class="card"><div class="k">Entwürfe</div><div class="v" style="color:var(--st-submitted)">1</div><div class="d">unveröffentlicht</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>Module</h2><input type="text" placeholder="🔍 Modul suchen …" style="max-width:220px" /></div>
+        <table class="mtable">
+          <thead>
+            <tr><th>Modul</th><th>Bänder / Niveaus</th><th>Kompetenzen</th><th>Klassen</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><div class="mod">Modul 293</div><div style="color:var(--fg-muted)">ICT-Geräte in Betrieb nehmen</div></td>
+              <td><div class="chips"><span class="chip">A · Hardware</span><span class="chip">B · OS</span><span class="chip">C · Netzwerk</span></div></td>
+              <td>9</td>
+              <td>INF-1a, INF-1b</td>
+              <td><span class="badge b-graded"><span class="dot" style="background:var(--st-graded)"></span> veröffentlicht</span></td>
+              <td><a class="btn" href="#">Bearbeiten</a></td>
+            </tr>
+            <tr>
+              <td><div class="mod">Modul 117</div><div style="color:var(--fg-muted)">Informatik-Netzwerk aufbauen</div></td>
+              <td><div class="chips"><span class="chip">A · Planung</span><span class="chip">B · Aufbau</span></div></td>
+              <td>11</td>
+              <td>INF-2a</td>
+              <td><span class="badge b-graded"><span class="dot" style="background:var(--st-graded)"></span> veröffentlicht</span></td>
+              <td><a class="btn" href="#">Bearbeiten</a></td>
+            </tr>
+            <tr>
+              <td><div class="mod">Modul 322</div><div style="color:var(--fg-muted)">Webauftritt erstellen</div></td>
+              <td><div class="chips"><span class="chip">A · HTML/CSS</span><span class="chip">B · JS</span></div></td>
+              <td>10</td>
+              <td>INF-2a</td>
+              <td><span class="badge b-graded"><span class="dot" style="background:var(--st-graded)"></span> veröffentlicht</span></td>
+              <td><a class="btn" href="#">Bearbeiten</a></td>
+            </tr>
+            <tr>
+              <td><div class="mod">Modul 305</div><div style="color:var(--fg-muted)">Multiuser-Applikation</div></td>
+              <td><div class="chips"><span class="chip">A · Konzept</span></div></td>
+              <td>7</td>
+              <td>—</td>
+              <td><span class="badge b-submitted"><span class="dot" style="background:var(--st-submitted)"></span> Entwurf</span></td>
+              <td><a class="btn" href="#">Bearbeiten</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>Raster-Vorschau · Modul 293</h2><span class="badge b-open">Punkte X/Y pro Zelle</span></div>
+        <div class="matrix">
+          <div class="h">Band</div>
+          <div class="h">Beginner (B)</div>
+          <div class="h">Intermediate (I)</div>
+          <div class="h">Advanced (A)</div>
+
+          <div class="rowlabel">A · Hardware</div>
+          <div class="field"><strong>A1B</strong><small>Komponenten benennen</small><span class="badge b-open" style="align-self:flex-start">max 20 P.</span></div>
+          <div class="field"><strong>A1I</strong><small>Gerät zusammenbauen</small><span class="badge b-open" style="align-self:flex-start">max 20 P.</span></div>
+          <div class="field"><strong>A1A</strong><small>Fehlerdiagnose</small><span class="badge b-open" style="align-self:flex-start">max 20 P.</span></div>
+
+          <div class="rowlabel">B · Betriebssystem</div>
+          <div class="field"><strong>B1B</strong><small>OS installieren</small><span class="badge b-open" style="align-self:flex-start">max 20 P.</span></div>
+          <div class="field"><strong>B1I</strong><small>OS konfigurieren</small><span class="badge b-open" style="align-self:flex-start">max 20 P.</span></div>
+          <div class="field"><strong>B1A</strong><small>Automatisierung</small><span class="badge b-open" style="align-self:flex-start">max 20 P.</span></div>
+
+          <div class="rowlabel">C · Netzwerk</div>
+          <div class="field"><strong>C1B</strong><small>IP vergeben</small><span class="badge b-open" style="align-self:flex-start">max 20 P.</span></div>
+          <div class="field"><strong>C1I</strong><small>Netzwerk dokumentieren</small><span class="badge b-open" style="align-self:flex-start">max 20 P.</span></div>
+          <div class="field"><strong>C1A</strong><small>VLANs konfigurieren</small><span class="badge b-open" style="align-self:flex-start">max 20 P.</span></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <footer class="note">Mockup · Module &amp; Matrizen</footer>
+
+  <script>
+    document.getElementById('demobar').innerHTML = renderDemobar('lehrer-module.html');
+    document.getElementById('header').innerHTML = renderHeader();
+    document.getElementById('sidebar').innerHTML = renderSidebar('teacher','module');
+  </script>
+</body>
+</html>

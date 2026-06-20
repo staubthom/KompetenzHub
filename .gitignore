@@ -1,0 +1,30 @@
+# ===== Projekt-spezifisch =====
+# Internes Archiv / Quellmaterial nicht veröffentlichen
+Archiv/
+/Archiv
+
+# ===== Betriebssystem =====
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# ===== Editor / IDE =====
+.vscode/
+.idea/
+.obsidian/
+*.swp
+*.swo
+*~
+
+# ===== Temporäre Dateien =====
+*.tmp
+*.bak
+*.log
+_*.html
+
+# ===== Node (falls später ein Build dazukommt) =====
+node_modules/
+dist/
+build/
+.cache/
