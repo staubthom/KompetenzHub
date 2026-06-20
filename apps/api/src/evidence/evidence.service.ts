@@ -27,6 +27,7 @@ export interface CreateEvidenceDto {
   isVisible?: boolean;
   availableFrom?: string;
   dueAt?: string;
+  sortOrder?: number;
   config?: UploadConfig;
   fieldIds?: string[];
 }
@@ -44,7 +45,7 @@ export class EvidenceService {
     return this.prisma.competenceEvidence.findMany({
       where: { tenantId, ...(moduleId ? { moduleId } : {}) },
       include: { fields: true, _count: { select: { submissions: true } } },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
     });
   }
 
@@ -62,6 +63,14 @@ export class EvidenceService {
     const module = await this.prisma.module.findFirst({ where: { id: dto.moduleId, tenantId } });
     if (!module) throw new BadRequestException('Modul nicht gefunden.');
 
+    // Nächste Reihenfolge innerhalb des Moduls bestimmen
+    const last = await this.prisma.competenceEvidence.findFirst({
+      where: { moduleId: dto.moduleId },
+      orderBy: { sortOrder: 'desc' },
+      select: { sortOrder: true },
+    });
+    const sortOrder = (last?.sortOrder ?? 0) + 1;
+
     const ev = await this.prisma.competenceEvidence.create({
       data: {
         // tenantId via Scoping-Middleware
@@ -74,6 +83,7 @@ export class EvidenceService {
         isVisible: dto.isVisible ?? false,
         availableFrom: dto.availableFrom ? new Date(dto.availableFrom) : null,
         dueAt: dto.dueAt ? new Date(dto.dueAt) : null,
+        sortOrder,
         config: this.normalizeConfig(dto.config) as Prisma.InputJsonValue,
       } as never,
       include: { fields: true },
@@ -97,6 +107,7 @@ export class EvidenceService {
         availableFrom: dto.availableFrom ? new Date(dto.availableFrom) : null,
       }),
       ...(dto.dueAt !== undefined && { dueAt: dto.dueAt ? new Date(dto.dueAt) : null }),
+      ...(dto.sortOrder !== undefined && { sortOrder: dto.sortOrder }),
       ...(dto.config !== undefined && {
         config: this.normalizeConfig(dto.config) as Prisma.InputJsonValue,
       }),

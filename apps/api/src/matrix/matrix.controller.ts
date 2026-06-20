@@ -50,6 +50,7 @@ export class MatrixController {
               include: {
                 descriptor: true,
                 evidences: {
+                  orderBy: { evidence: { sortOrder: 'asc' } },
                   include: {
                     evidence: {
                       select: {
@@ -59,6 +60,7 @@ export class MatrixController {
                         isVisible: true,
                         dueAt: true,
                         maxPoints: true,
+                        sortOrder: true,
                         config: true,
                         _count: { select: { submissions: true } },
                       },

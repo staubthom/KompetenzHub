@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import RichTextEditor from './RichTextEditor';
 import TrashIcon from './TrashIcon';
-import { evidence, type Evidence } from '../lib/api';
+import { evidence, uploadRichTextImage, type Evidence } from '../lib/api';
 
 interface Draft {
   title: string;
@@ -149,6 +149,24 @@ export default function FieldEvidenceModal({
     }
   }
 
+  // Reihenfolge: sortOrder mit dem Nachbarn tauschen
+  async function move(index: number, dir: -1 | 1) {
+    if (!list) return;
+    const current = list[index];
+    const target = list[index + dir];
+    if (!current || !target) return;
+    try {
+      await Promise.all([
+        evidence.update(current.id, { sortOrder: target.sortOrder }),
+        evidence.update(target.id, { sortOrder: current.sortOrder }),
+      ]);
+      await load();
+      onChanged();
+    } catch (e: unknown) {
+      showError(e);
+    }
+  }
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -172,7 +190,7 @@ export default function FieldEvidenceModal({
                 </div>
               ) : (
                 <ul className="hz-list">
-                  {list.map((ev) => (
+                  {list.map((ev, i) => (
                     <li key={ev.id} className="hz-item">
                       <div style={{ flex: 1 }}>
                         <strong>{ev.title?.de}</strong>
@@ -182,6 +200,26 @@ export default function FieldEvidenceModal({
                             ` · fällig ${new Date(ev.dueAt).toLocaleDateString('de-CH')}`}
                         </div>
                       </div>
+                      <button
+                        className="btn-icon"
+                        title="Nach oben"
+                        disabled={i === 0}
+                        onClick={() => {
+                          void move(i, -1);
+                        }}
+                      >
+                        ▲
+                      </button>
+                      <button
+                        className="btn-icon"
+                        title="Nach unten"
+                        disabled={i === list.length - 1}
+                        onClick={() => {
+                          void move(i, 1);
+                        }}
+                      >
+                        ▼
+                      </button>
                       <button
                         className={`badge ${ev.isVisible ? 'b-published' : 'b-archived'}`}
                         style={{ cursor: 'pointer', border: 'none' }}
@@ -232,6 +270,7 @@ export default function FieldEvidenceModal({
                   value={draft.instructions}
                   onChange={(html) => setDraft({ ...draft, instructions: html })}
                   placeholder="Aufgabenstellung … (Links, Bilder, Videos möglich)"
+                  uploadImage={uploadRichTextImage}
                 />
               </div>
 

@@ -115,8 +115,36 @@ check('Verborgener Nachweis → 404', hidden.status === 404);
 const studentCreate = await req('POST', '/evidence', { moduleId, title: { de: 'x' } }, student);
 check('Student POST /evidence → 403', studentCreate.status === 403);
 
+// ── Reihenfolge der Nachweise ─────────────────────────────────────
+await req('PATCH', `/evidence/${evId}`, { isVisible: true }, teacher); // wieder sichtbar
+const ev2 = await req('POST', '/evidence', {
+  moduleId, title: { de: 'Zweiter Nachweis' }, isVisible: true, fieldIds: [fieldId],
+}, teacher);
+const evId2 = ev2.body?.id;
+check('Zweiter Nachweis sortOrder > erster', ev2.body?.sortOrder > ev.body?.sortOrder);
+
+// Reihenfolge tauschen: zweiten nach vorne
+await req('PATCH', `/evidence/${evId2}`, { sortOrder: ev.body.sortOrder }, teacher);
+await req('PATCH', `/evidence/${evId}`, { sortOrder: ev2.body.sortOrder }, teacher);
+const reordered = await req('GET', `/modules/${moduleId}/matrix`, null, teacher);
+const fieldEvs = reordered.body?.matrix?.bands?.[0]?.fields?.find((f) => f.id === fieldId)?.evidences ?? [];
+check('Matrix-Reihenfolge getauscht', fieldEvs[0]?.evidence?.id === evId2);
+
+// ── Bild-Upload (Rich-Text-Asset) ─────────────────────────────────
+const imgBad = await req('POST', '/assets/image-upload-url', { fileName: 'x.exe', contentType: 'x' }, teacher);
+check('Nicht-Bild → 400', imgBad.status === 400);
+const img = await req('POST', '/assets/image-upload-url', { fileName: 'foto.png', contentType: 'image/png', sizeBytes: 2048 }, teacher);
+check('Bild-Upload-URL → presigned + publicUrl', img.status === 201 && img.body?.uploadUrl?.startsWith('http') && !!img.body?.publicUrl);
+const imgPut = await fetch(img.body.uploadUrl, { method: 'PUT', headers: { 'Content-Type': 'image/png' }, body: Buffer.from('PNGDATA') });
+check('Bild-PUT an MinIO → 200', imgPut.status === 200);
+const imgGet = await fetch(img.body.publicUrl);
+check('Bild öffentlich abrufbar (GET ohne Auth) → 200', imgGet.status === 200);
+const studentImgPost = await req('POST', '/assets/image-upload-url', { fileName: 'a.png', contentType: 'image/png' }, student);
+check('Student Bild-Upload → 403', studentImgPost.status === 403);
+
 // ── Aufräumen ─────────────────────────────────────────────────────
 await req('DELETE', `/evidence/${evId}`, null, teacher);
+await req('DELETE', `/evidence/${evId2}`, null, teacher);
 await req('DELETE', `/classes/${cls.body.id}`, null, teacher);
 await req('DELETE', `/modules/${moduleId}`, null, teacher);
 

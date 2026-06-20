@@ -66,6 +66,7 @@ export class ModulesService {
                   include: {
                     descriptor: true,
                     evidences: {
+                      orderBy: { evidence: { sortOrder: 'asc' } },
                       include: {
                         evidence: {
                           select: {
@@ -75,6 +76,7 @@ export class ModulesService {
                             isVisible: true,
                             dueAt: true,
                             maxPoints: true,
+                            sortOrder: true,
                             config: true,
                             _count: { select: { submissions: true } },
                           },

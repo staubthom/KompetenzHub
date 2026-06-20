@@ -169,6 +169,31 @@ export const evidence = {
     }),
 };
 
+// Rich-Text-Assets (Bild-Upload vom PC)
+export const assets = {
+  imageUploadUrl: (fileName: string, contentType: string, sizeBytes: number) =>
+    apiFetch<{ uploadUrl: string; publicUrl: string }>('/assets/image-upload-url', {
+      method: 'POST',
+      body: JSON.stringify({ fileName, contentType, sizeBytes }),
+    }),
+};
+
+/** Bild vom PC hochladen → liefert die einbettbare öffentliche URL. */
+export async function uploadRichTextImage(file: File): Promise<string> {
+  const { uploadUrl, publicUrl } = await assets.imageUploadUrl(
+    file.name,
+    file.type || 'image/png',
+    file.size,
+  );
+  const put = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': file.type || 'image/png' },
+    body: file,
+  });
+  if (!put.ok) throw new Error('Bild-Upload fehlgeschlagen.');
+  return publicUrl;
+}
+
 // ── Typen ──────────────────────────────────────────────────────────
 
 export interface ModuleSummary {
@@ -308,6 +333,7 @@ export interface EvidenceInput {
   maxPoints?: number;
   isVisible?: boolean;
   dueAt?: string | null;
+  sortOrder?: number;
   config?: EvidenceConfig;
   fieldIds?: string[];
 }
@@ -321,6 +347,7 @@ export interface Evidence {
   maxPoints: string | null;
   isVisible: boolean;
   dueAt: string | null;
+  sortOrder: number;
   config: EvidenceConfig;
   fields: { evidenceId: string; fieldId: string }[];
   _count?: { submissions: number };
