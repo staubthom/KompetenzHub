@@ -2,19 +2,19 @@
 
 ## 1. Technologie-Stack
 
-| Schicht | Technologie | Begründung |
-|---------|-------------|------------|
-| Frontend | **Next.js (React) + TypeScript** | SSR/SSG, gute DX, PWA-fähig, i18n-Support |
-| UI | Tailwind CSS + shadcn/ui (Radix) | schnelle, konsistente, barrierearme UI |
-| State/Data | TanStack Query | Server-State, Caching |
-| Backend | **NestJS (Node.js) + TypeScript** | modular, DI, gut strukturierbar, OpenAPI |
-| ORM | Prisma | typsicher, Migrationen, PostgreSQL-First |
-| Datenbank | **PostgreSQL** | relational, JSONB für i18n/config |
-| Objektspeicher | **S3-kompatibel** (MinIO lokal / AWS S3 / Cloudflare R2) | Dokumenten-Uploads, Archive |
-| Auth | OIDC via **NextAuth.js** + Microsoft & Google | Standard-Provider |
-| KI | OpenAI-kompatibler HTTP-Client | konfigurierbar pro Lehrperson |
-| Jobs | BullMQ (Redis) | asynchrone KI-Calls, Exporte, Mailversand |
-| Realtime | WebSocket (Socket.IO) optional | Live-Dashboard, Fachgespräch-Streaming |
+| Schicht        | Technologie                                              | Begründung                                |
+| -------------- | -------------------------------------------------------- | ----------------------------------------- |
+| Frontend       | **Next.js (React) + TypeScript**                         | SSR/SSG, gute DX, PWA-fähig, i18n-Support |
+| UI             | Tailwind CSS + shadcn/ui (Radix)                         | schnelle, konsistente, barrierearme UI    |
+| State/Data     | TanStack Query                                           | Server-State, Caching                     |
+| Backend        | **NestJS (Node.js) + TypeScript**                        | modular, DI, gut strukturierbar, OpenAPI  |
+| ORM            | Prisma                                                   | typsicher, Migrationen, PostgreSQL-First  |
+| Datenbank      | **PostgreSQL**                                           | relational, JSONB für i18n/config         |
+| Objektspeicher | **S3-kompatibel** (MinIO lokal / AWS S3 / Cloudflare R2) | Dokumenten-Uploads, Archive               |
+| Auth           | OIDC via **NextAuth.js** + Microsoft & Google            | Standard-Provider                         |
+| KI             | OpenAI-kompatibler HTTP-Client                           | konfigurierbar pro Lehrperson             |
+| Jobs           | BullMQ (Redis)                                           | asynchrone KI-Calls, Exporte, Mailversand |
+| Realtime       | WebSocket (Socket.IO) optional                           | Live-Dashboard, Fachgespräch-Streaming    |
 
 ## 2. Systemüberblick
 
@@ -101,11 +101,11 @@ sequenceDiagram
 
 ## 6. Deployment
 
-| Umgebung | Setup |
-|----------|-------|
-| Lokal/Dev | Docker Compose: Postgres, Redis, MinIO, API, Web |
+| Umgebung     | Setup                                                                                                       |
+| ------------ | ----------------------------------------------------------------------------------------------------------- |
+| Lokal/Dev    | Docker Compose: Postgres, Redis, MinIO, API, Web                                                            |
 | Staging/Prod | Container (Docker) auf Kubernetes oder PaaS; Managed Postgres; S3/R2; Reverse Proxy (Traefik/Nginx) mit TLS |
-| CI/CD | GitHub Actions: Lint, Test, Build, Migrate, Deploy |
+| CI/CD        | GitHub Actions: Lint, Test, Build, Migrate, Deploy                                                          |
 
 ```mermaid
 graph LR
@@ -119,18 +119,20 @@ graph LR
 ```
 
 ### 6.1 Container-Images
+
 Drei schlanke, zustandslose Images (Multi-Stage-Builds), per Tag versioniert:
 
-| Image | Inhalt | Skalierung |
-|-------|--------|------------|
-| `web` | Next.js (SSR/PWA) | horizontal |
-| `api` | NestJS REST API | horizontal (stateless) |
+| Image    | Inhalt                           | Skalierung                 |
+| -------- | -------------------------------- | -------------------------- |
+| `web`    | Next.js (SSR/PWA)                | horizontal                 |
+| `api`    | NestJS REST API                  | horizontal (stateless)     |
 | `worker` | BullMQ-Worker (KI, Export, Mail) | horizontal nach Queue-Last |
 
 Konfiguration ausschliesslich über Env-Variablen/Secrets (12-Factor). Persistenz liegt extern
 (Managed Postgres, S3/R2) – Container halten keine Daten.
 
 ### 6.2 Kubernetes (Staging/Prod)
+
 - **Deployments** für `web`, `api`, `worker`; **Service** + **Ingress** (Traefik/Nginx, TLS).
 - **Liveness/Readiness-Probes** (`/healthz`, `/readyz`) je Service.
 - **HPA** für `api` und `worker` (CPU/Queue-Tiefe).
@@ -163,11 +165,11 @@ graph TD
 
 ## 8. Zentrale Querschnittsthemen
 
-| Thema | Lösung |
-|-------|--------|
-| Validierung | class-validator DTOs |
-| Fehlerformat | RFC 7807 (problem+json) |
-| API-Doku | OpenAPI/Swagger automatisch |
-| Logging | strukturiert (pino), Correlation-ID |
-| Secrets | Env + verschlüsselte AiConfig-Tokens (KMS/lib) |
-| Tests | Unit (Jest), E2E (Playwright) |
+| Thema        | Lösung                                         |
+| ------------ | ---------------------------------------------- |
+| Validierung  | class-validator DTOs                           |
+| Fehlerformat | RFC 7807 (problem+json)                        |
+| API-Doku     | OpenAPI/Swagger automatisch                    |
+| Logging      | strukturiert (pino), Correlation-ID            |
+| Secrets      | Env + verschlüsselte AiConfig-Tokens (KMS/lib) |
+| Tests        | Unit (Jest), E2E (Playwright)                  |

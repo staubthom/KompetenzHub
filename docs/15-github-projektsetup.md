@@ -13,30 +13,38 @@ Alles ist in **GitHub Free / Education** kostenlos enthalten.
 Legt **Milestones, Labels und alle Issues** in einem Rutsch an.
 
 ### 1. GitHub CLI installieren (einmalig, kostenlos)
+
 ```powershell
 winget install GitHub.cli
 ```
+
 > `gh` ist ein freies Tool und unabhängig vom GitHub-Plan (funktioniert mit Education).
 
 ### 2. Anmelden (einmalig)
+
 ```powershell
 gh auth login
 ```
+
 (GitHub.com → HTTPS → im Browser bestätigen.)
 
 ### 3. Skript ausführen (aus dem Repo-Verzeichnis)
 
 **Windows (empfohlen, PowerShell-Variante – kein bash nötig):**
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File .github\scripts\setup-project.ps1
 ```
+
 > Öffne dazu **PowerShell** im Repo-Ordner (in VS Code: Terminal → „PowerShell"; oder im
 > Datei-Explorer im Ordner `Umschalt`+Rechtsklick → „PowerShell-Fenster hier öffnen").
 
 **Falls du lieber das bash-Skript nutzt** (Git Bash oder WSL erforderlich):
+
 ```bash
 bash .github/scripts/setup-project.sh
 ```
+
 > Git Bash kommt mit „Git for Windows" und ist meist schon installiert. In Git Bash
 > ins Repo wechseln (`cd /c/Users/staubt/OneDrive/KI_Spielplatz/Kompetenzmatrix`) und obigen
 > Befehl ausführen.
@@ -90,7 +98,7 @@ machst du einmalig im Browser (5 Minuten):
 
 1. Repo → Tab **Projects → New project → Board** (oder „Team planning").
 2. **Felder anlegen** (rechts „+" → New field):
-   - `Status` (Single select): `Todo`, `In Progress`, `Review`, `Done` *(meist vorhanden)*.
+   - `Status` (Single select): `Todo`, `In Progress`, `Review`, `Done` _(meist vorhanden)_.
    - `Sprint` (**Iteration**): Startdatum wählen, Dauer **2 Wochen** → GitHub erzeugt
      automatisch fortlaufende Sprints (Sprint 1, 2, 3 …). **Das ist dein Sprint-Mechanismus.**
    - `Estimate` (Number): Story Points.
@@ -118,9 +126,10 @@ machst du einmalig im Browser (5 Minuten):
 ---
 
 ## Tipp: Velocity ehrlich messen
+
 Erst nach **2–3 Sprints** hast du eine realistische Velocity. Bis dahin Planung bewusst
 konservativ halten und nach jedem Sprint die Sprintzuordnung im Board nachjustieren.
 
-| Version | Datum | Anmerkung |
-|---------|-------|-----------|
-| 0.1 | 2026-06-20 | Erstfassung (gh-Skript + Klick-Fallback) |
+| Version | Datum      | Anmerkung                                |
+| ------- | ---------- | ---------------------------------------- |
+| 0.1     | 2026-06-20 | Erstfassung (gh-Skript + Klick-Fallback) |

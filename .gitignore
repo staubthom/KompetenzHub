@@ -23,8 +23,30 @@ $RECYCLE.BIN/
 *.log
 _*.html
 
-# ===== Node (falls später ein Build dazukommt) =====
+# ===== Node / Monorepo =====
 node_modules/
 dist/
 build/
 .cache/
+coverage/
+*.tsbuildinfo
+
+# ===== Next.js =====
+.next/
+out/
+next-env.d.ts
+
+# ===== Env / Secrets =====
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# ===== Prisma =====
+# generierter Client (wird via prisma generate erzeugt)
+apps/api/node_modules/.prisma/
+
+# ===== Docker / Daten-Volumes (lokal) =====
+.docker-data/
+
+

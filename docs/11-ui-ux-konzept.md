@@ -33,6 +33,7 @@ graph TD
 ## 2. Hauptscreens – Lehrperson
 
 ### 2.1 Matrix-Editor
+
 - Tabellarische Ansicht: Zeilen = Kompetenzbänder, Spalten = Beginner/Intermediate/Advanced.
 - Zelle = Kompetenzfeld mit Deskriptor; Inline-Edit; Badge `A1B`.
 - Seitenspalte: Handlungsziele (per Drag&Drop einem Band zuordnen).
@@ -50,16 +51,19 @@ graph TD
 ```
 
 ### 2.2 Nachweis-Editor
+
 - Typ wählen (Quiz/Upload/Upload+KI/Fachgespräch).
 - Kompetenzfeld(er) zuordnen, Sichtbarkeit-Toggle, Ablaufdatum, Punkte/Ziel-Gütestufe.
 - Bewertungsraster-Builder (Kriterien + Indikatoren je Stufe) oder Leistungsziele.
 
 ### 2.3 Fortschritts-Heatmap (Dashboard)
+
 - Matrix: Zeilen = Lernende, Spalten = Kompetenzbänder/-felder.
 - Farbe = Status/Gütestufe (grau offen, gelb eingereicht, grün bewertet, rot zurückgewiesen).
 - Klick → Drilldown auf Lernende:r; Badge mit Anzahl offener Bewertungen.
 
 ### 2.4 Bewertungs-Ansicht
+
 - Geteilte Ansicht: links Abgabe (Dokument-Viewer/Quiz/Gesprächsverlauf), rechts Bewertung.
 - Buttons: „KI-Vorschlag holen", „Bewerten", „Zurückweisen".
 - Felder: Gütestufe/Punkte, Feedback, Begründung.
@@ -67,36 +71,41 @@ graph TD
 ## 3. Hauptscreens – Lernende
 
 ### 3.1 Meine Matrix / Lernpfad (Umschalter)
+
 - Matrix-Ansicht analog, aber pro Feld Status-Badge + Aufgaben.
 - Lernpfad-Ansicht: geführte Schritte (Stepper), Fortschrittsbalken.
 
 ### 3.2 Nachweis bearbeiten
+
 - Aufgabenstellung, Eingabe je Typ (Quiz, Upload-Dropzone, Texteditor).
 - „Einreichen"; nach Einreichung optional KI-Feedback.
 - Status & ggf. Rückweisungsgrund sichtbar.
 
 ### 3.3 Fachgespräch
+
 - Chat-UI mit KI; Modus „Üben" gekennzeichnet.
 - Verlauf scrollbar; Ende-Button.
 
 ## 4. Designprinzipien
-| Prinzip | Umsetzung |
-|---------|-----------|
-| Klarheit | Status-Farben konsistent, sprechende Badges (A1B) |
-| Effizienz | Inline-Edit, Tastatur-Shortcuts, Bulk-Bewertung |
-| Transparenz | Fortschritt jederzeit sichtbar; KI klar gekennzeichnet |
-| Konsistenz | Design-System (shadcn/ui), wiederverwendbare Komponenten |
-| Mobile | Lernenden-Flows touch-optimiert, responsive |
-| A11y | WCAG 2.1 AA: Kontrast, Fokus, ARIA, Skalierung |
+
+| Prinzip     | Umsetzung                                                |
+| ----------- | -------------------------------------------------------- |
+| Klarheit    | Status-Farben konsistent, sprechende Badges (A1B)        |
+| Effizienz   | Inline-Edit, Tastatur-Shortcuts, Bulk-Bewertung          |
+| Transparenz | Fortschritt jederzeit sichtbar; KI klar gekennzeichnet   |
+| Konsistenz  | Design-System (shadcn/ui), wiederverwendbare Komponenten |
+| Mobile      | Lernenden-Flows touch-optimiert, responsive              |
+| A11y        | WCAG 2.1 AA: Kontrast, Fokus, ARIA, Skalierung           |
 
 ## 5. Statusfarben (Legende)
-| Status | Farbe |
-|--------|-------|
-| Offen | Grau |
-| Eingereicht / In Bewertung | Gelb |
-| Bewertet | Grün (Schattierung nach Gütestufe) |
-| Zurückgewiesen | Rot |
-| Abgelaufen | Dunkelgrau |
+
+| Status                     | Farbe                              |
+| -------------------------- | ---------------------------------- |
+| Offen                      | Grau                               |
+| Eingereicht / In Bewertung | Gelb                               |
+| Bewertet                   | Grün (Schattierung nach Gütestufe) |
+| Zurückgewiesen             | Rot                                |
+| Abgelaufen                 | Dunkelgrau                         |
 
 > Statusfarben werden nie **allein** zur Bedeutungsvermittlung genutzt (A11y): immer kombiniert
 > mit Icon und/oder Textlabel, damit auch bei Farbsehschwäche eindeutig.
@@ -108,11 +117,12 @@ Farben, Abstände, Radii und Schatten sind Tokens – dadurch sind Modi-Wechsel 
 ohne Code-Änderung möglich.
 
 ### 6.1 Anzeige-Modi (vom Nutzer wählbar)
-| Modus | Beschreibung |
-|-------|--------------|
-| **Light** | Heller Hintergrund, dunkle Schrift. Standard. |
-| **Dark** | Dunkler Hintergrund, helle Schrift; augenschonend bei wenig Licht. |
-| **Gray** | Gedämpfte, neutrale Graustufen-Palette (minimaler Farbeinsatz, sehr ruhig/fokussiert). |
+
+| Modus     | Beschreibung                                                                           |
+| --------- | -------------------------------------------------------------------------------------- |
+| **Light** | Heller Hintergrund, dunkle Schrift. Standard.                                          |
+| **Dark**  | Dunkler Hintergrund, helle Schrift; augenschonend bei wenig Licht.                     |
+| **Gray**  | Gedämpfte, neutrale Graustufen-Palette (minimaler Farbeinsatz, sehr ruhig/fokussiert). |
 
 - Auswahl pro Nutzer:in im Profil; Default = **System** (`prefers-color-scheme`).
 - Persistenz: in `User.settings`/LocalStorage; kein Flash beim Laden (SSR-fähig).
@@ -120,15 +130,16 @@ ohne Code-Änderung möglich.
   Modus auf kontrastsichere Varianten gemappt.
 
 ### 6.2 Schul-Branding (durch Admin konfigurierbar)
+
 Pro Mandant (Schule) kann der/die **Admin** ein leichtgewichtiges Branding setzen:
 
-| Einstellung | Beschreibung |
-|-------------|--------------|
-| **Primärfarbe** | Akzentfarbe (Buttons, Links, aktive Zustände), passend zur Schule. |
-| **Sekundär-/Akzentfarbe** | optional, für Highlights. |
-| **Logo (Light/Dark)** | Upload (SVG/PNG); je eine Variante für helle/dunkle Hintergründe. |
-| **Favicon** | optional, aus Logo ableitbar. |
-| **App-/Schulname** | Anzeigename in Kopfzeile/Title. |
+| Einstellung               | Beschreibung                                                       |
+| ------------------------- | ------------------------------------------------------------------ |
+| **Primärfarbe**           | Akzentfarbe (Buttons, Links, aktive Zustände), passend zur Schule. |
+| **Sekundär-/Akzentfarbe** | optional, für Highlights.                                          |
+| **Logo (Light/Dark)**     | Upload (SVG/PNG); je eine Variante für helle/dunkle Hintergründe.  |
+| **Favicon**               | optional, aus Logo ableitbar.                                      |
+| **App-/Schulname**        | Anzeigename in Kopfzeile/Title.                                    |
 
 - Branding-Farben werden als Tokens injiziert und **automatisch auf alle drei Modi** angepasst.
 - **Kontrast-Guard:** Beim Speichern prüft das System das Kontrastverhältnis (Text auf
@@ -145,18 +156,20 @@ graph LR
 ```
 
 ### 6.3 Token-Beispiel (CSS-Variablen)
+
 ```css
-:root {            /* Light */
+:root {
+  /* Light */
   --color-bg: #ffffff;
   --color-fg: #0f172a;
   --color-primary: var(--brand-primary, #2563eb); /* Schul-Override */
   --radius: 0.5rem;
 }
-[data-theme="dark"] {
+[data-theme='dark'] {
   --color-bg: #0b0f17;
   --color-fg: #e5e7eb;
 }
-[data-theme="gray"] {
+[data-theme='gray'] {
   --color-bg: #f3f4f6;
   --color-fg: #1f2937;
   --color-primary: #4b5563; /* entsättigt */
@@ -164,6 +177,7 @@ graph LR
 ```
 
 ### 6.4 Barrierefreiheit (WCAG 2.1 AA)
+
 - **Kontrast:** Text ≥ 4.5:1, grosse Schrift/Icons ≥ 3:1 – in allen Modi und für Branding-Farben.
 - **Tastatur:** alle Funktionen ohne Maus bedienbar; sichtbarer Fokus-Ring (Token-basiert).
 - **Screenreader:** semantisches HTML, ARIA-Rollen/-Labels, Live-Regions für Status-Updates.

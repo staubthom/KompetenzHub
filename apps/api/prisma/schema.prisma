@@ -1,0 +1,222 @@
+// KompetenzHub – Prisma-Schema (Sprint 0, MVP-Kern)
+// Basis: docs/05-datenmodell.md. Abgebildet sind Mandant/Benutzer sowie die
+// Kern-Matrix-Struktur (Modul → Matrix → Bänder × Gütestufen → Felder → Deskriptoren).
+// Weitere Entitäten (Evidence, Submission, Evaluation, AI, LearningPath, Class …)
+// folgen in späteren Sprints.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// Enums
+// ============================================================
+
+enum Role {
+  ADMIN
+  TEACHER
+  LEARNER
+}
+
+enum MembershipStatus {
+  ACTIVE
+  INVITED
+  DISABLED
+}
+
+enum AuthProvider {
+  MICROSOFT
+  GOOGLE
+}
+
+enum Locale {
+  de
+  fr
+  it
+  en
+}
+
+enum ModuleStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum CompetenceLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+// ============================================================
+// Mandant & Benutzer
+// ============================================================
+
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  settings  Json     @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  branding TenantBranding?
+  users    Membership[]
+  modules  Module[]
+}
+
+model TenantBranding {
+  id             String   @id @default(uuid())
+  tenantId       String   @unique
+  primaryColor   String   @default("#2563eb")
+  secondaryColor String?
+  logoLightKey   String?
+  logoDarkKey    String?
+  faviconKey     String?
+  displayName    String?
+  updatedAt      DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id           String       @id @default(uuid())
+  email        String       @unique
+  displayName  String
+  authProvider AuthProvider
+  externalId   String
+  avatarUrl    String?
+  locale       Locale       @default(de)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  memberships  Membership[]
+  ownedModules Module[]     @relation("ModuleOwner")
+
+  @@unique([authProvider, externalId])
+}
+
+model Membership {
+  id        String           @id @default(uuid())
+  tenantId  String
+  userId    String
+  role      Role
+  status    MembershipStatus @default(ACTIVE)
+  createdAt DateTime         @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId, role])
+  @@index([tenantId])
+  @@index([userId])
+}
+
+// ============================================================
+// Modul & Kompetenzmatrix
+// ============================================================
+
+model Module {
+  id          String       @id @default(uuid())
+  tenantId    String
+  ownerId     String?
+  number      String // Modulidentifikation, z. B. "293"
+  title       Json // i18n {de,fr,it,en}
+  description Json         @default("{}") // i18n
+  profession  String?
+  status      ModuleStatus @default(DRAFT)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  tenant      Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  owner       User?             @relation("ModuleOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  matrix      CompetenceMatrix?
+  actionGoals ActionGoal[]
+
+  @@unique([tenantId, number])
+  @@index([tenantId])
+}
+
+model ActionGoal {
+  id        String   @id @default(uuid())
+  moduleId  String
+  code      String // z. B. "1", "2"
+  text      Json     @default("{}") // i18n
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  module Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  bands  BandActionGoal[]
+
+  @@index([moduleId])
+}
+
+model CompetenceMatrix {
+  id        String       @id @default(uuid())
+  moduleId  String       @unique
+  version   Int          @default(1)
+  status    ModuleStatus @default(DRAFT)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  module Module          @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  bands  CompetenceBand[]
+}
+
+model CompetenceBand {
+  id          String   @id @default(uuid())
+  matrixId    String
+  code        String // z. B. "A1"
+  description Json     @default("{}") // i18n
+  weight      Decimal  @default(1.0) @db.Decimal(5, 2)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  matrix      CompetenceMatrix  @relation(fields: [matrixId], references: [id], onDelete: Cascade)
+  fields      CompetenceField[]
+  actionGoals BandActionGoal[]
+
+  @@index([matrixId])
+}
+
+model BandActionGoal {
+  bandId       String
+  actionGoalId String
+
+  band       CompetenceBand @relation(fields: [bandId], references: [id], onDelete: Cascade)
+  actionGoal ActionGoal     @relation(fields: [actionGoalId], references: [id], onDelete: Cascade)
+
+  @@id([bandId, actionGoalId])
+  @@index([actionGoalId])
+}
+
+model CompetenceField {
+  id        String          @id @default(uuid())
+  bandId    String
+  level     CompetenceLevel
+  code      String // generiert, z. B. "A1B"
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  band       CompetenceBand @relation(fields: [bandId], references: [id], onDelete: Cascade)
+  descriptor Descriptor?
+
+  @@unique([bandId, level])
+  @@index([bandId])
+}
+
+model Descriptor {
+  id        String   @id @default(uuid())
+  fieldId   String   @unique
+  text      Json     @default("{}") // i18n "Ich kann …"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  field CompetenceField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+}

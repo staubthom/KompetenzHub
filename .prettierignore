@@ -1,0 +1,9 @@
+node_modules
+dist
+build
+.next
+out
+coverage
+package-lock.json
+docs/backlog.csv
+mockups

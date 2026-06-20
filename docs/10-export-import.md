@@ -7,6 +7,7 @@ Zwei Hauptfälle: **(A) Matrix-Wiederverwendung** und **(B) Klassen-Archivierung
 Ziel: Eine erstellte Kompetenzmatrix inkl. Nachweisen in einer anderen Instanz/Konto nutzen.
 
 **Paketinhalt (`.kmx`, ZIP):**
+
 ```
 matrix-export/
   manifest.json        # Version, Schema, Quelle, Datum
@@ -16,6 +17,7 @@ matrix-export/
   learning-paths.json  # optionale Lernpfade
   assets/              # ggf. Aufgaben-Anhänge (keine Lernenden-Daten!)
 ```
+
 - **Keine** personenbezogenen Daten (keine Lernenden, keine Submissions).
 - Import erzeugt neue IDs, hängt Matrix an importierenden Tenant/Lehrperson.
 - Schema-Version im Manifest → Migration bei Versionssprung.
@@ -32,6 +34,7 @@ Ziel: Abgeschlossene Klasse inkl. **aller Lernenden-Dokumente** exportieren, Kla
 löschen (Speicherplatz), im Streitfall reimportieren.
 
 **Paketinhalt (`.kmc`, ZIP – ggf. verschlüsselt):**
+
 ```
 class-archive/
   manifest.json        # Version, Klasse, Zeitraum, Hash
@@ -41,6 +44,7 @@ class-archive/
   expert-talks.json    # Fachgespräch-Verläufe
   files/               # alle hochgeladenen Dokumente (aus S3)
 ```
+
 - Enthält **personenbezogene Daten** → verschlüsseltes Archiv empfohlen, DSG-konform aufbewahren.
 - Nach erfolgreichem Export (Integritäts-Hash geprüft) kann Klasse hart gelöscht werden
   (inkl. S3-Objekte).
@@ -63,16 +67,18 @@ sequenceDiagram
 ```
 
 ## 3. Integrität & Sicherheit
-| Thema | Massnahme |
-|-------|-----------|
-| Integrität | SHA-256-Hash im Manifest |
-| Versionierung | `schemaVersion` im Manifest, Migrationspfad |
+
+| Thema           | Massnahme                                            |
+| --------------- | ---------------------------------------------------- |
+| Integrität      | SHA-256-Hash im Manifest                             |
+| Versionierung   | `schemaVersion` im Manifest, Migrationspfad          |
 | Verschlüsselung | Klassen-Archive optional passwort-/key-verschlüsselt |
-| Zugriff | nur Eigentümer-Lehrperson/Admin |
-| Audit | Export-/Lösch-Events protokolliert |
+| Zugriff         | nur Eigentümer-Lehrperson/Admin                      |
+| Audit           | Export-/Lösch-Events protokolliert                   |
 
 ## 4. Formate-Zusammenfassung
-| Paket | Endung | Enthält PII? | Zweck |
-|-------|--------|--------------|-------|
-| Matrix-Export | `.kmx` | nein | Wiederverwendung von Matrizen/Nachweisen |
-| Klassen-Archiv | `.kmc` | ja | Archivierung/Löschung, Streitfall-Reimport |
+
+| Paket          | Endung | Enthält PII? | Zweck                                      |
+| -------------- | ------ | ------------ | ------------------------------------------ |
+| Matrix-Export  | `.kmx` | nein         | Wiederverwendung von Matrizen/Nachweisen   |
+| Klassen-Archiv | `.kmc` | ja           | Archivierung/Löschung, Streitfall-Reimport |
