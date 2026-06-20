@@ -1,54 +1,45 @@
-import { BadRequestException, Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post } from '@nestjs/common';
 import { Role } from '@prisma/client';
-
-import { PrismaService } from '../prisma/prisma.service';
 import { CurrentUser, Roles } from '../auth/decorators';
 import type { RequestContext } from '../common/request-context';
+import { ModulesService } from './modules.service';
 
-interface CreateModuleDto {
-  number: string;
-  title?: Record<string, string>;
-}
-
-/**
- * Demo-/Fundament-Controller für Sprint 1: zeigt RBAC (@Roles) und
- * automatisches Tenant-Scoping (PrismaService-Middleware) in Aktion.
- * Wird in Sprint 2 zum vollwertigen Matrix-Editor-Endpoint ausgebaut.
- */
 @Controller('modules')
 export class ModulesController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly modules: ModulesService) {}
 
-  /** Liste der Module – automatisch auf den aktiven Tenant gescoped. */
   @Get()
   @Roles(Role.TEACHER, Role.ADMIN, Role.LEARNER)
-  async list(): Promise<unknown> {
-    return this.prisma.module.findMany({
-      select: { id: true, number: true, title: true, status: true },
-      orderBy: { number: 'asc' },
-    });
+  list(@CurrentUser() user: RequestContext) {
+    return this.modules.list(user.tenantId);
   }
 
-  /** Modul anlegen – nur Lehrperson/Admin; tenantId wird automatisch gesetzt. */
+  @Get(':id')
+  @Roles(Role.TEACHER, Role.ADMIN, Role.LEARNER)
+  findOne(@Param('id') id: string, @CurrentUser() user: RequestContext) {
+    return this.modules.findOne(id, user.tenantId);
+  }
+
   @Post()
   @Roles(Role.TEACHER, Role.ADMIN)
-  async create(
-    @Body() dto: CreateModuleDto,
-    @CurrentUser() user: RequestContext,
-  ): Promise<unknown> {
-    const number = dto.number?.trim();
-    if (!number) {
-      throw new BadRequestException('Feld "number" ist erforderlich.');
-    }
-    return this.prisma.module.create({
-      data: {
-        // tenantId wird durch die Scoping-Middleware ergänzt
-        number,
-        title: dto.title ?? { de: `Modul ${number}` },
+  create(@Body() dto: Record<string, unknown>, @CurrentUser() user: RequestContext) {
+    return this.modules.create(dto as never, user.tenantId, user.userId);
+  }
 
-        ownerId: user.userId,
-      } as never,
-      select: { id: true, number: true, title: true, status: true },
-    });
+  @Patch(':id')
+  @Roles(Role.TEACHER, Role.ADMIN)
+  update(
+    @Param('id') id: string,
+    @Body() dto: Record<string, unknown>,
+    @CurrentUser() user: RequestContext,
+  ) {
+    return this.modules.update(id, dto as never, user.tenantId);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  @Roles(Role.TEACHER, Role.ADMIN)
+  remove(@Param('id') id: string, @CurrentUser() user: RequestContext) {
+    return this.modules.remove(id, user.tenantId);
   }
 }

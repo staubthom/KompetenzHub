@@ -6,11 +6,12 @@ import { PrismaService } from './prisma/prisma.service';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { RolesGuard } from './auth/roles.guard';
-import { ModulesController } from './modules/modules.controller';
+import { ModulesModule } from './modules/modules.module';
+import { MatrixModule } from './matrix/matrix.module';
 
 @Module({
-  imports: [AuthModule],
-  controllers: [HealthController, ModulesController],
+  imports: [AuthModule, ModulesModule, MatrixModule],
+  controllers: [HealthController],
   providers: [
     PrismaService,
     ConnectivityService,

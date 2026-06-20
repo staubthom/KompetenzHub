@@ -1,0 +1,12 @@
+# Einheitliche Zeilenenden: im Repo immer LF (Prettier endOfLine: lf, CI auf Linux)
+* text=auto eol=lf
+
+# Binärdateien nicht anfassen
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary

@@ -40,20 +40,24 @@ kompletten Flow (Login, /me, RBAC, 400/401/403-Fehler).
 ## 3. Manuell mit `curl` (Windows cmd)
 
 ### a) Als Lehrperson einloggen und Token holen
+
 ```cmd
 curl -s -X POST http://localhost:3001/api/v1/auth/dev-login ^
   -H "Content-Type: application/json" ^
   -d "{\"email\":\"lehrer@demo.ch\",\"role\":\"TEACHER\"}"
 ```
+
 Aus der Antwort das Feld `token` kopieren.
 
 ### b) Eigenes Profil abrufen (Token einsetzen)
+
 ```cmd
 curl -s http://localhost:3001/api/v1/auth/me ^
   -H "Authorization: Bearer DEIN_TOKEN_HIER"
 ```
 
 ### c) Modul anlegen (nur TEACHER/ADMIN erlaubt)
+
 ```cmd
 curl -s -X POST http://localhost:3001/api/v1/modules ^
   -H "Authorization: Bearer DEIN_TOKEN_HIER" ^
@@ -62,6 +66,7 @@ curl -s -X POST http://localhost:3001/api/v1/modules ^
 ```
 
 ### d) Module auflisten
+
 ```cmd
 curl -s http://localhost:3001/api/v1/modules ^
   -H "Authorization: Bearer DEIN_TOKEN_HIER"
@@ -74,7 +79,7 @@ curl -s http://localhost:3001/api/v1/modules ^
 Beim `dev-login` sind nur diese Werte für `role` erlaubt:
 
 | Rolle     | Schreibrechte (POST /modules) |
-|-----------|-------------------------------|
+| --------- | ----------------------------- |
 | `ADMIN`   | ja                            |
 | `TEACHER` | ja                            |
 | `LEARNER` | nein → liefert **403**        |
@@ -83,12 +88,12 @@ Beim `dev-login` sind nur diese Werte für `role` erlaubt:
 
 ## 5. Was du erwarten solltest (Soll-Verhalten)
 
-| Aktion                                   | Erwartetes Ergebnis |
-|------------------------------------------|---------------------|
-| GET /modules ohne Token                  | 401                 |
-| dev-login (TEACHER)                       | 201 + `token`       |
-| GET /auth/me mit Token                    | 200 + eigenes Profil|
-| POST /modules (TEACHER) mit `number`      | 201                 |
-| POST /modules ohne `number`               | 400                 |
-| POST /modules als LEARNER                 | 403                 |
-| GET /auth/me mit kaputtem Token           | 401                 |
+| Aktion                               | Erwartetes Ergebnis  |
+| ------------------------------------ | -------------------- |
+| GET /modules ohne Token              | 401                  |
+| dev-login (TEACHER)                  | 201 + `token`        |
+| GET /auth/me mit Token               | 200 + eigenes Profil |
+| POST /modules (TEACHER) mit `number` | 201                  |
+| POST /modules ohne `number`          | 400                  |
+| POST /modules als LEARNER            | 403                  |
+| GET /auth/me mit kaputtem Token      | 401                  |
