@@ -53,6 +53,17 @@ enum CompetenceLevel {
   ADVANCED
 }
 
+enum ClassStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  PENDING
+  REMOVED
+}
+
 // ============================================================
 // Mandant & Benutzer
 // ============================================================
@@ -67,6 +78,7 @@ model Tenant {
   branding TenantBranding?
   users    Membership[]
   modules  Module[]
+  classes  Class[]
 }
 
 model TenantBranding {
@@ -96,6 +108,8 @@ model User {
 
   memberships  Membership[]
   ownedModules Module[]     @relation("ModuleOwner")
+  ownedClasses Class[]      @relation("ClassOwner")
+  enrollments  Enrollment[]
 
   @@unique([authProvider, externalId])
 }
@@ -156,6 +170,7 @@ model Module {
   owner       User?             @relation("ModuleOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   matrix      CompetenceMatrix?
   actionGoals ActionGoal[]
+  classes     Class[]
 
   @@unique([tenantId, number])
   @@index([tenantId])
@@ -239,4 +254,58 @@ model Descriptor {
   updatedAt DateTime @updatedAt
 
   field CompetenceField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================
+// Klassen & Einschreibung (Sprint 3)
+// ============================================================
+
+model Class {
+  id         String      @id @default(uuid())
+  tenantId   String
+  ownerId    String
+  name       String
+  year       Int?
+  schoolYear String?
+  moduleId   String? // genau ein zugeordnetes Modul (→ dessen Matrix)
+  status     ClassStatus @default(ACTIVE)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  owner       User         @relation("ClassOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  module      Module?      @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  joinCodes   JoinCode[]
+  enrollments Enrollment[]
+
+  @@index([tenantId])
+  @@index([ownerId])
+}
+
+model JoinCode {
+  id        String    @id @default(uuid())
+  classId   String
+  code      String    @unique
+  expiresAt DateTime?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+
+  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@index([classId, isActive])
+}
+
+model Enrollment {
+  id          String           @id @default(uuid())
+  classId     String
+  userId      String?
+  displayName String
+  status      EnrollmentStatus @default(ACTIVE)
+  joinedAt    DateTime         @default(now())
+
+  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  user  User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([classId, userId])
+  @@index([classId])
 }

@@ -734,6 +734,118 @@ a {
   color: var(--brand-primary);
 }
 
+/* ===== Klassen (Sprint 3) ===== */
+.kh-muted {
+  color: var(--fg-muted);
+}
+.classgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+.classcard {
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  transition: 0.15s;
+  font: inherit;
+  color: var(--fg);
+}
+.classcard:hover {
+  border-color: var(--brand-primary);
+  box-shadow: var(--shadow);
+}
+.classcard.active {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand-primary) 25%, transparent);
+}
+.classcard-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.field-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--fg-muted);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.inline-select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  padding: 8px 11px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-family: inherit;
+  min-width: 260px;
+}
+.joincode-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.joincode {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--brand-primary);
+  background: color-mix(in srgb, var(--brand-primary) 8%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--brand-primary) 40%, var(--border));
+  padding: 6px 16px;
+  border-radius: var(--radius-sm);
+}
+.member-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.avatar.sm {
+  width: 26px;
+  height: 26px;
+  font-size: 10px;
+}
+
+.join-form {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.join-input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 20px;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  width: 200px;
+}
+.join-input:focus {
+  outline: 2px solid color-mix(in srgb, var(--brand-primary) 40%, transparent);
+  border-color: var(--brand-primary);
+}
+.join-success {
+  background: var(--st-graded-bg);
+  color: var(--st-graded);
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+}
+
 /* ===== Login ===== */
 .login-wrap {
   min-height: 100vh;

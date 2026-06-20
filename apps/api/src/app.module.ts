@@ -8,9 +8,10 @@ import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { RolesGuard } from './auth/roles.guard';
 import { ModulesModule } from './modules/modules.module';
 import { MatrixModule } from './matrix/matrix.module';
+import { ClassesModule } from './classes/classes.module';
 
 @Module({
-  imports: [AuthModule, ModulesModule, MatrixModule],
+  imports: [AuthModule, ModulesModule, MatrixModule, ClassesModule],
   controllers: [HealthController],
   providers: [
     PrismaService,

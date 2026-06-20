@@ -7,7 +7,7 @@ import { getCurrentTenantId } from '../common/request-context';
  * (User/Membership/AuditLog werden bewusst NICHT hier gescoped, da sie
  * tenant-übergreifend bzw. über Membership aufgelöst werden.)
  */
-const TENANT_SCOPED_MODELS = new Set<string>(['Module']);
+const TENANT_SCOPED_MODELS = new Set<string>(['Module', 'Class']);
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {

@@ -12,6 +12,7 @@
     "test": "echo \"(noch keine Tests)\" && exit 0",
     "smoke": "node scripts/smoke-auth.mjs",
     "smoke:matrix": "node scripts/smoke-matrix.mjs",
+    "smoke:classes": "node scripts/smoke-classes.mjs",
 
     "prisma:generate": "prisma generate",
     "prisma:migrate": "dotenv -e ../../.env -- prisma migrate dev",
