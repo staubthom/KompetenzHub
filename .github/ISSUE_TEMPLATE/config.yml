@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 📋 Sprintplan
+    url: https://github.com/staubthom/KompetenzHub/blob/main/docs/14-sprintplan.md
+    about: Sprintübersicht und Build-Reihenfolge ansehen.
+  - name: 📚 Planungsdokumentation
+    url: https://github.com/staubthom/KompetenzHub/blob/main/docs/00-README.md
+    about: Vollständige Fachplanung (FA, Datenmodell, Architektur …).

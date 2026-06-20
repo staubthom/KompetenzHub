@@ -28,6 +28,9 @@ aktualisiert 05.08.2025, in Kraft seit 01.06.2025).
 | 11 | [UI/UX-Konzept](./11-ui-ux-konzept.md) | Hauptscreens, Dashboards |
 | 12 | [Nicht-funktionale Anforderungen](./12-nicht-funktionale-anforderungen.md) | Datenschutz, Sicherheit, Performance, i18n |
 | 13 | [Roadmap & MVP](./13-roadmap-und-mvp.md) | Phasen, Meilensteine, Aufwand |
+| 14 | [Sprintplan](./14-sprintplan.md) | Sprint 0–10 (Solo + KI), Ziele, DoD |
+| 15 | [GitHub-Projektsetup](./15-github-projektsetup.md) | Issues/Milestones/Iterations, gh-Skript |
+| – | [Backlog (CSV)](./backlog.csv) | Issue-Liste für Import (Fallback ohne CLI) |
 
 ---
 

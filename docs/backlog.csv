@@ -1,0 +1,40 @@
+Sprint,Phase,Title,Type,Area,Milestone,FA
+0,1,[Chore] Repo-Struktur & Tooling (Lint/Format),chore,infra,Phase 1 – MVP,
+0,1,[Chore] CI-Pipeline (GitHub Actions),chore,infra,Phase 1 – MVP,
+0,1,[Chore] Docker-Compose (App + DB),chore,infra,Phase 1 – MVP,
+0,1,[Chore] Prisma-Schema-Grundgerüst & erste Migration,chore,backend,Phase 1 – MVP,
+0,1,[Chore] Walking-Skeleton: Health-Endpoint + leere Startseite,chore,backend,Phase 1 – MVP,
+1,1,[FA-08] OAuth/OIDC Login (Microsoft & Google),feature,backend,Phase 1 – MVP,FA-08
+1,1,[FA-08] Rollenmodell & RBAC-Middleware,feature,backend,Phase 1 – MVP,FA-08
+1,1,[FA-08] Multi-Tenant-Schema & Tenant-Scope,feature,backend,Phase 1 – MVP,FA-08
+2,1,[FA-01] Modul & Modulidentifikation verwalten,feature,backend,Phase 1 – MVP,FA-01
+2,1,[FA-02] Handlungsziele verwalten,feature,backend,Phase 1 – MVP,FA-02
+2,1,[FA-03] Kompetenzbänder × Gütestufen (Matrix-Struktur),feature,frontend,Phase 1 – MVP,FA-03
+2,1,[FA-04] Kompetenzfelder & Deskriptoren (Ich kann),feature,frontend,Phase 1 – MVP,FA-04
+3,1,[FA-20] Klasse anlegen & Matrix zuordnen,feature,backend,Phase 1 – MVP,FA-20
+3,1,[FA-23] Beitrittscode generieren & beitreten,feature,backend,Phase 1 – MVP,FA-23
+3,1,[FA-25] Mitgliederliste & Verwaltung,feature,frontend,Phase 1 – MVP,FA-25
+4,1,[FA-30] Kompetenznachweis: Upload-Typ,feature,backend,Phase 1 – MVP,FA-30
+4,1,[FA-32] Kompetenznachweis: Quiz-Typ,feature,frontend,Phase 1 – MVP,FA-32
+4,1,[FA-36] Sichtbarkeit & Ablaufdatum,feature,backend,Phase 1 – MVP,FA-36
+4,1,[FA-40] Punktevergabe-Schema (X/Y),feature,backend,Phase 1 – MVP,FA-40
+5,1,[FA-50] Lernende:r reicht Nachweis ein,feature,frontend,Phase 1 – MVP,FA-50
+5,1,[FA-53] Statusanzeige für Lernende,feature,frontend,Phase 1 – MVP,FA-53
+5,1,[FA-60] Lehrperson bewertet (Punkte/Level + Feedback),feature,frontend,Phase 1 – MVP,FA-60
+5,1,[FA-62] Einreichung zurückweisen,feature,backend,Phase 1 – MVP,FA-62
+5,1,[FA-65] Bewertungshistorie / Audit,feature,backend,Phase 1 – MVP,FA-65
+6,1,[FA-90] Fortschritts-Heatmap (Basis),feature,frontend,Phase 1 – MVP,FA-90
+6,1,[FA-91] Kennzahlen-Karten,feature,frontend,Phase 1 – MVP,FA-91
+6,1,[FA-92] Bewertungs-Queue (Wartet auf Bewertung),feature,frontend,Phase 1 – MVP,FA-92
+6,1,[Chore] MVP-Polish & Pilotvorbereitung (Modul 293),chore,infra,Phase 1 – MVP,
+7,2,[FA-34] KI-Konfiguration (Endpoint je Lehrperson),feature,ki,Phase 2 – KI & Lernpfad,FA-34
+7,2,[FA-70] KI-Bewertungsvorschlag,feature,ki,Phase 2 – KI & Lernpfad,FA-70
+7,2,[FA-72] KI-Feedbacktext generieren,feature,ki,Phase 2 – KI & Lernpfad,FA-72
+8,2,[FA-80] KI-Fachgespräch (Übungsmodus),feature,ki,Phase 2 – KI & Lernpfad,FA-80
+8,2,[FA-84] Lernpfade (alternative Reihenfolge),feature,frontend,Phase 2 – KI & Lernpfad,FA-84
+9,3,[FA-100] Matrix-Export/-Import,feature,backend,Phase 3 – Export & i18n,FA-100
+9,3,[FA-103] Klassen-Archivierung,feature,backend,Phase 3 – Export & i18n,FA-103
+9,3,[FA-10] Mehrsprachigkeit FR/IT/EN,feature,frontend,Phase 3 – Export & i18n,FA-10
+10,4,[FA-11] Excel-Import (ICT-BBCH-Template),feature,backend,Phase 4 – Reife,FA-11
+10,4,[FA-93] Erweitertes Reporting & Filter,feature,frontend,Phase 4 – Reife,FA-93
+10,4,[Chore] Härtung: Sicherheit, A11y, Performance,chore,infra,Phase 4 – Reife,
