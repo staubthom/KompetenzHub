@@ -10,7 +10,7 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import { EvidenceType, Role } from '@prisma/client';
+import { Role } from '@prisma/client';
 import { CurrentUser, Roles } from '../auth/decorators';
 import type { RequestContext } from '../common/request-context';
 import { EvidenceService } from './evidence.service';
@@ -19,7 +19,7 @@ import { EvidenceService } from './evidence.service';
 export class EvidenceController {
   constructor(private readonly evidence: EvidenceService) {}
 
-  // ── Lehrer (FA-30/32/36/40) ───────────────────────────────────
+  // ── Lehrer (FA-30/36/40) ──────────────────────────────────────
 
   @Get()
   @Roles(Role.TEACHER, Role.ADMIN)
@@ -66,12 +66,12 @@ export class EvidenceController {
     return this.evidence.setFields(id, dto?.fieldIds ?? [], user.tenantId);
   }
 
-  // ── Lernende (FA-32 Quiz, FA-30 Upload) ───────────────────────
+  // ── Lernende: Sicht + Einreichung (FA-30/50) ──────────────────
 
   @Get('student/list')
   @Roles(Role.LEARNER, Role.TEACHER, Role.ADMIN)
-  studentList(@Query('type') type: EvidenceType | undefined, @CurrentUser() user: RequestContext) {
-    return this.evidence.listForStudent(user.tenantId, user.userId, type);
+  studentList(@CurrentUser() user: RequestContext) {
+    return this.evidence.listForStudent(user.tenantId, user.userId);
   }
 
   @Get('student/:id')
@@ -80,16 +80,7 @@ export class EvidenceController {
     return this.evidence.getForStudent(id, user.tenantId, user.userId);
   }
 
-  @Post(':id/quiz/grade')
-  @Roles(Role.LEARNER, Role.TEACHER, Role.ADMIN)
-  gradeQuiz(
-    @Param('id') id: string,
-    @Body() dto: { answers: Record<string, string[]> },
-    @CurrentUser() user: RequestContext,
-  ) {
-    return this.evidence.gradeQuiz(id, user.tenantId, user.userId, dto?.answers ?? {});
-  }
-
+  /** Presigned-URL für direkten Datei-Upload anfordern. */
   @Post(':id/upload-url')
   @Roles(Role.LEARNER, Role.TEACHER, Role.ADMIN)
   requestUpload(
@@ -107,6 +98,7 @@ export class EvidenceController {
     );
   }
 
+  /** Datei-Upload bestätigen → Einreichung. */
   @Post(':id/upload-confirm')
   @Roles(Role.LEARNER, Role.TEACHER, Role.ADMIN)
   confirmUpload(
@@ -115,5 +107,19 @@ export class EvidenceController {
     @CurrentUser() user: RequestContext,
   ) {
     return this.evidence.confirmUpload(id, user.tenantId, user.userId, dto?.key, dto?.fileName);
+  }
+
+  /** Link- oder Text-Beleg einreichen. */
+  @Post(':id/submissions')
+  @Roles(Role.LEARNER, Role.TEACHER, Role.ADMIN)
+  submitContent(
+    @Param('id') id: string,
+    @Body() dto: { text?: string; link?: string },
+    @CurrentUser() user: RequestContext,
+  ) {
+    return this.evidence.submitContent(id, user.tenantId, user.userId, {
+      text: dto?.text,
+      link: dto?.link,
+    });
   }
 }

@@ -47,7 +47,25 @@ export class MatrixController {
           include: {
             fields: {
               orderBy: { level: 'asc' },
-              include: { descriptor: true },
+              include: {
+                descriptor: true,
+                evidences: {
+                  include: {
+                    evidence: {
+                      select: {
+                        id: true,
+                        title: true,
+                        instructions: true,
+                        isVisible: true,
+                        dueAt: true,
+                        maxPoints: true,
+                        config: true,
+                        _count: { select: { submissions: true } },
+                      },
+                    },
+                  },
+                },
+              },
             },
             actionGoals: {
               include: { actionGoal: { select: { id: true, code: true, text: true } } },

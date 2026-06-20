@@ -27,7 +27,6 @@ const STUDENT_NAV: NavItem[] = [
   { id: 'matrix', icon: '▦', label: 'Meine Matrix', href: '/lernende' },
   { id: 'lernpfad', icon: '➔', label: 'Lernpfad', href: '/lernende/lernpfad' },
   { id: 'nachweise', icon: '📄', label: 'Meine Nachweise', href: '/lernende/nachweise' },
-  { id: 'quiz', icon: '❓', label: 'Quiz', href: '/lernende/quiz' },
   { id: 'fachgespraech', icon: '💬', label: 'Fachgespräch üben', href: '/lernende/fachgespraech' },
   { id: 'einstellungen', icon: '⚙', label: 'Einstellungen', href: '/lernende/einstellungen' },
 ];
