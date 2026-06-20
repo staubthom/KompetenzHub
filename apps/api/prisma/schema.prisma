@@ -117,6 +117,26 @@ model Membership {
 }
 
 // ============================================================
+// Audit (Login-/Sicherheits-Events) – Basis fuer Sprint 1 DoD
+// ============================================================
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  tenantId  String?
+  userId    String?
+  action    String // z. B. "auth.login", "auth.logout", "rbac.denied"
+  detail    Json     @default("{}")
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([action])
+}
+
+
+// ============================================================
 // Modul & Kompetenzmatrix
 // ============================================================
 
