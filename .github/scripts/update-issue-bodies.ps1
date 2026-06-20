@@ -28,11 +28,26 @@ $ErrorActionPreference = 'Stop'
 $Repo = if ($env:REPO) { $env:REPO } else { 'staubthom/KompetenzHub' }
 Write-Host "==> Repository: $Repo"
 
-if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
-  Write-Error "GitHub CLI 'gh' fehlt. Installiere mit: winget install GitHub.cli"; exit 1
+# gh finden: zuerst im PATH, sonst Standard-Installationspfade (frische Installation
+# ist evtl. noch nicht im PATH der aktuellen Sitzung).
+$ghLookup = Get-Command gh -ErrorAction SilentlyContinue
+$ghCmd = if ($ghLookup) { $ghLookup.Source } else { $null }
+if (-not $ghCmd) {
+
+  $candidates = @(
+    "$env:ProgramFiles\GitHub CLI\gh.exe",
+    "${env:ProgramFiles(x86)}\GitHub CLI\gh.exe",
+    "$env:LOCALAPPDATA\Programs\GitHub CLI\gh.exe"
+  )
+  $ghCmd = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
 }
-& gh auth status 2>$null | Out-Null
+if (-not $ghCmd) {
+  Write-Error "GitHub CLI 'gh' nicht gefunden. Installiere mit 'winget install GitHub.cli' und/oder oeffne ein neues Terminal."; exit 1
+}
+& $ghCmd auth status 2>$null | Out-Null
+
 if ($LASTEXITCODE -ne 0) { Write-Error "Bitte zuerst 'gh auth login' ausfuehren."; exit 1 }
+
 
 # --- Bodies-Datei einlesen und in Abschnitte zerlegen -----------------------
 $RepoRoot   = (git rev-parse --show-toplevel).Trim()
@@ -57,7 +72,8 @@ Write-Host "==> $($bodies.Count) Bodies aus bodies.md geladen."
 
 # --- Bestehende Issues laden (Titel -> Nummer) ------------------------------
 Write-Host "==> Lade bestehende Issues ..."
-$issuesJson = gh issue list --repo $Repo --state all --limit 500 --json number,title | ConvertFrom-Json
+$issuesJson = & $ghCmd issue list --repo $Repo --state all --limit 500 --json number,title | ConvertFrom-Json
+
 $byTitle = @{}
 foreach ($i in $issuesJson) { $byTitle[$i.title] = $i.number }
 
@@ -76,7 +92,8 @@ try {
       continue
     }
     Set-Content -LiteralPath $tmp -Value $bodies[$title] -Encoding UTF8
-    gh issue edit $num --repo $Repo --body-file $tmp | Out-Null
+    & $ghCmd issue edit $num --repo $Repo --body-file $tmp | Out-Null
+
     Write-Host "   ~ #$num aktualisiert: $title"
     $updated++
   }
