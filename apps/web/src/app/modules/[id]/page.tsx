@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AppShell from '../../../components/AppShell';
 import TrashIcon from '../../../components/TrashIcon';
+import EvidenceManager, { type FieldOption } from '../../../components/EvidenceManager';
 import {
   modules,
   actionGoals,
@@ -15,6 +16,12 @@ import {
   type ActionGoal,
   type CompetenceField,
 } from '../../../lib/api';
+
+const LEVEL_SHORT: Record<string, string> = {
+  BEGINNER: 'Beginner',
+  INTERMEDIATE: 'Intermediate',
+  ADVANCED: 'Advanced',
+};
 
 const LEVEL_LABEL: Record<string, string> = {
   BEGINNER: 'Beginner (B)',
@@ -292,6 +299,9 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
 
   const bands: Band[] = mod.matrix?.bands ?? [];
   const goals: ActionGoal[] = mod.actionGoals;
+  const fieldOptions: FieldOption[] = bands.flatMap((b) =>
+    b.fields.map((f) => ({ id: f.id, label: `${b.code} · ${LEVEL_SHORT[f.level]}` })),
+  );
 
   return (
     <AppShell>
@@ -775,6 +785,9 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
           </form>
         </div>
       )}
+
+      {/* Kompetenznachweise (FA-30/32/36/40) */}
+      <EvidenceManager moduleId={id} fields={fieldOptions} />
     </AppShell>
   );
 }

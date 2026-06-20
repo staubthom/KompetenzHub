@@ -121,6 +121,7 @@ export const descriptors = {
 // Classes (FA-20, 23, 25)
 export const classes = {
   list: () => apiFetch<ClassSummary[]>('/classes'),
+  mine: () => apiFetch<MyEnrollment[]>('/classes/mine'),
   get: (id: string) => apiFetch<ClassDetail>(`/classes/${id}`),
   create: (data: { name: string; moduleId?: string; year?: number; schoolYear?: string }) =>
     apiFetch<ClassSummary>('/classes', { method: 'POST', body: JSON.stringify(data) }),
@@ -137,6 +138,36 @@ export const classes = {
   members: (id: string) => apiFetch<Member[]>(`/classes/${id}/members`),
   removeMember: (id: string, userId: string) =>
     apiFetch<void>(`/classes/${id}/members/${userId}`, { method: 'DELETE' }),
+};
+
+// Evidence / Kompetenznachweise (FA-30, 32, 36, 40)
+export const evidence = {
+  // Lehrer
+  list: (moduleId: string) => apiFetch<Evidence[]>(`/evidence?moduleId=${moduleId}`),
+  create: (data: EvidenceInput) =>
+    apiFetch<Evidence>('/evidence', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: Partial<EvidenceInput>) =>
+    apiFetch<Evidence>(`/evidence/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  remove: (id: string) => apiFetch<void>(`/evidence/${id}`, { method: 'DELETE' }),
+  // Lernende
+  studentList: (type?: 'QUIZ' | 'FILE_UPLOAD') =>
+    apiFetch<StudentEvidence[]>(`/evidence/student/list${type ? `?type=${type}` : ''}`),
+  studentGet: (id: string) => apiFetch<StudentEvidence>(`/evidence/student/${id}`),
+  gradeQuiz: (id: string, answers: Record<string, string[]>) =>
+    apiFetch<{ submissionId: string; points: number; maxPoints: number }>(
+      `/evidence/${id}/quiz/grade`,
+      { method: 'POST', body: JSON.stringify({ answers }) },
+    ),
+  requestUpload: (id: string, fileName: string, contentType: string, sizeBytes: number) =>
+    apiFetch<{ uploadUrl: string; key: string }>(`/evidence/${id}/upload-url`, {
+      method: 'POST',
+      body: JSON.stringify({ fileName, contentType, sizeBytes }),
+    }),
+  confirmUpload: (id: string, key: string, fileName: string) =>
+    apiFetch<{ submissionId: string; status: string }>(`/evidence/${id}/upload-confirm`, {
+      method: 'POST',
+      body: JSON.stringify({ key, fileName }),
+    }),
 };
 
 // ── Typen ──────────────────────────────────────────────────────────
@@ -227,6 +258,17 @@ export interface ClassDetail extends ClassSummary {
   activeJoinCode: JoinCode | null;
 }
 
+export interface MyEnrollment {
+  enrollmentId: string;
+  joinedAt: string;
+  class: {
+    id: string;
+    name: string;
+    status: string;
+    module: ClassModuleRef | null;
+  };
+}
+
 export interface Member {
   id: string;
   displayName: string;
@@ -234,4 +276,58 @@ export interface Member {
   joinedAt: string;
   userId: string | null;
   user: { id: string; email: string; displayName: string; avatarUrl: string | null } | null;
+}
+
+// ── Kompetenznachweise ──────────────────────────────────────────────
+
+export type EvidenceType = 'QUIZ' | 'FILE_UPLOAD';
+
+export interface QuizOption {
+  id: string;
+  text: string;
+}
+export interface QuizQuestion {
+  id: string;
+  text: string;
+  type: 'single' | 'multiple';
+  options: QuizOption[];
+  correct?: string[]; // nur Lehrer-Sicht
+  points: number;
+}
+
+export interface EvidenceInput {
+  moduleId?: string;
+  type?: EvidenceType;
+  title?: Record<string, string>;
+  instructions?: Record<string, string>;
+  maxPoints?: number;
+  isVisible?: boolean;
+  dueAt?: string | null;
+  config?: Record<string, unknown>;
+  fieldIds?: string[];
+}
+
+export interface Evidence {
+  id: string;
+  moduleId: string;
+  type: EvidenceType;
+  title: Record<string, string>;
+  instructions: Record<string, string>;
+  maxPoints: string | null;
+  isVisible: boolean;
+  dueAt: string | null;
+  config: { questions?: QuizQuestion[]; allowedFileTypes?: string[]; maxFileSizeMb?: number };
+  fields: { evidenceId: string; fieldId: string }[];
+  _count?: { submissions: number };
+}
+
+export interface StudentEvidence {
+  id: string;
+  type: EvidenceType;
+  title: Record<string, string>;
+  instructions: Record<string, string>;
+  maxPoints: string | null;
+  dueAt: string | null;
+  isOverdue: boolean;
+  config: { questions?: QuizQuestion[]; allowedFileTypes?: string[]; maxFileSizeMb?: number };
 }

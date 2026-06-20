@@ -9,9 +9,10 @@ import { RolesGuard } from './auth/roles.guard';
 import { ModulesModule } from './modules/modules.module';
 import { MatrixModule } from './matrix/matrix.module';
 import { ClassesModule } from './classes/classes.module';
+import { EvidenceModule } from './evidence/evidence.module';
 
 @Module({
-  imports: [AuthModule, ModulesModule, MatrixModule, ClassesModule],
+  imports: [AuthModule, ModulesModule, MatrixModule, ClassesModule, EvidenceModule],
   controllers: [HealthController],
   providers: [
     PrismaService,

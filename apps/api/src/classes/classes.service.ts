@@ -51,6 +51,31 @@ export class ClassesService {
     });
   }
 
+  /** Aktive Klassenmitgliedschaften einer/eines Lernenden inkl. Modul. */
+  async listMine(tenantId: string, userId: string) {
+    const enrollments = await this.prisma.enrollment.findMany({
+      where: { userId, status: EnrollmentStatus.ACTIVE, class: { tenantId } },
+      select: {
+        id: true,
+        joinedAt: true,
+        class: {
+          select: {
+            id: true,
+            name: true,
+            status: true,
+            module: { select: { id: true, number: true, title: true } },
+          },
+        },
+      },
+      orderBy: { joinedAt: 'desc' },
+    });
+    return enrollments.map((e) => ({
+      enrollmentId: e.id,
+      joinedAt: e.joinedAt,
+      class: e.class,
+    }));
+  }
+
   async findOne(id: string, tenantId: string, userId: string, roles: Role[]) {
     const cls = await this.assertOwner(id, tenantId, userId, roles);
     const activeCode = await this.prisma.joinCode.findFirst({

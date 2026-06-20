@@ -1,16 +1,64 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
 import AppShell from '../../components/AppShell';
-import { classes } from '../../lib/api';
+import {
+  classes,
+  matrix as matrixApi,
+  type MyEnrollment,
+  type MatrixResponse,
+  type Band,
+  type CompetenceField,
+} from '../../lib/api';
+
+const LEVEL_LABEL: Record<string, string> = {
+  BEGINNER: 'Beginner',
+  INTERMEDIATE: 'Intermediate',
+  ADVANCED: 'Advanced',
+};
+const LEVELS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'] as const;
 
 export default function LernendeMatrixPage() {
-  const router = useRouter();
+  const [enrollments, setEnrollments] = useState<MyEnrollment[] | null>(null);
+  const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
+  const [matrix, setMatrix] = useState<MatrixResponse | null>(null);
+  const [error, setError] = useState('');
+
+  // Beitritt
   const [code, setCode] = useState('');
   const [joining, setJoining] = useState(false);
-  const [error, setError] = useState('');
-  const [joined, setJoined] = useState<{ name: string } | null>(null);
+
+  const loadEnrollments = useCallback(async () => {
+    try {
+      const mine = await classes.mine();
+      setEnrollments(mine);
+      // Erstes Modul automatisch wählen
+      const firstWithModule = mine.find((e) => e.class.module);
+      if (firstWithModule?.class.module && !selectedModuleId) {
+        setSelectedModuleId(firstWithModule.class.module.id);
+      }
+    } catch (e: unknown) {
+      setError(String(e));
+    }
+  }, [selectedModuleId]);
+
+  useEffect(() => {
+    void loadEnrollments();
+  }, [loadEnrollments]);
+
+  useEffect(() => {
+    if (!selectedModuleId) {
+      setMatrix(null);
+      return;
+    }
+    void (async () => {
+      try {
+        setMatrix(await matrixApi.get(selectedModuleId));
+      } catch (e: unknown) {
+        setError(String(e));
+      }
+    })();
+  }, [selectedModuleId]);
 
   async function handleJoin(e: React.FormEvent) {
     e.preventDefault();
@@ -18,9 +66,9 @@ export default function LernendeMatrixPage() {
     setJoining(true);
     setError('');
     try {
-      const res = await classes.join(code.trim());
-      setJoined({ name: res.class.name });
+      await classes.join(code.trim());
       setCode('');
+      await loadEnrollments();
     } catch (e: unknown) {
       const err = e as { status?: number; body?: { title?: string } };
       setError(
@@ -33,73 +81,138 @@ export default function LernendeMatrixPage() {
     }
   }
 
+  const bands: Band[] = matrix?.matrix?.bands ?? [];
+  const hasClasses = enrollments && enrollments.length > 0;
+
   return (
     <AppShell>
       <div className="breadcrumb">Übersicht / Meine Matrix</div>
       <div className="page-head">
         <div>
           <h1>Meine Matrix</h1>
-          <p>Dein Kompetenzraster mit Status &amp; Fortschritt</p>
+          <p>Deine Kompetenzbänder pro Klasse</p>
         </div>
       </div>
+
+      {error && <div className="error">{error}</div>}
+
+      {/* Klassenauswahl */}
+      {hasClasses && (
+        <div className="classgrid">
+          {enrollments!.map((e) => {
+            const mod = e.class.module;
+            const isActive = mod && selectedModuleId === mod.id;
+            return (
+              <button
+                key={e.enrollmentId}
+                className={`classcard ${isActive ? 'active' : ''}`}
+                onClick={() => mod && setSelectedModuleId(mod.id)}
+                disabled={!mod}
+              >
+                <div className="classcard-head">
+                  <strong>{e.class.name}</strong>
+                </div>
+                <div className="kh-muted" style={{ fontSize: 13 }}>
+                  {mod
+                    ? `Modul ${mod.number} · ${mod.title?.de ?? ''}`
+                    : 'noch kein Modul zugeordnet'}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Matrix-Anzeige (read-only) */}
+      {selectedModuleId && (
+        <div className="panel">
+          <div className="panel-head">
+            <h2>
+              {matrix?.module
+                ? `Modul ${matrix.module.number} · ${matrix.module.title?.de ?? ''}`
+                : 'Kompetenzmatrix'}
+            </h2>
+          </div>
+          {bands.length === 0 ? (
+            <div className="empty">
+              <span className="ic">▦</span>
+              <p>Für dieses Modul wurde noch keine Matrix erfasst.</p>
+            </div>
+          ) : (
+            <div className="matrix">
+              <div className="matrix-header">
+                <div>Band</div>
+                {LEVELS.map((lvl) => (
+                  <div key={lvl}>{LEVEL_LABEL[lvl]}</div>
+                ))}
+              </div>
+              {bands.map((band) => (
+                <div
+                  key={band.id}
+                  className="matrix-row"
+                  style={{ gridTemplateColumns: '180px 1fr 1fr 1fr' }}
+                >
+                  <div className="band-col">
+                    <div className="band-code">{band.code}</div>
+                    {band.description?.de && <div className="band-desc">{band.description.de}</div>}
+                  </div>
+                  {LEVELS.map((lvl) => {
+                    const field = band.fields.find((f: CompetenceField) => f.level === lvl);
+                    return (
+                      <div key={lvl} className="level-col" style={{ padding: 12 }}>
+                        {field?.descriptor?.text?.de ? (
+                          <>
+                            <span className="field-code">{field.code}</span>
+                            <span className="descriptor-text">{field.descriptor.text.de}</span>
+                          </>
+                        ) : (
+                          <span className="descriptor-empty">—</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Klasse beitreten (FA-23) */}
       <div className="panel">
         <div className="panel-head">
-          <h2>Klasse beitreten</h2>
+          <h2>{hasClasses ? 'Weitere Klasse beitreten' : 'Klasse beitreten'}</h2>
         </div>
         <div className="panel-body">
-          {joined ? (
-            <div className="join-success">
-              ✓ Du bist der Klasse <strong>{joined.name}</strong> beigetreten.
-              <button className="btn sm" style={{ marginLeft: 12 }} onClick={() => setJoined(null)}>
-                Weiteren Code eingeben
-              </button>
-            </div>
-          ) : (
-            <>
-              <p className="kh-muted" style={{ marginTop: 0 }}>
-                Gib den Beitrittscode deiner Lehrperson ein, um einer Klasse beizutreten.
-              </p>
-              {error && <div className="error">{error}</div>}
-              <form
-                className="join-form"
-                onSubmit={(e) => {
-                  void handleJoin(e);
-                }}
-              >
-                <input
-                  className="join-input"
-                  placeholder="z. B. A1B2C3"
-                  value={code}
-                  maxLength={6}
-                  onChange={(e) => setCode(e.target.value.toUpperCase())}
-                />
-                <button type="submit" className="btn primary" disabled={joining}>
-                  {joining ? 'Beitreten…' : 'Beitreten'}
-                </button>
-              </form>
-            </>
-          )}
+          <p className="kh-muted" style={{ marginTop: 0 }}>
+            Gib den Beitrittscode deiner Lehrperson ein.
+          </p>
+          <form
+            className="join-form"
+            onSubmit={(e) => {
+              void handleJoin(e);
+            }}
+          >
+            <input
+              className="join-input"
+              placeholder="z. B. A1B2C3"
+              value={code}
+              maxLength={6}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
+            />
+            <button type="submit" className="btn primary" disabled={joining}>
+              {joining ? 'Beitreten…' : 'Beitreten'}
+            </button>
+          </form>
         </div>
       </div>
 
-      <div className="panel">
-        <div className="panel-head">
-          <h2>Kompetenzbänder</h2>
-        </div>
-        <div className="empty">
-          <span className="ic">▦</span>
-          <p>
-            Sobald du einer Klasse beigetreten bist, erscheint hier deine
-            <br />
-            persönliche Kompetenzmatrix mit Punkten und Status.
-          </p>
-          <p style={{ marginTop: '1rem' }}>
-            Die Matrix-Ansicht mit Nachweisen folgt in Sprint 4 (FA-30..40).
-          </p>
-        </div>
-      </div>
+      {!hasClasses && enrollments !== null && (
+        <p className="kh-muted" style={{ textAlign: 'center' }}>
+          Du bist noch keiner Klasse beigetreten. Sobald du beigetreten bist, erscheint hier deine
+          Kompetenzmatrix.
+        </p>
+      )}
     </AppShell>
   );
 }
