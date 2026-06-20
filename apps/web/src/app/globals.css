@@ -595,7 +595,7 @@ a {
 .matrix-header,
 .matrix-row {
   display: grid;
-  grid-template-columns: 180px 1fr 1fr 1fr 44px;
+  grid-template-columns: 180px 1fr 1fr 1fr 52px;
   border-bottom: 1px solid var(--border);
 }
 .matrix-header {
@@ -635,10 +635,25 @@ a {
   border-right: none;
 }
 .act-col {
-  padding: 8px;
+  padding: 8px 4px;
   display: flex;
-  align-items: flex-start;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.act-col .btn-icon {
+  font-size: 15px;
+  color: var(--fg-muted);
+}
+.act-col .btn-icon:hover:not(:disabled) {
+  color: var(--brand-primary);
+}
+.act-col .btn-icon:last-child:hover:not(:disabled) {
+  color: var(--st-rejected);
+}
+.btn-icon:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 .field-btn {
   display: block;

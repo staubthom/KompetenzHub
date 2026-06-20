@@ -55,8 +55,23 @@ check('Modul hat Matrix', !!getMod.body?.matrix);
 const patchMod = await req('PATCH', `/modules/${moduleId}`, { title: { de: 'Geändert' } }, token);
 check('PATCH /modules/:id → 200', patchMod.status === 200);
 
-const dupMod = await req('POST', '/modules', { number: testNumber, title: { de: 'Duplikat' } }, token);
+// Modulnummer ändern (FA-01)
+const newNumber = `${testNumber}X`;
+const patchNum = await req('PATCH', `/modules/${moduleId}`, { number: newNumber }, token);
+check('PATCH /modules/:id Nummer → 200', patchNum.status === 200);
+check('Nummer geändert', patchNum.body?.number === newNumber);
+
+const emptyNum = await req('PATCH', `/modules/${moduleId}`, { number: '  ' }, token);
+check('PATCH leere Nummer → 400', emptyNum.status === 400);
+
+const dupMod = await req('POST', '/modules', { number: newNumber, title: { de: 'Duplikat' } }, token);
 check('POST /modules Duplikat → 409', dupMod.status === 409);
+
+// Zweites Modul anlegen und versuchen, dessen Nummer auf newNumber zu setzen → 409
+const other = await req('POST', '/modules', { number: `${testNumber}Y`, title: { de: 'Other' } }, token);
+const dupPatch = await req('PATCH', `/modules/${other.body?.id}`, { number: newNumber }, token);
+check('PATCH auf belegte Nummer → 409', dupPatch.status === 409);
+await req('DELETE', `/modules/${other.body?.id}`, null, token);
 
 // ── FA-02: Handlungsziele ─────────────────────────────────────────
 const createHZ = await req('POST', `/modules/${moduleId}/action-goals`, {

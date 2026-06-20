@@ -22,6 +22,7 @@ export interface CreateModuleDto {
 }
 
 export interface UpdateModuleDto {
+  number?: string;
   title?: I18nField;
   description?: I18nField;
   profession?: string;
@@ -105,9 +106,21 @@ export class ModulesService {
 
   async update(id: string, dto: UpdateModuleDto, tenantId: string) {
     await this.assertExists(id, tenantId);
+
+    let number: string | undefined;
+    if (dto.number !== undefined) {
+      number = dto.number.trim();
+      if (!number) throw new BadRequestException('"number" darf nicht leer sein.');
+      const clash = await this.prisma.module.findFirst({
+        where: { tenantId, number, id: { not: id } },
+      });
+      if (clash) throw new ConflictException(`Modul ${number} existiert bereits.`);
+    }
+
     return this.prisma.module.update({
       where: { id },
       data: {
+        ...(number !== undefined && { number }),
         ...(dto.title && { title: dto.title as Prisma.InputJsonValue }),
         ...(dto.description !== undefined && {
           description: dto.description as Prisma.InputJsonValue,

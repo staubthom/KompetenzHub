@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import AppShell from '../../../components/AppShell';
 import {
   modules, actionGoals, matrix as matrixApi, descriptors,
@@ -18,12 +19,13 @@ const LEVELS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'] as const;
 // In Next.js 14 ist params ein einfaches Objekt (kein Promise).
 export default function ModuleDetailPage({ params }: { params: { id: string } }) {
   const id = params.id;
+  const router = useRouter();
   const [mod, setMod] = useState<ModuleDetail | null>(null);
   const [error, setError] = useState('');
 
   // Modul-Bearbeitung
   const [editMod, setEditMod] = useState(false);
-  const [modForm, setModForm] = useState({ title: '', description: '', status: 'DRAFT' });
+  const [modForm, setModForm] = useState({ number: '', title: '', description: '', status: 'DRAFT' });
 
   // Handlungsziele
   const [addingGoal, setAddingGoal] = useState(false);
@@ -60,6 +62,7 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
   function startEditMod() {
     if (!mod) return;
     setModForm({
+      number: mod.number,
       title: mod.title?.de ?? '',
       description: mod.description?.de ?? '',
       status: mod.status,
@@ -71,12 +74,24 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
     e.preventDefault();
     try {
       await modules.update(id, {
+        number: modForm.number.trim(),
         title: { de: modForm.title.trim() },
         description: { de: modForm.description.trim() },
         status: modForm.status,
       });
       setEditMod(false);
       await load();
+    } catch (e: unknown) {
+      showError(e);
+    }
+  }
+
+  async function handleDeleteModule() {
+    if (!mod) return;
+    if (!confirm(`Modul ${mod.number} und die gesamte Matrix wirklich löschen?`)) return;
+    try {
+      await modules.remove(id);
+      router.replace('/modules');
     } catch (e: unknown) {
       showError(e);
     }
@@ -277,6 +292,14 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
           <div className="panel-head"><h2>Modul bearbeiten</h2></div>
           <form className="form" onSubmit={(e) => { void saveMod(e); }}>
             <label>
+              Modulnummer
+              <input
+                required
+                value={modForm.number}
+                onChange={(e) => setModForm((f) => ({ ...f, number: e.target.value }))}
+              />
+            </label>
+            <label>
               Titel (DE)
               <input
                 value={modForm.title}
@@ -301,9 +324,14 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
                 <option value="ARCHIVED">Archiviert</option>
               </select>
             </label>
-            <div className="form-actions">
-              <button type="button" className="btn" onClick={() => setEditMod(false)}>Abbrechen</button>
-              <button type="submit" className="btn primary">Speichern</button>
+            <div className="form-actions" style={{ justifyContent: 'space-between' }}>
+              <button type="button" className="btn danger" onClick={() => { void handleDeleteModule(); }}>
+                Modul löschen
+              </button>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="button" className="btn" onClick={() => setEditMod(false)}>Abbrechen</button>
+                <button type="submit" className="btn primary">Speichern</button>
+              </div>
             </div>
           </form>
         </div>

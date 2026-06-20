@@ -59,7 +59,7 @@ export const modules = {
   get: (id: string) => apiFetch<ModuleDetail>(`/modules/${id}`),
   create: (data: { number: string; title: { de: string }; description?: { de: string }; profession?: string }) =>
     apiFetch<ModuleSummary>('/modules', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: string, data: Partial<{ title: Record<string,string>; description: Record<string,string>; status: string }>) =>
+  update: (id: string, data: Partial<{ number: string; title: Record<string,string>; description: Record<string,string>; status: string }>) =>
     apiFetch<ModuleSummary>(`/modules/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   remove: (id: string) => apiFetch<void>(`/modules/${id}`, { method: 'DELETE' }),
 };
