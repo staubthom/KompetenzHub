@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AppShell from '../../../components/AppShell';
+import TrashIcon from '../../../components/TrashIcon';
 import {
   modules, actionGoals, matrix as matrixApi, descriptors,
   type ModuleDetail, type Band, type ActionGoal, type CompetenceField,
@@ -326,7 +327,7 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
             </label>
             <div className="form-actions" style={{ justifyContent: 'space-between' }}>
               <button type="button" className="btn danger" onClick={() => { void handleDeleteModule(); }}>
-                Modul löschen
+                <TrashIcon /> Modul löschen
               </button>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button type="button" className="btn" onClick={() => setEditMod(false)}>Abbrechen</button>
@@ -392,7 +393,7 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
                     <button className="btn-icon" title="Nach oben" disabled={i === 0} onClick={() => { void moveGoal(i, -1); }}>▲</button>
                     <button className="btn-icon" title="Nach unten" disabled={i === goals.length - 1} onClick={() => { void moveGoal(i, 1); }}>▼</button>
                     <button className="btn sm" onClick={() => setEditGoal({ id: g.id, code: g.code, text: g.text?.de ?? '' })}>Bearbeiten</button>
-                    <button className="btn-icon" title="Löschen" onClick={() => { void handleDeleteGoal(g.id); }}>×</button>
+                    <button className="btn-icon" title="Löschen" onClick={() => { void handleDeleteGoal(g.id); }}><TrashIcon /></button>
                   </>
                 )}
               </li>
@@ -520,7 +521,7 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
                   <button className="btn-icon" title="Nach oben" disabled={i === 0} onClick={() => { void moveBand(i, -1); }}>▲</button>
                   <button className="btn-icon" title="Nach unten" disabled={i === bands.length - 1} onClick={() => { void moveBand(i, 1); }}>▼</button>
                   <button className="btn-icon" title="Band bearbeiten" onClick={() => startEditBand(band)}>✎</button>
-                  <button className="btn-icon" title="Band löschen" onClick={() => { void handleDeleteBand(band.id); }}>×</button>
+                  <button className="btn-icon" title="Band löschen" onClick={() => { void handleDeleteBand(band.id); }}><TrashIcon /></button>
                 </div>
               </div>
             ))}

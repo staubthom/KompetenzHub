@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import AppShell from '../../components/AppShell';
+import TrashIcon from '../../components/TrashIcon';
 import { modules, type ModuleSummary } from '../../lib/api';
 
 function statusLabel(s: string): string {
@@ -155,7 +156,7 @@ export default function ModulesPage() {
                             title="Löschen"
                             onClick={() => { void handleDelete(m.id, m.number); }}
                           >
-                            ×
+                            <TrashIcon />
                           </button>
                         </div>
                       </td>
