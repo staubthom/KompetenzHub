@@ -12,7 +12,7 @@ Grundbildung in der ICT"* von **ICT-Berufsbildung Schweiz** (in Kraft seit 01.06
 
 ## 🔗 Schnellzugriff
 
-- **🖥️ Live-Mockups (GitHub Pages):** https://<USERNAME>.github.io/<REPO>/
+- **🖥️ Live-Mockups (GitHub Pages):** https://staubthom.github.io/KompetenzHub/
   *(Platzhalter — nach dem Aktivieren von Pages durch deine URL ersetzen.)*
 - **📁 Mockups (Quellcode):** [`mockups/`](./mockups/index.html)
 - **📚 Planungsdokumentation:** [`docs/`](./docs/00-README.md)
@@ -75,26 +75,6 @@ Optional mit lokalem Webserver (empfohlen, damit relative Pfade sauber laden):
 python -m http.server 8000
 # danach im Browser: http://localhost:8000/mockups/
 ```
-
----
-
-## 🌐 GitHub Pages aktivieren
-
-Damit die Mockups direkt online sichtbar sind:
-
-1. Repository auf GitHub pushen.
-2. **Settings → Pages** öffnen.
-3. Unter **Build and deployment → Source**: `Deploy from a branch` wählen.
-4. **Branch**: `main` und **Folder**: `/ (root)` auswählen → **Save**.
-5. Nach kurzer Wartezeit ist die Seite unter
-   `https://<USERNAME>.github.io/<REPO>/` erreichbar.
-
-Die Root-Datei [`index.html`](./index.html) leitet automatisch auf die
-Mockup-Startseite (`mockups/index.html`) weiter, sodass Besucher sofort etwas sehen.
-
-> Die Datei `.nojekyll` verhindert, dass GitHub Pages die Dateien durch Jekyll verarbeitet.
-
----
 
 ## 📦 Repository-Struktur
 
