@@ -46,6 +46,29 @@ Danach existieren 4 Milestones, alle Labels und ~38 Issues mit `sprint:*`-Labels
 
 ---
 
+## Issue-Beschreibungen nachträglich ausformulieren (User Story + Akzeptanzkriterien)
+
+Die per Setup-Skript angelegten Issues haben zunächst nur einen kurzen Body. Mit dem
+**Update-Skript** werden sie um **User Story** und **Akzeptanzkriterien** ergänzt – ohne
+Titel, Labels, Milestone oder **Sprint-/Project-Zuordnung** zu verändern (Matching per Titel,
+Aktualisierung via `gh issue edit`).
+
+Die ausformulierten Texte stehen zentral in [`docs/issues/bodies.md`](./issues/bodies.md)
+(ein Abschnitt je Issue, beginnend mit `### <exakter Titel>`).
+
+```powershell
+# Vorschau (zeigt nur, was aktualisiert würde):
+powershell -ExecutionPolicy Bypass -File .github\scripts\update-issue-bodies.ps1 -WhatIf
+
+# Tatsächlich anwenden:
+powershell -ExecutionPolicy Bypass -File .github\scripts\update-issue-bodies.ps1
+```
+
+> Das Skript ist **idempotent** und **sicher für bereits in Sprints geplante Issues**:
+> Es setzt nur den Body. Texte anpassen → einfach `bodies.md` editieren und erneut ausführen.
+
+---
+
 ## Variante B – Ohne CLI, per Klick / CSV-Import
 
 Falls du `gh` nicht installieren möchtest:
