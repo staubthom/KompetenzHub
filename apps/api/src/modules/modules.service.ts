@@ -63,7 +63,27 @@ export class ModulesService {
               include: {
                 fields: {
                   orderBy: { level: 'asc' },
-                  include: { descriptor: true },
+                  include: {
+                    descriptor: true,
+                    evidences: {
+                      orderBy: { evidence: { sortOrder: 'asc' } },
+                      include: {
+                        evidence: {
+                          select: {
+                            id: true,
+                            title: true,
+                            instructions: true,
+                            isVisible: true,
+                            dueAt: true,
+                            maxPoints: true,
+                            sortOrder: true,
+                            config: true,
+                            _count: { select: { submissions: true } },
+                          },
+                        },
+                      },
+                    },
+                  },
                 },
                 actionGoals: { include: { actionGoal: true } },
               },

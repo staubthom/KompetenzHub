@@ -5,9 +5,13 @@ import {
   GetObjectCommand,
   CreateBucketCommand,
   HeadBucketCommand,
+  PutBucketPolicyCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'node:crypto';
+
+/** Präfix für öffentlich lesbare Rich-Text-Bilder. */
+const PUBLIC_PREFIX = 'rte';
 
 /**
  * S3-/MinIO-Anbindung für presigned Uploads/Downloads.
@@ -40,6 +44,26 @@ export class S3Service implements OnModuleInit {
         this.logger.warn(`Bucket konnte nicht angelegt werden: ${String(error)}`);
       }
     }
+    // Öffentlicher Lesezugriff nur für Rich-Text-Bilder (rte/*); Belege bleiben privat.
+    try {
+      const policy = {
+        Version: '2012-10-17',
+        Statement: [
+          {
+            Sid: 'PublicReadRteImages',
+            Effect: 'Allow',
+            Principal: { AWS: ['*'] },
+            Action: ['s3:GetObject'],
+            Resource: [`arn:aws:s3:::${this.bucket}/${PUBLIC_PREFIX}/*`],
+          },
+        ],
+      };
+      await this.client.send(
+        new PutBucketPolicyCommand({ Bucket: this.bucket, Policy: JSON.stringify(policy) }),
+      );
+    } catch (error) {
+      this.logger.warn(`Bucket-Policy konnte nicht gesetzt werden: ${String(error)}`);
+    }
   }
 
   /** Erzeugt einen eindeutigen Objekt-Key unter einem Präfix. */
@@ -62,5 +86,15 @@ export class S3Service implements OnModuleInit {
   async presignDownload(key: string, expiresIn = 900): Promise<string> {
     const cmd = new GetObjectCommand({ Bucket: this.bucket, Key: key });
     return getSignedUrl(this.client, cmd, { expiresIn });
+  }
+
+  /** Key-Präfix für öffentlich lesbare Rich-Text-Bilder. */
+  get publicPrefix(): string {
+    return PUBLIC_PREFIX;
+  }
+
+  /** Stabile, öffentlich lesbare URL (nur für rte/*-Objekte gültig). */
+  publicUrl(key: string): string {
+    return `${this.endpoint}/${this.bucket}/${key}`;
   }
 }

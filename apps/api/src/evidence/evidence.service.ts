@@ -9,34 +9,26 @@ import { EnrollmentStatus, EvidenceType, Prisma, SubmissionStatus } from '@prism
 import { PrismaService } from '../prisma/prisma.service';
 import { S3Service } from '../storage/s3.service';
 
-interface QuizOption {
-  id: string;
-  text: string;
-}
-interface QuizQuestion {
-  id: string;
-  text: string;
-  type: 'single' | 'multiple';
-  options: QuizOption[];
-  correct: string[];
-  points: number;
-}
 interface UploadConfig {
   allowedFileTypes?: string[];
   maxFileSizeMb?: number;
+  allowFile?: boolean;
+  allowLink?: boolean;
+  allowText?: boolean;
 }
 
 export interface CreateEvidenceDto {
   moduleId: string;
-  type: EvidenceType;
   title: Record<string, string>;
+  /** Rich-Text-Beschreibung (HTML) als i18n-Feld. */
   instructions?: Record<string, string>;
   maxPoints?: number;
   targetLevel?: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
   isVisible?: boolean;
   availableFrom?: string;
   dueAt?: string;
-  config?: Record<string, unknown>;
+  sortOrder?: number;
+  config?: UploadConfig;
   fieldIds?: string[];
 }
 
@@ -47,13 +39,13 @@ export class EvidenceService {
     private readonly s3: S3Service,
   ) {}
 
-  // ── Lehrer-CRUD (FA-30/32/36/40) ──────────────────────────────
+  // ── Lehrer-CRUD (FA-30/36/40) ─────────────────────────────────
 
   async list(tenantId: string, moduleId?: string) {
     return this.prisma.competenceEvidence.findMany({
       where: { tenantId, ...(moduleId ? { moduleId } : {}) },
       include: { fields: true, _count: { select: { submissions: true } } },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
     });
   }
 
@@ -68,27 +60,31 @@ export class EvidenceService {
 
   async create(dto: CreateEvidenceDto, tenantId: string) {
     if (!dto.title?.de) throw new BadRequestException('"title.de" ist erforderlich.');
-    if (!dto.type) throw new BadRequestException('"type" ist erforderlich.');
     const module = await this.prisma.module.findFirst({ where: { id: dto.moduleId, tenantId } });
     if (!module) throw new BadRequestException('Modul nicht gefunden.');
 
-    if (dto.type === EvidenceType.QUIZ) this.validateQuizConfig(dto.config);
-
-    const maxPoints = this.resolveMaxPoints(dto.type, dto.maxPoints, dto.config);
+    // Nächste Reihenfolge innerhalb des Moduls bestimmen
+    const last = await this.prisma.competenceEvidence.findFirst({
+      where: { moduleId: dto.moduleId },
+      orderBy: { sortOrder: 'desc' },
+      select: { sortOrder: true },
+    });
+    const sortOrder = (last?.sortOrder ?? 0) + 1;
 
     const ev = await this.prisma.competenceEvidence.create({
       data: {
         // tenantId via Scoping-Middleware
         moduleId: dto.moduleId,
-        type: dto.type,
+        type: EvidenceType.FILE_UPLOAD,
         title: dto.title as Prisma.InputJsonValue,
         instructions: (dto.instructions ?? {}) as Prisma.InputJsonValue,
-        maxPoints,
+        maxPoints: dto.maxPoints ?? null,
         targetLevel: dto.targetLevel,
         isVisible: dto.isVisible ?? false,
         availableFrom: dto.availableFrom ? new Date(dto.availableFrom) : null,
         dueAt: dto.dueAt ? new Date(dto.dueAt) : null,
-        config: (dto.config ?? {}) as Prisma.InputJsonValue,
+        sortOrder,
+        config: this.normalizeConfig(dto.config) as Prisma.InputJsonValue,
       } as never,
       include: { fields: true },
     });
@@ -98,31 +94,24 @@ export class EvidenceService {
   }
 
   async update(id: string, dto: Partial<CreateEvidenceDto>, tenantId: string) {
-    const ev = await this.findOneForTeacher(id, tenantId);
-    if (dto.config !== undefined && ev.type === EvidenceType.QUIZ) {
-      this.validateQuizConfig(dto.config);
-    }
+    await this.findOneForTeacher(id, tenantId);
     const data: Prisma.CompetenceEvidenceUpdateInput = {
       ...(dto.title && { title: dto.title as Prisma.InputJsonValue }),
       ...(dto.instructions !== undefined && {
         instructions: dto.instructions as Prisma.InputJsonValue,
       }),
+      ...(dto.maxPoints !== undefined && { maxPoints: dto.maxPoints }),
       ...(dto.targetLevel !== undefined && { targetLevel: dto.targetLevel }),
       ...(dto.isVisible !== undefined && { isVisible: dto.isVisible }),
       ...(dto.availableFrom !== undefined && {
         availableFrom: dto.availableFrom ? new Date(dto.availableFrom) : null,
       }),
       ...(dto.dueAt !== undefined && { dueAt: dto.dueAt ? new Date(dto.dueAt) : null }),
-      ...(dto.config !== undefined && { config: dto.config as Prisma.InputJsonValue }),
+      ...(dto.sortOrder !== undefined && { sortOrder: dto.sortOrder }),
+      ...(dto.config !== undefined && {
+        config: this.normalizeConfig(dto.config) as Prisma.InputJsonValue,
+      }),
     };
-    if (dto.maxPoints !== undefined || dto.config !== undefined) {
-      data.maxPoints = this.resolveMaxPoints(
-        ev.type,
-        dto.maxPoints ?? (ev.maxPoints ? Number(ev.maxPoints) : undefined),
-        dto.config ?? (ev.config as Record<string, unknown>),
-      );
-    }
-
     await this.prisma.competenceEvidence.update({ where: { id }, data });
     if (dto.fieldIds) await this.setFields(id, dto.fieldIds, tenantId);
     return this.findOneForTeacher(id, tenantId);
@@ -136,7 +125,6 @@ export class EvidenceService {
   /** Kompetenzfeld-Zuordnung setzen (n:m), validiert Tenant-Zugehörigkeit. */
   async setFields(id: string, fieldIds: string[], tenantId: string) {
     await this.findOneForTeacher(id, tenantId);
-    // Nur Felder des aktiven Tenants zulassen
     const valid = await this.prisma.competenceField.findMany({
       where: { id: { in: fieldIds }, band: { matrix: { module: { tenantId } } } },
       select: { id: true },
@@ -153,19 +141,24 @@ export class EvidenceService {
 
   // ── Lernenden-Sicht (FA-36 Sichtbarkeit) ──────────────────────
 
-  /** Sichtbare Nachweise für Lernende (ohne Lösungen), inkl. Fälligkeitsstatus. */
-  async listForStudent(tenantId: string, userId: string, type?: EvidenceType) {
+  async listForStudent(tenantId: string, userId: string) {
     const now = new Date();
     const evidences = await this.prisma.competenceEvidence.findMany({
       where: {
         tenantId,
         isVisible: true,
-        ...(type ? { type } : {}),
         module: {
           classes: { some: { enrollments: { some: { userId, status: EnrollmentStatus.ACTIVE } } } },
         },
       },
-      include: { fields: true },
+      include: {
+        fields: true,
+        submissions: {
+          where: { enrollment: { userId } },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
       orderBy: { createdAt: 'desc' },
     });
     return evidences
@@ -193,46 +186,9 @@ export class EvidenceService {
     return this.toStudentView(ev, now);
   }
 
-  // ── Quiz-Auswertung (FA-32) ───────────────────────────────────
+  // ── Einreichung: Datei / Link / Text (FA-30/50) ───────────────
 
-  /** Bewertet die Quiz-Antworten serverseitig und speichert die Einreichung. */
-  async gradeQuiz(id: string, tenantId: string, userId: string, answers: Record<string, string[]>) {
-    const ev = await this.prisma.competenceEvidence.findFirst({
-      where: { id, tenantId, isVisible: true },
-    });
-    if (!ev) throw new NotFoundException('Quiz nicht verfügbar.');
-    if (ev.type !== EvidenceType.QUIZ) throw new BadRequestException('Kein Quiz.');
-
-    const enrollment = await this.resolveEnrollment(ev.moduleId, tenantId, userId);
-    const questions = this.questions(ev.config as Record<string, unknown>);
-
-    let achieved = 0;
-    let max = 0;
-    for (const q of questions) {
-      max += q.points;
-      const given = new Set(answers?.[q.id] ?? []);
-      const correct = new Set(q.correct);
-      const exact = given.size === correct.size && [...given].every((g) => correct.has(g));
-      if (exact) achieved += q.points;
-    }
-
-    const submission = await this.prisma.submission.create({
-      data: {
-        evidenceId: id,
-        enrollmentId: enrollment.id,
-        status: SubmissionStatus.GRADED,
-        content: { answers } as Prisma.InputJsonValue,
-        points: achieved,
-        submittedAt: new Date(),
-      },
-    });
-
-    return { submissionId: submission.id, points: achieved, maxPoints: max };
-  }
-
-  // ── Upload (FA-30) ────────────────────────────────────────────
-
-  /** Presigned-URL für den direkten Upload anfordern (validiert Typ & Grösse). */
+  /** Presigned-URL für den direkten Datei-Upload anfordern. */
   async requestUpload(
     id: string,
     tenantId: string,
@@ -241,15 +197,10 @@ export class EvidenceService {
     contentType: string,
     sizeBytes: number,
   ) {
-    const ev = await this.prisma.competenceEvidence.findFirst({
-      where: { id, tenantId, isVisible: true },
-    });
-    if (!ev) throw new NotFoundException('Nachweis nicht verfügbar.');
-    if (ev.type !== EvidenceType.FILE_UPLOAD)
-      throw new BadRequestException('Kein Upload-Nachweis.');
+    const ev = await this.loadVisibleEvidence(id, tenantId);
     await this.resolveEnrollment(ev.moduleId, tenantId, userId);
-
     const cfg = (ev.config ?? {}) as UploadConfig;
+    if (cfg.allowFile === false) throw new BadRequestException('Datei-Upload ist nicht erlaubt.');
     this.validateFile(cfg, fileName, sizeBytes);
 
     const key = this.s3.buildKey(`evidence/${id}`, fileName);
@@ -257,14 +208,10 @@ export class EvidenceService {
     return { uploadUrl: url, key };
   }
 
-  /** Upload bestätigen → Einreichung anlegen (status submitted). */
+  /** Datei-Upload bestätigen → Einreichung anlegen. */
   async confirmUpload(id: string, tenantId: string, userId: string, key: string, fileName: string) {
-    const ev = await this.prisma.competenceEvidence.findFirst({
-      where: { id, tenantId, isVisible: true },
-    });
-    if (!ev) throw new NotFoundException('Nachweis nicht verfügbar.');
+    const ev = await this.loadVisibleEvidence(id, tenantId);
     const enrollment = await this.resolveEnrollment(ev.moduleId, tenantId, userId);
-
     const submission = await this.prisma.submission.create({
       data: {
         evidenceId: id,
@@ -272,6 +219,41 @@ export class EvidenceService {
         status: SubmissionStatus.SUBMITTED,
         fileKey: key,
         fileName,
+        content: { kind: 'file' } as Prisma.InputJsonValue,
+        submittedAt: new Date(),
+      },
+    });
+    return { submissionId: submission.id, status: submission.status };
+  }
+
+  /** Link- oder Text-Beleg einreichen. */
+  async submitContent(
+    id: string,
+    tenantId: string,
+    userId: string,
+    payload: { text?: string; link?: string },
+  ) {
+    const ev = await this.loadVisibleEvidence(id, tenantId);
+    const enrollment = await this.resolveEnrollment(ev.moduleId, tenantId, userId);
+    const cfg = (ev.config ?? {}) as UploadConfig;
+
+    const text = payload.text?.trim();
+    const link = payload.link?.trim();
+    if (!text && !link) throw new BadRequestException('Text oder Link erforderlich.');
+    if (link) {
+      if (cfg.allowLink === false) throw new BadRequestException('Links sind nicht erlaubt.');
+      if (!/^https?:\/\//i.test(link)) {
+        throw new UnprocessableEntityException('Link muss mit http(s):// beginnen.');
+      }
+    }
+    if (text && cfg.allowText === false) throw new BadRequestException('Text ist nicht erlaubt.');
+
+    const submission = await this.prisma.submission.create({
+      data: {
+        evidenceId: id,
+        enrollmentId: enrollment.id,
+        status: SubmissionStatus.SUBMITTED,
+        content: { kind: link ? 'link' : 'text', text, link } as Prisma.InputJsonValue,
         submittedAt: new Date(),
       },
     });
@@ -280,13 +262,17 @@ export class EvidenceService {
 
   // ── Helfer ────────────────────────────────────────────────────
 
+  private async loadVisibleEvidence(id: string, tenantId: string) {
+    const ev = await this.prisma.competenceEvidence.findFirst({
+      where: { id, tenantId, isVisible: true },
+    });
+    if (!ev) throw new NotFoundException('Nachweis nicht verfügbar.');
+    return ev;
+  }
+
   private async resolveEnrollment(moduleId: string, tenantId: string, userId: string) {
     const enrollment = await this.prisma.enrollment.findFirst({
-      where: {
-        userId,
-        status: EnrollmentStatus.ACTIVE,
-        class: { moduleId, tenantId },
-      },
+      where: { userId, status: EnrollmentStatus.ACTIVE, class: { moduleId, tenantId } },
     });
     if (!enrollment) {
       throw new ForbiddenException('Keine aktive Klassenmitgliedschaft für diesen Nachweis.');
@@ -294,35 +280,16 @@ export class EvidenceService {
     return enrollment;
   }
 
-  private questions(config: Record<string, unknown>): QuizQuestion[] {
-    const qs = (config?.questions ?? []) as QuizQuestion[];
-    return Array.isArray(qs) ? qs : [];
-  }
-
-  private resolveMaxPoints(
-    type: EvidenceType,
-    maxPoints: number | undefined,
-    config: Record<string, unknown> | undefined,
-  ): number | null {
-    if (type === EvidenceType.QUIZ) {
-      const sum = this.questions(config ?? {}).reduce((s, q) => s + (Number(q.points) || 0), 0);
-      return sum > 0 ? sum : (maxPoints ?? null);
-    }
-    return maxPoints ?? null;
-  }
-
-  private validateQuizConfig(config: Record<string, unknown> | undefined) {
-    const qs = this.questions(config ?? {});
-    if (qs.length === 0) throw new BadRequestException('Quiz braucht mindestens eine Frage.');
-    for (const q of qs) {
-      if (!q.id || !q.text) throw new BadRequestException('Jede Frage braucht id und text.');
-      if (!Array.isArray(q.options) || q.options.length < 2) {
-        throw new BadRequestException('Jede Frage braucht mindestens zwei Optionen.');
-      }
-      if (!Array.isArray(q.correct) || q.correct.length === 0) {
-        throw new BadRequestException('Jede Frage braucht mindestens eine korrekte Antwort.');
-      }
-    }
+  private normalizeConfig(config: UploadConfig | undefined): UploadConfig {
+    const cfg = config ?? {};
+    return {
+      allowedFileTypes: cfg.allowedFileTypes ?? [],
+      maxFileSizeMb: cfg.maxFileSizeMb ?? 10,
+      // Standard: alle drei Einreichungsarten erlaubt
+      allowFile: cfg.allowFile ?? true,
+      allowLink: cfg.allowLink ?? true,
+      allowText: cfg.allowText ?? true,
+    };
   }
 
   private validateFile(cfg: UploadConfig, fileName: string, sizeBytes: number) {
@@ -340,7 +307,6 @@ export class EvidenceService {
     }
   }
 
-  /** Entfernt korrekte Antworten aus der Quiz-Config und ergänzt Status. */
   private toStudentView(
     ev: {
       id: string;
@@ -352,10 +318,11 @@ export class EvidenceService {
       dueAt: Date | null;
       config: unknown;
       fields: unknown;
+      submissions?: { id: string; status: SubmissionStatus }[];
     },
     now: Date,
   ) {
-    const base = {
+    return {
       id: ev.id,
       type: ev.type,
       title: ev.title,
@@ -364,18 +331,11 @@ export class EvidenceService {
       targetLevel: ev.targetLevel,
       dueAt: ev.dueAt,
       isOverdue: !!ev.dueAt && ev.dueAt < now,
+      config: ev.config,
       fields: ev.fields,
+      lastSubmission: ev.submissions?.[0]
+        ? { id: ev.submissions[0].id, status: ev.submissions[0].status }
+        : null,
     };
-    if (ev.type === EvidenceType.QUIZ) {
-      const qs = this.questions(ev.config as Record<string, unknown>).map((q) => ({
-        id: q.id,
-        text: q.text,
-        type: q.type,
-        points: q.points,
-        options: q.options, // ohne "correct"
-      }));
-      return { ...base, config: { questions: qs } };
-    }
-    return { ...base, config: ev.config };
   }
 }

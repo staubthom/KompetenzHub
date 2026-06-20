@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AppShell from '../../../components/AppShell';
 import TrashIcon from '../../../components/TrashIcon';
-import EvidenceManager, { type FieldOption } from '../../../components/EvidenceManager';
+import FieldEvidenceModal from '../../../components/FieldEvidenceModal';
 import {
   modules,
   actionGoals,
@@ -72,6 +72,9 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
   // Deskriptoren
   const [editingDesc, setEditingDesc] = useState<{ fieldId: string; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Nachweise je Feld (Modal)
+  const [evidenceField, setEvidenceField] = useState<{ id: string; label: string } | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -299,9 +302,6 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
 
   const bands: Band[] = mod.matrix?.bands ?? [];
   const goals: ActionGoal[] = mod.actionGoals;
-  const fieldOptions: FieldOption[] = bands.flatMap((b) =>
-    b.fields.map((f) => ({ id: f.id, label: `${b.code} · ${LEVEL_SHORT[f.level]}` })),
-  );
 
   return (
     <AppShell>
@@ -662,18 +662,45 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
                           </div>
                         </div>
                       ) : (
-                        <button
-                          className="field-btn"
-                          title="Deskriptor bearbeiten"
-                          onClick={() => startEditDesc(field)}
-                        >
-                          <span className="field-code">{field.code}</span>
-                          {field.descriptor?.text?.de ? (
-                            <span className="descriptor-text">{field.descriptor.text.de}</span>
-                          ) : (
-                            <span className="descriptor-empty">Ich kann …</span>
-                          )}
-                        </button>
+                        <>
+                          <button
+                            className="field-btn"
+                            title="Deskriptor bearbeiten"
+                            onClick={() => startEditDesc(field)}
+                          >
+                            <span className="field-code">{field.code}</span>
+                            {field.descriptor?.text?.de ? (
+                              <span className="descriptor-text">{field.descriptor.text.de}</span>
+                            ) : (
+                              <span className="descriptor-empty">Ich kann …</span>
+                            )}
+                          </button>
+                          <div className="field-evidence">
+                            {(field.evidences ?? []).map((e) => (
+                              <span
+                                key={e.evidence.id}
+                                className="evidence-chip"
+                                title={e.evidence.title?.de}
+                              >
+                                📎 {e.evidence.title?.de}
+                                {!e.evidence.isVisible && (
+                                  <span className="ev-hidden"> (verborgen)</span>
+                                )}
+                              </span>
+                            ))}
+                            <button
+                              className="evidence-add"
+                              onClick={() =>
+                                setEvidenceField({
+                                  id: field.id,
+                                  label: `${band.code} · ${LEVEL_SHORT[field.level]}`,
+                                })
+                              }
+                            >
+                              + Nachweis
+                            </button>
+                          </div>
+                        </>
                       )}
                     </div>
                   );
@@ -786,8 +813,18 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
         </div>
       )}
 
-      {/* Kompetenznachweise (FA-30/32/36/40) */}
-      <EvidenceManager moduleId={id} fields={fieldOptions} />
+      {/* Nachweise je Kompetenzfeld (Modal) */}
+      {evidenceField && (
+        <FieldEvidenceModal
+          moduleId={id}
+          fieldId={evidenceField.id}
+          fieldLabel={evidenceField.label}
+          onClose={() => setEvidenceField(null)}
+          onChanged={() => {
+            void load();
+          }}
+        />
+      )}
     </AppShell>
   );
 }

@@ -343,7 +343,8 @@ model CompetenceEvidence {
   isVisible    Boolean          @default(false)
   availableFrom DateTime?
   dueAt        DateTime?
-  config       Json             @default("{}") // Quizfragen ODER Upload-Constraints
+  sortOrder    Int              @default(0)
+  config       Json             @default("{}") // Upload-Constraints (Datei/Link/Text)
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
 
