@@ -149,21 +149,24 @@ export default function FieldEvidenceModal({
     }
   }
 
-  // Reihenfolge: sortOrder mit dem Nachbarn tauschen
+  // Reihenfolge ändern: Liste lokal umstellen und neu durchnummerieren.
+  // (Robust auch wenn bestehende Nachweise alle sortOrder=0 haben.)
   async function move(index: number, dir: -1 | 1) {
     if (!list) return;
-    const current = list[index];
-    const target = list[index + dir];
-    if (!current || !target) return;
+    const j = index + dir;
+    if (j < 0 || j >= list.length) return;
+    const next = [...list];
+    [next[index], next[j]] = [next[j], next[index]];
+    setList(next); // sofortiges visuelles Feedback
     try {
-      await Promise.all([
-        evidence.update(current.id, { sortOrder: target.sortOrder }),
-        evidence.update(target.id, { sortOrder: current.sortOrder }),
-      ]);
+      await Promise.all(
+        next.map((ev, idx) => evidence.update(ev.id, { sortOrder: idx + 1 })),
+      );
       await load();
       onChanged();
     } catch (e: unknown) {
       showError(e);
+      await load();
     }
   }
 
