@@ -70,10 +70,7 @@ export class EvidenceController {
 
   @Get('student/list')
   @Roles(Role.LEARNER, Role.TEACHER, Role.ADMIN)
-  studentList(
-    @Query('type') type: EvidenceType | undefined,
-    @CurrentUser() user: RequestContext,
-  ) {
+  studentList(@Query('type') type: EvidenceType | undefined, @CurrentUser() user: RequestContext) {
     return this.evidence.listForStudent(user.tenantId, user.userId, type);
   }
 

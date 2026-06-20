@@ -11,7 +11,11 @@ import { ProblemExceptionFilter } from './common/problem.filter';
 loadEnv({ path: join(__dirname, '..', '..', '..', '.env') });
 
 /** Schlanker Cookie-Parser (vermeidet zusätzliche Abhängigkeit). */
-function cookieParser(req: Request & { cookies?: Record<string, string> }, _res: Response, next: NextFunction): void {
+function cookieParser(
+  req: Request & { cookies?: Record<string, string> },
+  _res: Response,
+  next: NextFunction,
+): void {
   const header = req.headers.cookie;
   const out: Record<string, string> = {};
   if (header) {

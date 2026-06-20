@@ -5,16 +5,14 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import {
-  EnrollmentStatus,
-  EvidenceType,
-  Prisma,
-  SubmissionStatus,
-} from '@prisma/client';
+import { EnrollmentStatus, EvidenceType, Prisma, SubmissionStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { S3Service } from '../storage/s3.service';
 
-interface QuizOption { id: string; text: string }
+interface QuizOption {
+  id: string;
+  text: string;
+}
 interface QuizQuestion {
   id: string;
   text: string;
@@ -23,7 +21,10 @@ interface QuizQuestion {
   correct: string[];
   points: number;
 }
-interface UploadConfig { allowedFileTypes?: string[]; maxFileSizeMb?: number }
+interface UploadConfig {
+  allowedFileTypes?: string[];
+  maxFileSizeMb?: number;
+}
 
 export interface CreateEvidenceDto {
   moduleId: string;
@@ -160,7 +161,9 @@ export class EvidenceService {
         tenantId,
         isVisible: true,
         ...(type ? { type } : {}),
-        module: { classes: { some: { enrollments: { some: { userId, status: EnrollmentStatus.ACTIVE } } } } },
+        module: {
+          classes: { some: { enrollments: { some: { userId, status: EnrollmentStatus.ACTIVE } } } },
+        },
       },
       include: { fields: true },
       orderBy: { createdAt: 'desc' },
@@ -176,7 +179,9 @@ export class EvidenceService {
         id,
         tenantId,
         isVisible: true,
-        module: { classes: { some: { enrollments: { some: { userId, status: EnrollmentStatus.ACTIVE } } } } },
+        module: {
+          classes: { some: { enrollments: { some: { userId, status: EnrollmentStatus.ACTIVE } } } },
+        },
       },
       include: { fields: true },
     });
@@ -207,8 +212,7 @@ export class EvidenceService {
       max += q.points;
       const given = new Set(answers?.[q.id] ?? []);
       const correct = new Set(q.correct);
-      const exact =
-        given.size === correct.size && [...given].every((g) => correct.has(g));
+      const exact = given.size === correct.size && [...given].every((g) => correct.has(g));
       if (exact) achieved += q.points;
     }
 
@@ -241,7 +245,8 @@ export class EvidenceService {
       where: { id, tenantId, isVisible: true },
     });
     if (!ev) throw new NotFoundException('Nachweis nicht verfügbar.');
-    if (ev.type !== EvidenceType.FILE_UPLOAD) throw new BadRequestException('Kein Upload-Nachweis.');
+    if (ev.type !== EvidenceType.FILE_UPLOAD)
+      throw new BadRequestException('Kein Upload-Nachweis.');
     await this.resolveEnrollment(ev.moduleId, tenantId, userId);
 
     const cfg = (ev.config ?? {}) as UploadConfig;
@@ -336,10 +341,20 @@ export class EvidenceService {
   }
 
   /** Entfernt korrekte Antworten aus der Quiz-Config und ergänzt Status. */
-  private toStudentView(ev: {
-    id: string; type: EvidenceType; title: unknown; instructions: unknown;
-    maxPoints: unknown; targetLevel: unknown; dueAt: Date | null; config: unknown; fields: unknown;
-  }, now: Date) {
+  private toStudentView(
+    ev: {
+      id: string;
+      type: EvidenceType;
+      title: unknown;
+      instructions: unknown;
+      maxPoints: unknown;
+      targetLevel: unknown;
+      dueAt: Date | null;
+      config: unknown;
+      fields: unknown;
+    },
+    now: Date,
+  ) {
     const base = {
       id: ev.id,
       type: ev.type,

@@ -211,7 +211,13 @@ export class ClassesService {
     });
   }
 
-  async removeMember(id: string, memberUserId: string, tenantId: string, userId: string, roles: Role[]) {
+  async removeMember(
+    id: string,
+    memberUserId: string,
+    tenantId: string,
+    userId: string,
+    roles: Role[],
+  ) {
     await this.assertOwner(id, tenantId, userId, roles);
     const enrollment = await this.prisma.enrollment.findFirst({
       where: { classId: id, userId: memberUserId },

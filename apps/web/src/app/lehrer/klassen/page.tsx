@@ -4,8 +4,12 @@ import { useCallback, useEffect, useState } from 'react';
 import AppShell from '../../../components/AppShell';
 import TrashIcon from '../../../components/TrashIcon';
 import {
-  classes, modules,
-  type ClassSummary, type ClassDetail, type Member, type ModuleSummary,
+  classes,
+  modules,
+  type ClassSummary,
+  type ClassDetail,
+  type Member,
+  type ModuleSummary,
 } from '../../../lib/api';
 
 export default function KlassenPage() {
@@ -39,8 +43,12 @@ export default function KlassenPage() {
     }
   }, []);
 
-  useEffect(() => { void loadList(); }, [loadList]);
-  useEffect(() => { if (selectedId) void loadDetail(selectedId); }, [selectedId, loadDetail]);
+  useEffect(() => {
+    void loadList();
+  }, [loadList]);
+  useEffect(() => {
+    if (selectedId) void loadDetail(selectedId);
+  }, [selectedId, loadDetail]);
 
   function showError(e: unknown) {
     const err = e as { body?: { title?: string } };
@@ -68,7 +76,10 @@ export default function KlassenPage() {
     if (!confirm(`Klasse "${name}" wirklich löschen?`)) return;
     try {
       await classes.remove(id);
-      if (selectedId === id) { setSelectedId(null); setDetail(null); }
+      if (selectedId === id) {
+        setSelectedId(null);
+        setDetail(null);
+      }
       await loadList();
     } catch (e: unknown) {
       showError(e);
@@ -114,15 +125,24 @@ export default function KlassenPage() {
           <h1>Klassen</h1>
           <p>Lernende verwalten · Module zuweisen · Beitrittscode</p>
         </div>
-        <button className="btn primary" onClick={() => setCreating(true)}>+ Neue Klasse</button>
+        <button className="btn primary" onClick={() => setCreating(true)}>
+          + Neue Klasse
+        </button>
       </div>
 
       {error && <div className="error">{error}</div>}
 
       {creating && (
         <div className="panel">
-          <div className="panel-head"><h2>Neue Klasse</h2></div>
-          <form className="form" onSubmit={(e) => { void handleCreate(e); }}>
+          <div className="panel-head">
+            <h2>Neue Klasse</h2>
+          </div>
+          <form
+            className="form"
+            onSubmit={(e) => {
+              void handleCreate(e);
+            }}
+          >
             <label>
               Klassenname *
               <input
@@ -147,8 +167,12 @@ export default function KlassenPage() {
               </select>
             </label>
             <div className="form-actions">
-              <button type="button" className="btn" onClick={() => setCreating(false)}>Abbrechen</button>
-              <button type="submit" className="btn primary">Erstellen</button>
+              <button type="button" className="btn" onClick={() => setCreating(false)}>
+                Abbrechen
+              </button>
+              <button type="submit" className="btn primary">
+                Erstellen
+              </button>
             </div>
           </form>
         </div>
@@ -157,7 +181,12 @@ export default function KlassenPage() {
       {!list ? (
         <div className="loading">Lade Klassen…</div>
       ) : list.length === 0 ? (
-        <div className="panel"><div className="empty"><span className="ic">◫</span><p>Noch keine Klassen. Erstelle deine erste Klasse.</p></div></div>
+        <div className="panel">
+          <div className="empty">
+            <span className="ic">◫</span>
+            <p>Noch keine Klassen. Erstelle deine erste Klasse.</p>
+          </div>
+        </div>
       ) : (
         <div className="classgrid">
           {list.map((c) => (
@@ -187,7 +216,9 @@ export default function KlassenPage() {
             <h2>{detail.name}</h2>
             <button
               className="btn danger sm"
-              onClick={() => { void handleDeleteClass(detail.id, detail.name); }}
+              onClick={() => {
+                void handleDeleteClass(detail.id, detail.name);
+              }}
             >
               <TrashIcon /> Klasse löschen
             </button>
@@ -200,11 +231,15 @@ export default function KlassenPage() {
               <select
                 className="inline-select"
                 value={detail.module?.id ?? ''}
-                onChange={(e) => { void handleAssignModule(e.target.value); }}
+                onChange={(e) => {
+                  void handleAssignModule(e.target.value);
+                }}
               >
                 <option value="">— kein Modul —</option>
                 {mods.map((m) => (
-                  <option key={m.id} value={m.id}>{m.number} · {m.title?.de ?? ''}</option>
+                  <option key={m.id} value={m.id}>
+                    {m.number} · {m.title?.de ?? ''}
+                  </option>
                 ))}
               </select>
             </div>
@@ -218,12 +253,18 @@ export default function KlassenPage() {
                 ) : (
                   <span className="kh-muted">Noch kein Code generiert.</span>
                 )}
-                <button className="btn sm" onClick={() => { void handleGenerateCode(); }}>
+                <button
+                  className="btn sm"
+                  onClick={() => {
+                    void handleGenerateCode();
+                  }}
+                >
                   {detail.activeJoinCode ? 'Code erneuern' : 'Code generieren'}
                 </button>
               </div>
               <p className="kh-muted" style={{ fontSize: 12, marginTop: 6 }}>
-                Lernende treten unter „Klasse beitreten" mit diesem Code bei. Erneuern macht den alten Code ungültig.
+                Lernende treten unter „Klasse beitreten" mit diesem Code bei. Erneuern macht den
+                alten Code ungültig.
               </p>
             </div>
           </div>
@@ -233,22 +274,44 @@ export default function KlassenPage() {
             <h2>Lernende ({members.length})</h2>
           </div>
           {members.length === 0 ? (
-            <div className="empty"><p>Noch keine Lernenden. Teile den Beitrittscode.</p></div>
+            <div className="empty">
+              <p>Noch keine Lernenden. Teile den Beitrittscode.</p>
+            </div>
           ) : (
             <table className="table">
               <thead>
-                <tr><th>Lernende:r</th><th>E-Mail</th><th>Beigetreten</th><th>Status</th><th></th></tr>
+                <tr>
+                  <th>Lernende:r</th>
+                  <th>E-Mail</th>
+                  <th>Beigetreten</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
               </thead>
               <tbody>
                 {members.map((m) => (
                   <tr key={m.id}>
-                    <td><div className="member-cell"><span className="avatar sm">{initials(m.displayName)}</span> {m.displayName}</div></td>
+                    <td>
+                      <div className="member-cell">
+                        <span className="avatar sm">{initials(m.displayName)}</span> {m.displayName}
+                      </div>
+                    </td>
                     <td className="kh-muted">{m.user?.email ?? '—'}</td>
                     <td className="kh-muted">{new Date(m.joinedAt).toLocaleDateString('de-CH')}</td>
-                    <td><span className="badge b-published">{m.status === 'ACTIVE' ? 'aktiv' : m.status.toLowerCase()}</span></td>
+                    <td>
+                      <span className="badge b-published">
+                        {m.status === 'ACTIVE' ? 'aktiv' : m.status.toLowerCase()}
+                      </span>
+                    </td>
                     <td>
                       <div className="row-actions">
-                        <button className="btn-icon" title="Entfernen" onClick={() => { void handleRemoveMember(m.userId); }}>
+                        <button
+                          className="btn-icon"
+                          title="Entfernen"
+                          onClick={() => {
+                            void handleRemoveMember(m.userId);
+                          }}
+                        >
                           <TrashIcon />
                         </button>
                       </div>

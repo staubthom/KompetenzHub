@@ -18,7 +18,9 @@ export default function QuizPage() {
       setError(String(e));
     }
   }
-  useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    void load();
+  }, []);
 
   function startQuiz(ev: StudentEvidence) {
     setActive(ev);
@@ -31,7 +33,10 @@ export default function QuizPage() {
     setAnswers((a) => {
       const cur = a[q.id] ?? [];
       if (q.type === 'single') return { ...a, [q.id]: [optId] };
-      return { ...a, [q.id]: cur.includes(optId) ? cur.filter((x) => x !== optId) : [...cur, optId] };
+      return {
+        ...a,
+        [q.id]: cur.includes(optId) ? cur.filter((x) => x !== optId) : [...cur, optId],
+      };
     });
   }
 
@@ -54,9 +59,20 @@ export default function QuizPage() {
         <div className="page-head">
           <div>
             <h1>{active.title?.de}</h1>
-            <p>{questions.length} Fragen · automatische Auswertung{active.maxPoints ? ` · max. ${active.maxPoints} Punkte` : ''}</p>
+            <p>
+              {questions.length} Fragen · automatische Auswertung
+              {active.maxPoints ? ` · max. ${active.maxPoints} Punkte` : ''}
+            </p>
           </div>
-          <button className="btn" onClick={() => { setActive(null); void load(); }}>← Zurück</button>
+          <button
+            className="btn"
+            onClick={() => {
+              setActive(null);
+              void load();
+            }}
+          >
+            ← Zurück
+          </button>
         </div>
 
         {error && <div className="error">{error}</div>}
@@ -64,9 +80,19 @@ export default function QuizPage() {
         {result ? (
           <div className="panel">
             <div className="quiz-result">
-              <div className="score">{result.points} / {result.maxPoints}</div>
+              <div className="score">
+                {result.points} / {result.maxPoints}
+              </div>
               <p className="kh-muted">Punkte erreicht. Das Ergebnis wurde gespeichert.</p>
-              <button className="btn primary" onClick={() => { setActive(null); void load(); }}>Fertig</button>
+              <button
+                className="btn primary"
+                onClick={() => {
+                  setActive(null);
+                  void load();
+                }}
+              >
+                Fertig
+              </button>
             </div>
           </div>
         ) : (
@@ -74,7 +100,10 @@ export default function QuizPage() {
             <div className="panel-body">
               {questions.map((q, i) => (
                 <div key={q.id} className="question">
-                  <div className="q">{i + 1}. {q.text} {q.type === 'multiple' && <span className="kh-muted">(Mehrfachauswahl)</span>}</div>
+                  <div className="q">
+                    {i + 1}. {q.text}{' '}
+                    {q.type === 'multiple' && <span className="kh-muted">(Mehrfachauswahl)</span>}
+                  </div>
                   {q.options.map((o) => (
                     <label key={o.id} className="opt">
                       <input
@@ -89,7 +118,14 @@ export default function QuizPage() {
                 </div>
               ))}
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
-                <button className="btn primary" onClick={() => { void submit(); }}>Abschliessen &amp; auswerten</button>
+                <button
+                  className="btn primary"
+                  onClick={() => {
+                    void submit();
+                  }}
+                >
+                  Abschliessen &amp; auswerten
+                </button>
               </div>
             </div>
           </div>
@@ -103,7 +139,10 @@ export default function QuizPage() {
     <AppShell>
       <div className="breadcrumb">Meine Matrix / Quiz</div>
       <div className="page-head">
-        <div><h1>Quiz</h1><p>Verfügbare Quiz-Nachweise deiner Klassen</p></div>
+        <div>
+          <h1>Quiz</h1>
+          <p>Verfügbare Quiz-Nachweise deiner Klassen</p>
+        </div>
       </div>
 
       {error && <div className="error">{error}</div>}
@@ -112,7 +151,10 @@ export default function QuizPage() {
         {!list ? (
           <div className="loading">Lade Quiz…</div>
         ) : list.length === 0 ? (
-          <div className="empty"><span className="ic">❓</span><p>Aktuell sind keine Quiz verfügbar.</p></div>
+          <div className="empty">
+            <span className="ic">❓</span>
+            <p>Aktuell sind keine Quiz verfügbar.</p>
+          </div>
         ) : (
           <div className="evidence-list">
             {list.map((ev) => (
@@ -120,12 +162,24 @@ export default function QuizPage() {
                 <div>
                   <strong>{ev.title?.de}</strong>
                   <div className="evidence-meta">
-                    {(ev.config.questions?.length ?? 0)} Fragen
+                    {ev.config.questions?.length ?? 0} Fragen
                     {ev.maxPoints ? ` · max. ${ev.maxPoints} Punkte` : ''}
-                    {ev.dueAt && <> · {ev.isOverdue ? <span className="overdue">überfällig</span> : `fällig ${new Date(ev.dueAt).toLocaleDateString('de-CH')}`}</>}
+                    {ev.dueAt && (
+                      <>
+                        {' '}
+                        ·{' '}
+                        {ev.isOverdue ? (
+                          <span className="overdue">überfällig</span>
+                        ) : (
+                          `fällig ${new Date(ev.dueAt).toLocaleDateString('de-CH')}`
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
-                <button className="btn primary sm" onClick={() => startQuiz(ev)}>Starten</button>
+                <button className="btn primary sm" onClick={() => startQuiz(ev)}>
+                  Starten
+                </button>
               </div>
             ))}
           </div>

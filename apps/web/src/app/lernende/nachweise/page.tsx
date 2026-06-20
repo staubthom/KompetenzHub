@@ -16,7 +16,9 @@ export default function NachweisePage() {
       setError(String(e));
     }
   }
-  useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    void load();
+  }, []);
 
   async function handleUpload(ev: StudentEvidence, file: File) {
     setError('');
@@ -24,7 +26,10 @@ export default function NachweisePage() {
     try {
       // 1. presigned URL anfordern (Backend validiert Typ & Grösse)
       const { uploadUrl, key } = await evidence.requestUpload(
-        ev.id, file.name, file.type || 'application/octet-stream', file.size,
+        ev.id,
+        file.name,
+        file.type || 'application/octet-stream',
+        file.size,
       );
       // 2. Datei direkt an S3/MinIO laden (nicht über die API)
       const put = await fetch(uploadUrl, {
@@ -47,7 +52,10 @@ export default function NachweisePage() {
     <AppShell>
       <div className="breadcrumb">Meine Matrix / Meine Nachweise</div>
       <div className="page-head">
-        <div><h1>Meine Nachweise</h1><p>Datei-Nachweise hochladen und einreichen</p></div>
+        <div>
+          <h1>Meine Nachweise</h1>
+          <p>Datei-Nachweise hochladen und einreichen</p>
+        </div>
       </div>
 
       {error && <div className="error">{error}</div>}
@@ -56,7 +64,10 @@ export default function NachweisePage() {
         {!list ? (
           <div className="loading">Lade Nachweise…</div>
         ) : list.length === 0 ? (
-          <div className="empty"><span className="ic">📄</span><p>Aktuell sind keine Upload-Nachweise verfügbar.</p></div>
+          <div className="empty">
+            <span className="ic">📄</span>
+            <p>Aktuell sind keine Upload-Nachweise verfügbar.</p>
+          </div>
         ) : (
           <div className="evidence-list">
             {list.map((ev) => {
@@ -68,9 +79,23 @@ export default function NachweisePage() {
                     <div className="evidence-meta">
                       {types.length > 0 && `erlaubt: ${types.join(', ')}`}
                       {ev.config.maxFileSizeMb ? ` · max. ${ev.config.maxFileSizeMb} MB` : ''}
-                      {ev.dueAt && <> · {ev.isOverdue ? <span className="overdue">überfällig</span> : `fällig ${new Date(ev.dueAt).toLocaleDateString('de-CH')}`}</>}
+                      {ev.dueAt && (
+                        <>
+                          {' '}
+                          ·{' '}
+                          {ev.isOverdue ? (
+                            <span className="overdue">überfällig</span>
+                          ) : (
+                            `fällig ${new Date(ev.dueAt).toLocaleDateString('de-CH')}`
+                          )}
+                        </>
+                      )}
                     </div>
-                    {status[ev.id] && <div className="evidence-meta" style={{ color: 'var(--st-graded)' }}>{status[ev.id]}</div>}
+                    {status[ev.id] && (
+                      <div className="evidence-meta" style={{ color: 'var(--st-graded)' }}>
+                        {status[ev.id]}
+                      </div>
+                    )}
                   </div>
                   <label className="btn primary sm" style={{ cursor: 'pointer' }}>
                     Datei wählen

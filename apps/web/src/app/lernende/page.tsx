@@ -3,8 +3,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import AppShell from '../../components/AppShell';
 import {
-  classes, matrix as matrixApi,
-  type MyEnrollment, type MatrixResponse, type Band, type CompetenceField,
+  classes,
+  matrix as matrixApi,
+  type MyEnrollment,
+  type MatrixResponse,
+  type Band,
+  type CompetenceField,
 } from '../../lib/api';
 
 const LEVEL_LABEL: Record<string, string> = {
@@ -38,10 +42,15 @@ export default function LernendeMatrixPage() {
     }
   }, [selectedModuleId]);
 
-  useEffect(() => { void loadEnrollments(); }, [loadEnrollments]);
+  useEffect(() => {
+    void loadEnrollments();
+  }, [loadEnrollments]);
 
   useEffect(() => {
-    if (!selectedModuleId) { setMatrix(null); return; }
+    if (!selectedModuleId) {
+      setMatrix(null);
+      return;
+    }
     void (async () => {
       try {
         setMatrix(await matrixApi.get(selectedModuleId));
@@ -65,7 +74,7 @@ export default function LernendeMatrixPage() {
       setError(
         err.status === 410
           ? 'Dieser Beitrittscode ist abgelaufen.'
-          : err.body?.title ?? 'Beitritt fehlgeschlagen. Code prüfen.',
+          : (err.body?.title ?? 'Beitritt fehlgeschlagen. Code prüfen.'),
       );
     } finally {
       setJoining(false);
@@ -100,9 +109,13 @@ export default function LernendeMatrixPage() {
                 onClick={() => mod && setSelectedModuleId(mod.id)}
                 disabled={!mod}
               >
-                <div className="classcard-head"><strong>{e.class.name}</strong></div>
+                <div className="classcard-head">
+                  <strong>{e.class.name}</strong>
+                </div>
                 <div className="kh-muted" style={{ fontSize: 13 }}>
-                  {mod ? `Modul ${mod.number} · ${mod.title?.de ?? ''}` : 'noch kein Modul zugeordnet'}
+                  {mod
+                    ? `Modul ${mod.number} · ${mod.title?.de ?? ''}`
+                    : 'noch kein Modul zugeordnet'}
                 </div>
               </button>
             );
@@ -115,19 +128,30 @@ export default function LernendeMatrixPage() {
         <div className="panel">
           <div className="panel-head">
             <h2>
-              {matrix?.module ? `Modul ${matrix.module.number} · ${matrix.module.title?.de ?? ''}` : 'Kompetenzmatrix'}
+              {matrix?.module
+                ? `Modul ${matrix.module.number} · ${matrix.module.title?.de ?? ''}`
+                : 'Kompetenzmatrix'}
             </h2>
           </div>
           {bands.length === 0 ? (
-            <div className="empty"><span className="ic">▦</span><p>Für dieses Modul wurde noch keine Matrix erfasst.</p></div>
+            <div className="empty">
+              <span className="ic">▦</span>
+              <p>Für dieses Modul wurde noch keine Matrix erfasst.</p>
+            </div>
           ) : (
             <div className="matrix">
               <div className="matrix-header">
                 <div>Band</div>
-                {LEVELS.map((lvl) => <div key={lvl}>{LEVEL_LABEL[lvl]}</div>)}
+                {LEVELS.map((lvl) => (
+                  <div key={lvl}>{LEVEL_LABEL[lvl]}</div>
+                ))}
               </div>
               {bands.map((band) => (
-                <div key={band.id} className="matrix-row" style={{ gridTemplateColumns: '180px 1fr 1fr 1fr' }}>
+                <div
+                  key={band.id}
+                  className="matrix-row"
+                  style={{ gridTemplateColumns: '180px 1fr 1fr 1fr' }}
+                >
                   <div className="band-col">
                     <div className="band-code">{band.code}</div>
                     {band.description?.de && <div className="band-desc">{band.description.de}</div>}
@@ -156,12 +180,19 @@ export default function LernendeMatrixPage() {
 
       {/* Klasse beitreten (FA-23) */}
       <div className="panel">
-        <div className="panel-head"><h2>{hasClasses ? 'Weitere Klasse beitreten' : 'Klasse beitreten'}</h2></div>
+        <div className="panel-head">
+          <h2>{hasClasses ? 'Weitere Klasse beitreten' : 'Klasse beitreten'}</h2>
+        </div>
         <div className="panel-body">
           <p className="kh-muted" style={{ marginTop: 0 }}>
             Gib den Beitrittscode deiner Lehrperson ein.
           </p>
-          <form className="join-form" onSubmit={(e) => { void handleJoin(e); }}>
+          <form
+            className="join-form"
+            onSubmit={(e) => {
+              void handleJoin(e);
+            }}
+          >
             <input
               className="join-input"
               placeholder="z. B. A1B2C3"
@@ -178,7 +209,8 @@ export default function LernendeMatrixPage() {
 
       {!hasClasses && enrollments !== null && (
         <p className="kh-muted" style={{ textAlign: 'center' }}>
-          Du bist noch keiner Klasse beigetreten. Sobald du beigetreten bist, erscheint hier deine Kompetenzmatrix.
+          Du bist noch keiner Klasse beigetreten. Sobald du beigetreten bist, erscheint hier deine
+          Kompetenzmatrix.
         </p>
       )}
     </AppShell>
