@@ -79,7 +79,7 @@ export const matrix = {
   get: (moduleId: string) => apiFetch<MatrixResponse>(`/modules/${moduleId}/matrix`),
   createBand: (matrixId: string, data: { code: string; description?: { de: string }; actionGoalIds?: string[] }) =>
     apiFetch<Band>(`/matrices/${matrixId}/bands`, { method: 'POST', body: JSON.stringify(data) }),
-  updateBand: (id: string, data: Partial<{ code: string; description: Record<string,string>; weight: number; actionGoalIds: string[] }>) =>
+  updateBand: (id: string, data: Partial<{ code: string; description: Record<string,string>; weight: number; sortOrder: number; actionGoalIds: string[] }>) =>
     apiFetch<Band>(`/bands/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   removeBand: (id: string) => apiFetch<void>(`/bands/${id}`, { method: 'DELETE' }),
 };

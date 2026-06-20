@@ -506,7 +506,8 @@ a {
   font-weight: 600;
 }
 .form input,
-.form textarea {
+.form textarea,
+.form select {
   background: var(--bg);
   border: 1px solid var(--border);
   color: var(--fg);
@@ -516,9 +517,53 @@ a {
   font-family: inherit;
 }
 .form input:focus,
-.form textarea:focus {
+.form textarea:focus,
+.form select:focus {
   outline: 2px solid color-mix(in srgb, var(--brand-primary) 40%, transparent);
   border-color: var(--brand-primary);
+}
+
+/* Handlungsziel-Auswahl (Band ↔ HZ) */
+.goal-picker {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.goal-picker legend {
+  font-size: 12px;
+  color: var(--fg-muted);
+  font-weight: 700;
+  padding: 0 6px;
+}
+.goal-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--fg);
+  flex-direction: row;
+}
+.goal-check input {
+  width: auto;
+}
+.band-goals {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.goal-chip {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--fg-muted);
 }
 .form-actions {
   display: flex;
