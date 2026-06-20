@@ -1,11 +1,14 @@
 :root {
   --bg: #0f172a;
   --card: #1e293b;
+  --card2: #263248;
   --accent: #38bdf8;
   --text: #e2e8f0;
   --muted: #94a3b8;
   --up: #22c55e;
   --down: #ef4444;
+  --border: #334155;
+  --warn: #f59e0b;
 }
 
 * {
@@ -83,3 +86,131 @@ main {
   background: rgba(239, 68, 68, 0.15);
   color: var(--down);
 }
+
+/* ── KompetenzHub App-Styles ────────────────────────────────────── */
+
+.kh-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.kh-page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.kh-page-head h1 { margin: 0; font-size: 1.8rem; }
+
+.kh-breadcrumb { font-size: 0.85rem; color: var(--muted); }
+.kh-breadcrumb a { color: var(--accent); text-decoration: none; }
+.kh-muted { color: var(--muted); margin: 0; font-size: 0.9rem; }
+.kh-empty { padding: 1.5rem; text-align: center; }
+.kh-loading { padding: 3rem; text-align: center; color: var(--muted); }
+.kh-error { background: rgba(239,68,68,.15); color: var(--down); padding: 1rem 1.5rem; border-radius: 8px; }
+
+/* Panel */
+.kh-panel { background: var(--card); border-radius: 12px; overflow: hidden; }
+.kh-panel-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 1.5rem; border-bottom: 1px solid var(--border);
+}
+.kh-panel-head h2 { margin: 0; font-size: 1rem; }
+
+/* Buttons */
+.kh-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 0.45rem 1rem; border-radius: 8px; font-size: 0.85rem;
+  border: 1px solid var(--border); background: var(--card2);
+  color: var(--text); cursor: pointer; text-decoration: none;
+  transition: background .15s;
+}
+.kh-btn:hover { background: var(--border); }
+.kh-btn-primary { background: var(--accent); color: #0f172a; border-color: var(--accent); font-weight: 600; }
+.kh-btn-primary:hover { opacity: .9; background: var(--accent); }
+.kh-btn-danger { border-color: rgba(239,68,68,.4); color: var(--down); }
+.kh-btn-danger:hover { background: rgba(239,68,68,.15); }
+.kh-btn-sm { padding: .3rem .7rem; font-size: 0.8rem; }
+.kh-btn-icon { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 1.1rem; padding: 0 4px; }
+.kh-btn-icon:hover { color: var(--down); }
+
+/* Badges */
+.kh-badge {
+  display: inline-block; padding: 2px 10px; border-radius: 999px;
+  font-size: 0.78rem; font-weight: 600;
+}
+.kh-badge-draft { background: rgba(245,158,11,.15); color: var(--warn); }
+.kh-badge-published { background: rgba(34,197,94,.15); color: var(--up); }
+.kh-badge-archived { background: rgba(148,163,184,.15); color: var(--muted); }
+
+/* Table */
+.kh-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.kh-table th { text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border); }
+.kh-table td { padding: 0.9rem 1.5rem; border-bottom: 1px solid var(--border); }
+.kh-table tr:last-child td { border-bottom: none; }
+.kh-table tr:hover td { background: var(--card2); }
+.kh-mod-num { font-weight: 700; }
+.kh-actions { display: flex; gap: 6px; justify-content: flex-end; }
+
+/* Stats */
+.kh-stats { display: flex; gap: 1rem; }
+.kh-stat { background: var(--card); border-radius: 12px; padding: 1.2rem 1.8rem; flex: 1; }
+.kh-stat-v { font-size: 2rem; font-weight: 700; color: var(--accent); }
+.kh-stat-l { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+
+/* Form */
+.kh-form { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+.kh-form label { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: var(--muted); }
+.kh-form input, .kh-form textarea {
+  background: var(--bg); border: 1px solid var(--border); color: var(--text);
+  padding: 0.5rem 0.75rem; border-radius: 6px; font-size: 0.9rem; font-family: inherit;
+}
+.kh-form-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.kh-form-inline { flex-direction: row; align-items: center; padding: 0.75rem 1.5rem; gap: 8px; border-bottom: 1px solid var(--border); }
+.kh-form-inline input {
+  background: var(--bg); border: 1px solid var(--border); color: var(--text);
+  padding: 0.4rem 0.7rem; border-radius: 6px; font-size: 0.85rem;
+}
+
+/* Handlungsziele */
+.kh-hz-list { list-style: none; margin: 0; padding: 0; }
+.kh-hz-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.7rem 1.5rem; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
+.kh-hz-item:last-child { border-bottom: none; }
+.kh-hz-code { font-weight: 700; min-width: 2rem; color: var(--accent); }
+
+/* Matrix */
+.kh-matrix { display: flex; flex-direction: column; }
+.kh-matrix-header, .kh-matrix-row {
+  display: grid;
+  grid-template-columns: 180px 1fr 1fr 1fr 40px;
+  border-bottom: 1px solid var(--border);
+}
+.kh-matrix-header { background: var(--card2); padding: 0.5rem 0; }
+.kh-matrix-header > div { padding: 0.5rem 1rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.kh-matrix-row { min-height: 80px; }
+.kh-matrix-row:last-child { border-bottom: none; }
+.kh-matrix-band-col { padding: 0.8rem 1rem; border-right: 1px solid var(--border); }
+.kh-band-code { font-weight: 700; color: var(--accent); }
+.kh-band-desc { font-size: 0.8rem; margin-top: 2px; }
+.kh-matrix-level-col { border-right: 1px solid var(--border); }
+.kh-matrix-level-col:last-of-type { border-right: none; }
+.kh-matrix-act-col { padding: 0.5rem; display: flex; align-items: flex-start; justify-content: center; }
+.kh-field-cell { }
+.kh-field-btn {
+  display: block; width: 100%; height: 100%; min-height: 80px;
+  background: none; border: none; cursor: pointer; text-align: left;
+  padding: 0.8rem; color: var(--text); transition: background .1s;
+}
+.kh-field-btn:hover { background: rgba(56,189,248,.07); }
+.kh-descriptor-text { font-size: 0.82rem; line-height: 1.5; color: var(--text); }
+.kh-descriptor-empty { font-size: 0.8rem; color: var(--border); font-style: italic; }
+.kh-desc-editor { padding: 0.6rem; display: flex; flex-direction: column; gap: 6px; }
+.kh-desc-editor textarea {
+  background: var(--bg); border: 1px solid var(--accent); color: var(--text);
+  padding: 0.5rem; border-radius: 6px; font-size: 0.82rem; font-family: inherit; resize: vertical;
+}
+.kh-desc-editor-btns { display: flex; gap: 4px; }

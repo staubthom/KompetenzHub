@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 async function getHealth(): Promise<{
   status: string;
   db: string;
@@ -24,7 +26,7 @@ export default async function HomePage(): Promise<JSX.Element> {
       <h1 className="logo">
         Kompetenz<span>Hub</span>
       </h1>
-      <p className="tagline">Walking Skeleton · Sprint 0</p>
+      <p className="tagline">Sprint 2 · Matrix-Editor</p>
 
       <section className="card">
         <div className="status-row">
@@ -50,6 +52,12 @@ export default async function HomePage(): Promise<JSX.Element> {
           </div>
         ) : null}
       </section>
+
+      {systemOk && (
+        <Link href="/modules" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}>
+          → Module & Matrizen öffnen
+        </Link>
+      )}
     </main>
   );
 }
