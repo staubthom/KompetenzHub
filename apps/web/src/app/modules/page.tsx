@@ -24,7 +24,9 @@ export default function ModulesPage() {
     }
   }
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    void load();
+  }, []);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -72,7 +74,12 @@ export default function ModulesPage() {
 
       {creating && (
         <div className="panel">
-          <form className="form" onSubmit={(e) => { void handleCreate(e); }}>
+          <form
+            className="form"
+            onSubmit={(e) => {
+              void handleCreate(e);
+            }}
+          >
             <label>
               Modulnummer *
               <input
@@ -154,7 +161,9 @@ export default function ModulesPage() {
                           <button
                             className="btn-icon"
                             title="Löschen"
-                            onClick={() => { void handleDelete(m.id, m.number); }}
+                            onClick={() => {
+                              void handleDelete(m.id, m.number);
+                            }}
                           >
                             <TrashIcon />
                           </button>

@@ -22,9 +22,7 @@ export class ProblemExceptionFilter implements ExceptionFilter {
     const req = ctx.getRequest<Request>();
 
     const status =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+      exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
 
     let title = 'Internal Server Error';
     let detail: string | undefined;
@@ -44,15 +42,12 @@ export class ProblemExceptionFilter implements ExceptionFilter {
       detail = 'Ein unerwarteter Fehler ist aufgetreten.';
     }
 
-    res
-      .status(status)
-      .type('application/problem+json')
-      .json({
-        type: 'about:blank',
-        title,
-        status,
-        detail,
-        instance: req.originalUrl,
-      });
+    res.status(status).type('application/problem+json').json({
+      type: 'about:blank',
+      title,
+      status,
+      detail,
+      instance: req.originalUrl,
+    });
   }
 }

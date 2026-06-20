@@ -6,8 +6,14 @@ import { useRouter } from 'next/navigation';
 import AppShell from '../../../components/AppShell';
 import TrashIcon from '../../../components/TrashIcon';
 import {
-  modules, actionGoals, matrix as matrixApi, descriptors,
-  type ModuleDetail, type Band, type ActionGoal, type CompetenceField,
+  modules,
+  actionGoals,
+  matrix as matrixApi,
+  descriptors,
+  type ModuleDetail,
+  type Band,
+  type ActionGoal,
+  type CompetenceField,
 } from '../../../lib/api';
 
 const LEVEL_LABEL: Record<string, string> = {
@@ -26,7 +32,12 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
 
   // Modul-Bearbeitung
   const [editMod, setEditMod] = useState(false);
-  const [modForm, setModForm] = useState({ number: '', title: '', description: '', status: 'DRAFT' });
+  const [modForm, setModForm] = useState({
+    number: '',
+    title: '',
+    description: '',
+    status: 'DRAFT',
+  });
 
   // Handlungsziele
   const [addingGoal, setAddingGoal] = useState(false);
@@ -35,10 +46,21 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
 
   // Bänder
   const [addingBand, setAddingBand] = useState(false);
-  const [bandForm, setBandForm] = useState<{ code: string; description: string; goalIds: string[] }>({
-    code: '', description: '', goalIds: [],
+  const [bandForm, setBandForm] = useState<{
+    code: string;
+    description: string;
+    goalIds: string[];
+  }>({
+    code: '',
+    description: '',
+    goalIds: [],
   });
-  const [editBand, setEditBand] = useState<{ id: string; code: string; description: string; goalIds: string[] } | null>(null);
+  const [editBand, setEditBand] = useState<{
+    id: string;
+    code: string;
+    description: string;
+    goalIds: string[];
+  } | null>(null);
 
   // Deskriptoren
   const [editingDesc, setEditingDesc] = useState<{ fieldId: string; text: string } | null>(null);
@@ -52,7 +74,9 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
     }
   }, [id]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   function showError(e: unknown) {
     const err = e as { body?: { title?: string } };
@@ -103,7 +127,10 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
     e.preventDefault();
     if (!goalForm.code) return;
     try {
-      await actionGoals.create(id, { code: goalForm.code.trim(), text: { de: goalForm.text.trim() } });
+      await actionGoals.create(id, {
+        code: goalForm.code.trim(),
+        text: { de: goalForm.text.trim() },
+      });
       setAddingGoal(false);
       setGoalForm({ code: '', text: '' });
       await load();
@@ -279,9 +306,15 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <span className={`badge b-${mod.status.toLowerCase()}`}>
-            {mod.status === 'DRAFT' ? 'Entwurf' : mod.status === 'PUBLISHED' ? 'Veröffentlicht' : 'Archiviert'}
+            {mod.status === 'DRAFT'
+              ? 'Entwurf'
+              : mod.status === 'PUBLISHED'
+                ? 'Veröffentlicht'
+                : 'Archiviert'}
           </span>
-          <button className="btn sm" onClick={startEditMod}>Modul bearbeiten</button>
+          <button className="btn sm" onClick={startEditMod}>
+            Modul bearbeiten
+          </button>
         </div>
       </div>
 
@@ -290,8 +323,15 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
       {/* Modul bearbeiten (FA-01) */}
       {editMod && (
         <div className="panel">
-          <div className="panel-head"><h2>Modul bearbeiten</h2></div>
-          <form className="form" onSubmit={(e) => { void saveMod(e); }}>
+          <div className="panel-head">
+            <h2>Modul bearbeiten</h2>
+          </div>
+          <form
+            className="form"
+            onSubmit={(e) => {
+              void saveMod(e);
+            }}
+          >
             <label>
               Modulnummer
               <input
@@ -326,12 +366,22 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
               </select>
             </label>
             <div className="form-actions" style={{ justifyContent: 'space-between' }}>
-              <button type="button" className="btn danger" onClick={() => { void handleDeleteModule(); }}>
+              <button
+                type="button"
+                className="btn danger"
+                onClick={() => {
+                  void handleDeleteModule();
+                }}
+              >
                 <TrashIcon /> Modul löschen
               </button>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button type="button" className="btn" onClick={() => setEditMod(false)}>Abbrechen</button>
-                <button type="submit" className="btn primary">Speichern</button>
+                <button type="button" className="btn" onClick={() => setEditMod(false)}>
+                  Abbrechen
+                </button>
+                <button type="submit" className="btn primary">
+                  Speichern
+                </button>
               </div>
             </div>
           </form>
@@ -342,11 +392,18 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
       <div className="panel">
         <div className="panel-head">
           <h2>Handlungsziele</h2>
-          <button className="btn sm" onClick={() => setAddingGoal(true)}>+ HZ hinzufügen</button>
+          <button className="btn sm" onClick={() => setAddingGoal(true)}>
+            + HZ hinzufügen
+          </button>
         </div>
 
         {addingGoal && (
-          <form className="form-inline" onSubmit={(e) => { void handleAddGoal(e); }}>
+          <form
+            className="form-inline"
+            onSubmit={(e) => {
+              void handleAddGoal(e);
+            }}
+          >
             <input
               required
               placeholder="Code (z. B. 1)"
@@ -360,19 +417,31 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
               onChange={(e) => setGoalForm((f) => ({ ...f, text: e.target.value }))}
               style={{ flex: 1 }}
             />
-            <button type="submit" className="btn primary sm">Hinzufügen</button>
-            <button type="button" className="btn sm" onClick={() => setAddingGoal(false)}>✕</button>
+            <button type="submit" className="btn primary sm">
+              Hinzufügen
+            </button>
+            <button type="button" className="btn sm" onClick={() => setAddingGoal(false)}>
+              ✕
+            </button>
           </form>
         )}
 
         {goals.length === 0 ? (
-          <div className="empty"><p>Noch keine Handlungsziele. Füge das erste HZ hinzu.</p></div>
+          <div className="empty">
+            <p>Noch keine Handlungsziele. Füge das erste HZ hinzu.</p>
+          </div>
         ) : (
           <ul className="hz-list">
             {goals.map((g, i) => (
               <li key={g.id} className="hz-item">
                 {editGoal?.id === g.id ? (
-                  <form className="form-inline" style={{ flex: 1, padding: 0, border: 'none' }} onSubmit={(e) => { void saveEditGoal(e); }}>
+                  <form
+                    className="form-inline"
+                    style={{ flex: 1, padding: 0, border: 'none' }}
+                    onSubmit={(e) => {
+                      void saveEditGoal(e);
+                    }}
+                  >
                     <input
                       value={editGoal.code}
                       onChange={(e) => setEditGoal((d) => d && { ...d, code: e.target.value })}
@@ -383,17 +452,54 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
                       onChange={(e) => setEditGoal((d) => d && { ...d, text: e.target.value })}
                       style={{ flex: 1 }}
                     />
-                    <button type="submit" className="btn primary sm">Speichern</button>
-                    <button type="button" className="btn sm" onClick={() => setEditGoal(null)}>✕</button>
+                    <button type="submit" className="btn primary sm">
+                      Speichern
+                    </button>
+                    <button type="button" className="btn sm" onClick={() => setEditGoal(null)}>
+                      ✕
+                    </button>
                   </form>
                 ) : (
                   <>
                     <span className="hz-code">{g.code}</span>
                     <span style={{ flex: 1 }}>{g.text?.de ?? '—'}</span>
-                    <button className="btn-icon" title="Nach oben" disabled={i === 0} onClick={() => { void moveGoal(i, -1); }}>▲</button>
-                    <button className="btn-icon" title="Nach unten" disabled={i === goals.length - 1} onClick={() => { void moveGoal(i, 1); }}>▼</button>
-                    <button className="btn sm" onClick={() => setEditGoal({ id: g.id, code: g.code, text: g.text?.de ?? '' })}>Bearbeiten</button>
-                    <button className="btn-icon" title="Löschen" onClick={() => { void handleDeleteGoal(g.id); }}><TrashIcon /></button>
+                    <button
+                      className="btn-icon"
+                      title="Nach oben"
+                      disabled={i === 0}
+                      onClick={() => {
+                        void moveGoal(i, -1);
+                      }}
+                    >
+                      ▲
+                    </button>
+                    <button
+                      className="btn-icon"
+                      title="Nach unten"
+                      disabled={i === goals.length - 1}
+                      onClick={() => {
+                        void moveGoal(i, 1);
+                      }}
+                    >
+                      ▼
+                    </button>
+                    <button
+                      className="btn sm"
+                      onClick={() =>
+                        setEditGoal({ id: g.id, code: g.code, text: g.text?.de ?? '' })
+                      }
+                    >
+                      Bearbeiten
+                    </button>
+                    <button
+                      className="btn-icon"
+                      title="Löschen"
+                      onClick={() => {
+                        void handleDeleteGoal(g.id);
+                      }}
+                    >
+                      <TrashIcon />
+                    </button>
                   </>
                 )}
               </li>
@@ -406,17 +512,28 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
       <div className="panel">
         <div className="panel-head">
           <h2>Kompetenzmatrix</h2>
-          <button className="btn sm" onClick={() => setAddingBand(true)} disabled={goals.length === 0}>
+          <button
+            className="btn sm"
+            onClick={() => setAddingBand(true)}
+            disabled={goals.length === 0}
+          >
             + Band hinzufügen
           </button>
         </div>
 
         {goals.length === 0 && (
-          <div className="empty"><p>Lege zuerst Handlungsziele an – jedes Band muss mindestens eines referenzieren.</p></div>
+          <div className="empty">
+            <p>Lege zuerst Handlungsziele an – jedes Band muss mindestens eines referenzieren.</p>
+          </div>
         )}
 
         {addingBand && (
-          <form className="form" onSubmit={(e) => { void handleAddBand(e); }}>
+          <form
+            className="form"
+            onSubmit={(e) => {
+              void handleAddBand(e);
+            }}
+          >
             <div style={{ display: 'flex', gap: 8 }}>
               <label style={{ width: 130 }}>
                 Code
@@ -443,15 +560,32 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
                   <input
                     type="checkbox"
                     checked={bandForm.goalIds.includes(g.id)}
-                    onChange={() => toggleGoalId((ids) => setBandForm((f) => ({ ...f, goalIds: ids })), bandForm.goalIds, g.id)}
+                    onChange={() =>
+                      toggleGoalId(
+                        (ids) => setBandForm((f) => ({ ...f, goalIds: ids })),
+                        bandForm.goalIds,
+                        g.id,
+                      )
+                    }
                   />
                   <span className="hz-code">{g.code}</span> {g.text?.de ?? ''}
                 </label>
               ))}
             </fieldset>
             <div className="form-actions">
-              <button type="button" className="btn" onClick={() => { setAddingBand(false); setBandForm({ code: '', description: '', goalIds: [] }); }}>Abbrechen</button>
-              <button type="submit" className="btn primary">Band anlegen</button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  setAddingBand(false);
+                  setBandForm({ code: '', description: '', goalIds: [] });
+                }}
+              >
+                Abbrechen
+              </button>
+              <button type="submit" className="btn primary">
+                Band anlegen
+              </button>
             </div>
           </form>
         )}
@@ -465,7 +599,9 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
           <div className="matrix">
             <div className="matrix-header">
               <div>Band</div>
-              {LEVELS.map((lvl) => <div key={lvl}>{LEVEL_LABEL[lvl]}</div>)}
+              {LEVELS.map((lvl) => (
+                <div key={lvl}>{LEVEL_LABEL[lvl]}</div>
+              ))}
               <div></div>
             </div>
 
@@ -476,7 +612,9 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
                   {band.description?.de && <div className="band-desc">{band.description.de}</div>}
                   <div className="band-goals">
                     {band.actionGoals.map((a) => (
-                      <span key={a.actionGoal.id} className="goal-chip">HZ {a.actionGoal.code}</span>
+                      <span key={a.actionGoal.id} className="goal-chip">
+                        HZ {a.actionGoal.code}
+                      </span>
                     ))}
                   </div>
                 </div>
@@ -493,18 +631,32 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
                             autoFocus
                             rows={3}
                             value={editingDesc.text}
-                            onChange={(e) => setEditingDesc((d) => d && { ...d, text: e.target.value })}
+                            onChange={(e) =>
+                              setEditingDesc((d) => d && { ...d, text: e.target.value })
+                            }
                             placeholder="Ich kann …"
                           />
                           <div className="desc-editor-btns">
-                            <button className="btn primary sm" disabled={saving} onClick={() => { void saveDescriptor(); }}>
+                            <button
+                              className="btn primary sm"
+                              disabled={saving}
+                              onClick={() => {
+                                void saveDescriptor();
+                              }}
+                            >
                               {saving ? '…' : 'Speichern'}
                             </button>
-                            <button className="btn sm" onClick={() => setEditingDesc(null)}>✕</button>
+                            <button className="btn sm" onClick={() => setEditingDesc(null)}>
+                              ✕
+                            </button>
                           </div>
                         </div>
                       ) : (
-                        <button className="field-btn" title="Deskriptor bearbeiten" onClick={() => startEditDesc(field)}>
+                        <button
+                          className="field-btn"
+                          title="Deskriptor bearbeiten"
+                          onClick={() => startEditDesc(field)}
+                        >
                           <span className="field-code">{field.code}</span>
                           {field.descriptor?.text?.de ? (
                             <span className="descriptor-text">{field.descriptor.text.de}</span>
@@ -518,10 +670,42 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
                 })}
 
                 <div className="act-col">
-                  <button className="btn-icon" title="Nach oben" disabled={i === 0} onClick={() => { void moveBand(i, -1); }}>▲</button>
-                  <button className="btn-icon" title="Nach unten" disabled={i === bands.length - 1} onClick={() => { void moveBand(i, 1); }}>▼</button>
-                  <button className="btn-icon" title="Band bearbeiten" onClick={() => startEditBand(band)}>✎</button>
-                  <button className="btn-icon" title="Band löschen" onClick={() => { void handleDeleteBand(band.id); }}><TrashIcon /></button>
+                  <button
+                    className="btn-icon"
+                    title="Nach oben"
+                    disabled={i === 0}
+                    onClick={() => {
+                      void moveBand(i, -1);
+                    }}
+                  >
+                    ▲
+                  </button>
+                  <button
+                    className="btn-icon"
+                    title="Nach unten"
+                    disabled={i === bands.length - 1}
+                    onClick={() => {
+                      void moveBand(i, 1);
+                    }}
+                  >
+                    ▼
+                  </button>
+                  <button
+                    className="btn-icon"
+                    title="Band bearbeiten"
+                    onClick={() => startEditBand(band)}
+                  >
+                    ✎
+                  </button>
+                  <button
+                    className="btn-icon"
+                    title="Band löschen"
+                    onClick={() => {
+                      void handleDeleteBand(band.id);
+                    }}
+                  >
+                    <TrashIcon />
+                  </button>
                 </div>
               </div>
             ))}
@@ -532,8 +716,15 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
       {/* Band bearbeiten (FA-03) */}
       {editBand && (
         <div className="panel">
-          <div className="panel-head"><h2>Band {editBand.code} bearbeiten</h2></div>
-          <form className="form" onSubmit={(e) => { void saveEditBand(e); }}>
+          <div className="panel-head">
+            <h2>Band {editBand.code} bearbeiten</h2>
+          </div>
+          <form
+            className="form"
+            onSubmit={(e) => {
+              void saveEditBand(e);
+            }}
+          >
             <div style={{ display: 'flex', gap: 8 }}>
               <label style={{ width: 130 }}>
                 Code
@@ -557,18 +748,29 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
                   <input
                     type="checkbox"
                     checked={editBand.goalIds.includes(g.id)}
-                    onChange={() => setEditBand((d) => d && {
-                      ...d,
-                      goalIds: d.goalIds.includes(g.id) ? d.goalIds.filter((x) => x !== g.id) : [...d.goalIds, g.id],
-                    })}
+                    onChange={() =>
+                      setEditBand(
+                        (d) =>
+                          d && {
+                            ...d,
+                            goalIds: d.goalIds.includes(g.id)
+                              ? d.goalIds.filter((x) => x !== g.id)
+                              : [...d.goalIds, g.id],
+                          },
+                      )
+                    }
                   />
                   <span className="hz-code">{g.code}</span> {g.text?.de ?? ''}
                 </label>
               ))}
             </fieldset>
             <div className="form-actions">
-              <button type="button" className="btn" onClick={() => setEditBand(null)}>Abbrechen</button>
-              <button type="submit" className="btn primary">Speichern</button>
+              <button type="button" className="btn" onClick={() => setEditBand(null)}>
+                Abbrechen
+              </button>
+              <button type="submit" className="btn primary">
+                Speichern
+              </button>
             </div>
           </form>
         </div>
