@@ -178,6 +178,30 @@ export const assets = {
     }),
 };
 
+// Submissions / Bewertung (FA-50, 53, 60, 62, 65)
+export const submissions = {
+  list: (params?: { status?: string; classId?: string; evidenceId?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.status) q.set('status', params.status);
+    if (params?.classId) q.set('classId', params.classId);
+    if (params?.evidenceId) q.set('evidenceId', params.evidenceId);
+    const qs = q.toString();
+    return apiFetch<SubmissionListItem[]>(`/submissions${qs ? `?${qs}` : ''}`);
+  },
+  detail: (id: string) => apiFetch<SubmissionDetail>(`/submissions/${id}`),
+  history: (id: string) => apiFetch<HistoryEntry[]>(`/submissions/${id}/history`),
+  evaluate: (id: string, data: { points?: number; level?: string; feedback?: string }) =>
+    apiFetch<unknown>(`/submissions/${id}/evaluation`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  reject: (id: string, reason: string) =>
+    apiFetch<unknown>(`/submissions/${id}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    }),
+};
+
 /** Bild vom PC hochladen → liefert die einbettbare öffentliche URL. */
 export async function uploadRichTextImage(file: File): Promise<string> {
   const { uploadUrl, publicUrl } = await assets.imageUploadUrl(
@@ -252,6 +276,8 @@ export interface FieldEvidence {
   maxPoints: string | null;
   config: EvidenceConfig;
   _count?: { submissions: number };
+  /** Letzte Einreichung des/der aufrufenden Lernenden (für Chip-Status). */
+  submissions?: { status: string }[];
 }
 
 export interface Descriptor {
@@ -353,6 +379,15 @@ export interface Evidence {
   _count?: { submissions: number };
 }
 
+export interface LastSubmission {
+  id: string;
+  status: string;
+  points: string | null;
+  achievedLevel: string | null;
+  feedback: string | null;
+  rejectionReason: string | null;
+}
+
 export interface StudentEvidence {
   id: string;
   type: string;
@@ -362,5 +397,52 @@ export interface StudentEvidence {
   dueAt: string | null;
   isOverdue: boolean;
   config: EvidenceConfig;
-  lastSubmission: { id: string; status: string } | null;
+  lastSubmission: LastSubmission | null;
+}
+
+// ── Submissions / Bewertung ─────────────────────────────────────────
+
+export interface SubmissionListItem {
+  id: string;
+  status: string;
+  submittedAt: string | null;
+  points: string | null;
+  evidence: { id: string; title: Record<string, string>; maxPoints: string | null };
+  enrollment: { id: string; displayName: string; class: { id: string; name: string } | null };
+}
+
+export interface HistoryEntry {
+  id: string;
+  changeType: string;
+  achievedLevel: string | null;
+  points: string | null;
+  feedback: string | null;
+  source: string;
+  createdAt: string;
+  changedBy: { displayName: string };
+}
+
+export interface SubmissionDetail {
+  id: string;
+  status: string;
+  content: { kind?: string; text?: string; link?: string };
+  fileKey: string | null;
+  fileName: string | null;
+  fileUrl: string | null;
+  submittedAt: string | null;
+  points: string | null;
+  evidence: {
+    id: string;
+    title: Record<string, string>;
+    instructions: Record<string, string>;
+    maxPoints: string | null;
+  };
+  enrollment: { displayName: string; class: { id: string; name: string } | null };
+  evaluation: {
+    points: string | null;
+    achievedLevel: string | null;
+    feedback: string;
+    rejectionReason: string | null;
+  } | null;
+  history: HistoryEntry[];
 }

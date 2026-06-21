@@ -10,9 +10,17 @@ import { ModulesModule } from './modules/modules.module';
 import { MatrixModule } from './matrix/matrix.module';
 import { ClassesModule } from './classes/classes.module';
 import { EvidenceModule } from './evidence/evidence.module';
+import { SubmissionsModule } from './submissions/submissions.module';
 
 @Module({
-  imports: [AuthModule, ModulesModule, MatrixModule, ClassesModule, EvidenceModule],
+  imports: [
+    AuthModule,
+    ModulesModule,
+    MatrixModule,
+    ClassesModule,
+    EvidenceModule,
+    SubmissionsModule,
+  ],
   controllers: [HealthController],
   providers: [
     PrismaService,

@@ -1113,7 +1113,20 @@ a {
   font: inherit;
 }
 .evidence-chip-btn:hover {
-  background: color-mix(in srgb, var(--brand-primary) 20%, transparent);
+  filter: brightness(0.96);
+}
+/* Chip-Farbe je Einreichungsstatus (Lernenden-Matrix) */
+.chip-submitted {
+  background: var(--st-submitted-bg);
+  color: var(--st-submitted);
+}
+.chip-graded {
+  background: var(--st-graded-bg);
+  color: var(--st-graded);
+}
+.chip-rejected {
+  background: var(--st-rejected-bg);
+  color: var(--st-rejected);
 }
 .evidence-add {
   font-size: 11px;
@@ -1154,6 +1167,288 @@ a {
   cursor: pointer;
   padding: 0;
   font: inherit;
+}
+
+/* ===== Bewerten (Sprint 5) ===== */
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+}
+.fld {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Status der Einreichung (Lernenden-Sicht, FA-53) */
+.sub-status {
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  font-size: 14px;
+  border: 1px solid var(--border);
+}
+.sub-status.sub-submitted {
+  background: var(--st-submitted-bg);
+  color: var(--st-submitted);
+  border-color: color-mix(in srgb, var(--st-submitted) 30%, var(--border));
+}
+.sub-status.sub-graded {
+  background: var(--st-graded-bg);
+  color: var(--st-graded);
+  border-color: color-mix(in srgb, var(--st-graded) 30%, var(--border));
+}
+.sub-status.sub-rejected {
+  background: var(--st-rejected-bg);
+  color: var(--st-rejected);
+  border-color: color-mix(in srgb, var(--st-rejected) 30%, var(--border));
+}
+.sub-feedback {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--fg);
+}
+
+/* ===== Motivations-Animationen (Celebration) ===== */
+.celebrate {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+/* 0 Konfetti */
+.cf-piece {
+  position: absolute;
+  top: -20px;
+  width: 10px;
+  height: 16px;
+  border-radius: 2px;
+  animation-name: cf-fall;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+@keyframes cf-fall {
+  0% {
+    transform: translateY(-20px) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(105vh) rotate(720deg);
+    opacity: 0.9;
+  }
+}
+
+/* 1 Rakete */
+.cl-rocket {
+  position: absolute;
+  left: -10vw;
+  bottom: 12vh;
+  font-size: 64px;
+  animation: cl-rocket-fly 2.6s ease-in forwards;
+}
+.cl-rocket-trail {
+  position: absolute;
+  right: 100%;
+  top: 55%;
+  width: 90px;
+  height: 6px;
+  background: linear-gradient(90deg, transparent, #f59e0b, #dc2626);
+  border-radius: 4px;
+}
+@keyframes cl-rocket-fly {
+  0% {
+    transform: translate(0, 0) rotate(-10deg);
+  }
+  100% {
+    transform: translate(130vw, -80vh) rotate(-10deg);
+  }
+}
+
+/* 2 Sternschnuppen */
+.cl-star {
+  position: absolute;
+  left: -10vw;
+  width: 120px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #fff, var(--brand-primary));
+  box-shadow: 0 0 8px #fff;
+  animation: cl-shoot 1.4s ease-in forwards;
+}
+@keyframes cl-shoot {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(120vw, 40vh);
+    opacity: 0;
+  }
+}
+
+/* 3 Ballons */
+.cl-balloon {
+  position: absolute;
+  bottom: -60px;
+  font-size: 42px;
+  animation-name: cl-rise;
+  animation-timing-function: ease-in;
+  animation-fill-mode: forwards;
+}
+@keyframes cl-rise {
+  0% {
+    transform: translateY(0) rotate(-5deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-115vh) rotate(5deg);
+    opacity: 0.9;
+  }
+}
+
+/* 4 Emoji-Regen */
+.cl-emoji-drop {
+  position: absolute;
+  top: -40px;
+  animation-name: cf-fall;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+/* 5 Feuerwerk */
+.cl-firework {
+  position: absolute;
+  width: 0;
+  height: 0;
+  animation: cl-fw 1.4s ease-out forwards;
+}
+.cl-spark {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+@keyframes cl-fw {
+  0% {
+    transform: scale(0.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+/* 6 grosses Emoji */
+.cl-big-emoji {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 160px;
+  animation: cl-pop 1.6s ease-out forwards;
+}
+@keyframes cl-pop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  40% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  70% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.1);
+    opacity: 0;
+  }
+}
+
+/* 7 Herzen */
+.cl-heart {
+  position: absolute;
+  bottom: -40px;
+  animation-name: cl-rise;
+  animation-timing-function: ease-in;
+  animation-fill-mode: forwards;
+}
+
+/* 8 Trophäe */
+.cl-trophy {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 150px;
+  animation: cl-pop 2.4s ease-out forwards;
+}
+.cl-twinkle {
+  position: absolute;
+  font-size: 28px;
+  animation: cl-twinkle 1.6s ease-in-out infinite;
+}
+@keyframes cl-twinkle {
+  0%,
+  100% {
+    transform: scale(0.6);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+}
+
+/* 9 Super-Text */
+.cl-super {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+.cl-super-rays {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  background: repeating-conic-gradient(
+    from 0deg,
+    color-mix(in srgb, var(--brand-primary) 18%, transparent) 0deg 12deg,
+    transparent 12deg 24deg
+  );
+  border-radius: 50%;
+  animation: cl-spin 3s linear infinite;
+}
+@keyframes cl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.cl-super-text {
+  position: relative;
+  font-size: 64px;
+  font-weight: 800;
+  color: var(--brand-primary);
+  text-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  animation: cl-pop 2.4s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .celebrate {
+    display: none;
+  }
 }
 
 /* ===== Login ===== */

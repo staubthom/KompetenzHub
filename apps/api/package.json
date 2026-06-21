@@ -14,6 +14,7 @@
     "smoke:matrix": "node scripts/smoke-matrix.mjs",
     "smoke:classes": "node scripts/smoke-classes.mjs",
     "smoke:evidence": "node scripts/smoke-evidence.mjs",
+    "smoke:bewertung": "node scripts/smoke-bewertung.mjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "dotenv -e ../../.env -- prisma migrate dev",
     "prisma:seed": "dotenv -e ../../.env -- prisma db seed",

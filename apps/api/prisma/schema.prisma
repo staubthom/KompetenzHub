@@ -78,6 +78,25 @@ enum SubmissionStatus {
   EXPIRED
 }
 
+enum AchievedLevel {
+  NOT_MET
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum EvaluationChangeType {
+  CREATED
+  UPDATED
+  REJECTED
+  REOPENED
+}
+
+enum EvaluationSource {
+  TEACHER
+  AI
+}
+
 // ============================================================
 // Mandant & Benutzer
 // ============================================================
@@ -120,10 +139,12 @@ model User {
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
-  memberships  Membership[]
-  ownedModules Module[]     @relation("ModuleOwner")
-  ownedClasses Class[]      @relation("ClassOwner")
-  enrollments  Enrollment[]
+  memberships       Membership[]
+  ownedModules      Module[]            @relation("ModuleOwner")
+  ownedClasses      Class[]             @relation("ClassOwner")
+  enrollments       Enrollment[]
+  evaluations       Evaluation[]
+  evaluationChanges EvaluationHistory[]
 
   @@unique([authProvider, externalId])
 }
@@ -383,6 +404,45 @@ model Submission {
 
   evidence   CompetenceEvidence @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
   enrollment Enrollment         @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  evaluation Evaluation?
+  history    EvaluationHistory[]
 
   @@index([evidenceId, enrollmentId, attempt])
+}
+
+// ============================================================
+// Bewertung & Historie (Sprint 5)
+// ============================================================
+
+model Evaluation {
+  id              String         @id @default(uuid())
+  submissionId    String         @unique
+  evaluatorId     String
+  achievedLevel   AchievedLevel?
+  points          Decimal?       @db.Decimal(6, 2)
+  feedback        String         @default("")
+  rejectionReason String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  evaluator  User       @relation(fields: [evaluatorId], references: [id], onDelete: Cascade)
+}
+
+/// Append-only Bewertungshistorie (FA-65): jede Aktion erzeugt einen unveränderlichen Eintrag.
+model EvaluationHistory {
+  id            String               @id @default(uuid())
+  submissionId  String
+  changedById   String
+  changeType    EvaluationChangeType
+  achievedLevel AchievedLevel?
+  points        Decimal?             @db.Decimal(6, 2)
+  feedback      String?
+  source        EvaluationSource     @default(TEACHER)
+  createdAt     DateTime             @default(now())
+
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  changedBy  User       @relation(fields: [changedById], references: [id], onDelete: Cascade)
+
+  @@index([submissionId, createdAt])
 }
