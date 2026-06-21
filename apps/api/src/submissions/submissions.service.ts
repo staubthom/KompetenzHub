@@ -92,7 +92,20 @@ export class SubmissionsService {
     if (sub.fileKey) {
       fileUrl = await this.s3.presignDownload(sub.fileKey);
     }
-    return { ...sub, fileUrl };
+
+    // Mehrere Dateien/Screenshots aus content.files mit Download-Links versehen.
+    const content = (sub.content ?? {}) as {
+      files?: { key: string; name: string; kind: string }[];
+    };
+    const files = await Promise.all(
+      (content.files ?? []).map(async (f) => ({
+        name: f.name,
+        kind: f.kind,
+        url: await this.s3.presignDownload(f.key),
+      })),
+    );
+
+    return { ...sub, fileUrl, files };
   }
 
   /** Bewerten (FA-60): Punkte/Level/Feedback, Status → graded, Historie. */

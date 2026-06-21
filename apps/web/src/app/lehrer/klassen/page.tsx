@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import AppShell from '../../../components/AppShell';
 import TrashIcon from '../../../components/TrashIcon';
+import { useToast } from '../../../components/ToastProvider';
 import {
   classes,
   modules,
@@ -13,12 +14,12 @@ import {
 } from '../../../lib/api';
 
 export default function KlassenPage() {
+  const toast = useToast();
   const [list, setList] = useState<ClassSummary[] | null>(null);
   const [mods, setMods] = useState<ModuleSummary[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<ClassDetail | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
-  const [error, setError] = useState('');
 
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ name: '', moduleId: '' });
@@ -28,20 +29,23 @@ export default function KlassenPage() {
       const [cs, ms] = await Promise.all([classes.list(), modules.list()]);
       setList(cs);
       setMods(ms);
-    } catch (e: unknown) {
-      setError(String(e));
+    } catch {
+      toast.error('Modulanlässe konnten nicht geladen werden.');
     }
-  }, []);
+  }, [toast]);
 
-  const loadDetail = useCallback(async (id: string) => {
-    try {
-      const [d, m] = await Promise.all([classes.get(id), classes.members(id)]);
-      setDetail(d);
-      setMembers(m);
-    } catch (e: unknown) {
-      setError(String(e));
-    }
-  }, []);
+  const loadDetail = useCallback(
+    async (id: string) => {
+      try {
+        const [d, m] = await Promise.all([classes.get(id), classes.members(id)]);
+        setDetail(d);
+        setMembers(m);
+      } catch {
+        toast.error('Details konnten nicht geladen werden.');
+      }
+    },
+    [toast],
+  );
 
   useEffect(() => {
     void loadList();
@@ -52,7 +56,21 @@ export default function KlassenPage() {
 
   function showError(e: unknown) {
     const err = e as { body?: { title?: string } };
-    setError(err.body?.title ?? String(e));
+    toast.error(err.body?.title ?? 'Aktion fehlgeschlagen.');
+  }
+
+  function joinLink(code: string): string {
+    if (typeof window === 'undefined') return code;
+    return `${window.location.origin}/lernende?code=${code}`;
+  }
+
+  async function copy(text: string, label: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`${label} kopiert.`);
+    } catch {
+      toast.info(text);
+    }
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -129,8 +147,6 @@ export default function KlassenPage() {
           + Neuer Modulanlass
         </button>
       </div>
-
-      {error && <div className="error">{error}</div>}
 
       {creating && (
         <div className="panel">
@@ -244,12 +260,22 @@ export default function KlassenPage() {
               </select>
             </div>
 
-            {/* Beitrittscode */}
+            {/* Beitrittscode + Beitrittslink */}
             <div>
               <div className="field-label">Beitrittscode</div>
               <div className="joincode-row">
                 {detail.activeJoinCode ? (
-                  <span className="joincode">{detail.activeJoinCode.code}</span>
+                  <>
+                    <span className="joincode">{detail.activeJoinCode.code}</span>
+                    <button
+                      className="btn sm"
+                      onClick={() => {
+                        void copy(detail.activeJoinCode!.code, 'Code');
+                      }}
+                    >
+                      Code kopieren
+                    </button>
+                  </>
                 ) : (
                   <span className="kh-muted">Noch kein Code generiert.</span>
                 )}
@@ -262,9 +288,32 @@ export default function KlassenPage() {
                   {detail.activeJoinCode ? 'Code erneuern' : 'Code generieren'}
                 </button>
               </div>
+
+              {detail.activeJoinCode && (
+                <div style={{ marginTop: 10 }}>
+                  <div className="field-label">Beitrittslink</div>
+                  <div className="joincode-row">
+                    <input
+                      className="link-input"
+                      readOnly
+                      value={joinLink(detail.activeJoinCode.code)}
+                      onFocus={(e) => e.currentTarget.select()}
+                    />
+                    <button
+                      className="btn sm"
+                      onClick={() => {
+                        void copy(joinLink(detail.activeJoinCode!.code), 'Link');
+                      }}
+                    >
+                      Link kopieren
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <p className="kh-muted" style={{ fontSize: 12, marginTop: 6 }}>
-                Lernende treten unter „Modulanlass beitreten" mit diesem Code bei. Erneuern macht
-                den alten Code ungültig.
+                Lernende treten mit dem Code unter „Modulanlass beitreten" bei – oder direkt über
+                den Link. Erneuern macht den alten Code/Link ungültig.
               </p>
             </div>
           </div>

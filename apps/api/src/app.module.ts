@@ -11,6 +11,7 @@ import { MatrixModule } from './matrix/matrix.module';
 import { ClassesModule } from './classes/classes.module';
 import { EvidenceModule } from './evidence/evidence.module';
 import { SubmissionsModule } from './submissions/submissions.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { SubmissionsModule } from './submissions/submissions.module';
     ClassesModule,
     EvidenceModule,
     SubmissionsModule,
+    DashboardModule,
   ],
   controllers: [HealthController],
   providers: [

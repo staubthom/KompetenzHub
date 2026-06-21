@@ -80,12 +80,13 @@ export class EvidenceController {
     return this.evidence.getForStudent(id, user.tenantId, user.userId);
   }
 
-  /** Presigned-URL für direkten Datei-Upload anfordern. */
+  /** Presigned-URL für direkten Datei-/Screenshot-Upload anfordern. */
   @Post(':id/upload-url')
   @Roles(Role.LEARNER, Role.TEACHER, Role.ADMIN)
   requestUpload(
     @Param('id') id: string,
-    @Body() dto: { fileName: string; contentType: string; sizeBytes: number },
+    @Body()
+    dto: { fileName: string; contentType: string; sizeBytes: number; kind?: 'file' | 'screenshot' },
     @CurrentUser() user: RequestContext,
   ) {
     return this.evidence.requestUpload(
@@ -95,7 +96,24 @@ export class EvidenceController {
       dto?.fileName ?? 'datei',
       dto?.contentType ?? 'application/octet-stream',
       Number(dto?.sizeBytes ?? 0),
+      dto?.kind === 'screenshot' ? 'screenshot' : 'file',
     );
+  }
+
+  /** Zentrale Einreichung: Text + Link + Dateien/Screenshots zusammen. */
+  @Post(':id/submit')
+  @Roles(Role.LEARNER, Role.TEACHER, Role.ADMIN)
+  submit(
+    @Param('id') id: string,
+    @Body()
+    dto: {
+      text?: string;
+      link?: string;
+      files?: { key: string; name: string; kind: 'file' | 'screenshot' }[];
+    },
+    @CurrentUser() user: RequestContext,
+  ) {
+    return this.evidence.submit(id, user.tenantId, user.userId, dto);
   }
 
   /** Datei-Upload bestätigen → Einreichung. */

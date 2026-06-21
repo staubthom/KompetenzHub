@@ -65,6 +65,8 @@ check('Feld zugeordnet', ev.body?.fields?.length === 1);
 check('Rich-Text gespeichert', ev.body?.instructions?.de?.includes('<strong>'));
 check('Einreichungsarten default (file/link/text)',
   ev.body?.config?.allowFile && ev.body?.config?.allowLink && ev.body?.config?.allowText);
+check('Default: Einfügen gesperrt, Screenshot aus',
+  ev.body?.config?.allowPaste === false && ev.body?.config?.allowScreenshot === false);
 
 // ── Matrix liefert den Nachweis am Feld ───────────────────────────
 const matrix = await req('GET', `/modules/${moduleId}/matrix`, null, teacher);
@@ -147,9 +149,31 @@ check('Bild öffentlich abrufbar (GET ohne Auth) → 200', imgGet.status === 200
 const studentImgPost = await req('POST', '/assets/image-upload-url', { fileName: 'a.png', contentType: 'image/png' }, student);
 check('Student Bild-Upload → 403', studentImgPost.status === 403);
 
+// ── Zentrale Einreichung (Text+Link zusammen) + Screenshot-Erlaubnis ─
+const ev3 = await req('POST', '/evidence', {
+  moduleId, title: { de: 'Zentral-Einreichung' }, isVisible: true, fieldIds: [fieldId],
+  config: { allowScreenshot: true, allowPaste: true },
+}, teacher);
+const evId3 = ev3.body?.id;
+check('Nachweis mit allowScreenshot/allowPaste', ev3.body?.config?.allowScreenshot === true && ev3.body?.config?.allowPaste === true);
+const multi = await req('POST', `/evidence/${evId3}/submit`,
+  { text: 'Meine Begründung', link: 'https://example.com/x' }, student);
+check('Zentrale Einreichung (Text+Link) → submitted', multi.body?.status === 'SUBMITTED');
+const blocked3 = await req('POST', `/evidence/${evId3}/submit`, { text: 'Nochmal' }, student);
+check('Zentrale Einreichung erneut gesperrt → 409', blocked3.status === 409);
+
+// ── Lehrer-Anhang am Nachweis ─────────────────────────────────────
+const att = await req('POST', '/assets/attachment-upload-url', { fileName: 'vorlage.pdf', contentType: 'application/pdf' }, teacher);
+check('Anhang-Upload-URL → presigned', att.status === 201 && !!att.body?.key);
+await fetch(att.body.uploadUrl, { method: 'PUT', headers: { 'Content-Type': 'application/pdf' }, body: Buffer.from('%PDF vorlage') });
+await req('PATCH', `/evidence/${evId3}`, { config: { allowScreenshot: true, attachmentKey: att.body.key, attachmentName: 'vorlage.pdf' } }, teacher);
+const sView3 = await req('GET', `/evidence/student/${evId3}`, null, student);
+check('Lernende:r erhält Anhang-Download-URL', typeof sView3.body?.attachmentUrl === 'string' && sView3.body.attachmentUrl.startsWith('http'));
+
 // ── Aufräumen ─────────────────────────────────────────────────────
 await req('DELETE', `/evidence/${evId}`, null, teacher);
 await req('DELETE', `/evidence/${evId2}`, null, teacher);
+await req('DELETE', `/evidence/${evId3}`, null, teacher);
 await req('DELETE', `/classes/${cls.body.id}`, null, teacher);
 await req('DELETE', `/modules/${moduleId}`, null, teacher);
 

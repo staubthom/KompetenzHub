@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import AppShell from '../../components/AppShell';
 import TrashIcon from '../../components/TrashIcon';
+import { useToast } from '../../components/ToastProvider';
 import { modules, type ModuleSummary } from '../../lib/api';
 
 function statusLabel(s: string): string {
@@ -11,16 +12,16 @@ function statusLabel(s: string): string {
 }
 
 export default function ModulesPage() {
+  const toast = useToast();
   const [list, setList] = useState<ModuleSummary[] | null>(null);
-  const [error, setError] = useState('');
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ number: '', title: '', description: '' });
 
   async function load() {
     try {
       setList(await modules.list());
-    } catch (e: unknown) {
-      setError(String(e));
+    } catch {
+      toast.error('Module konnten nicht geladen werden.');
     }
   }
 
@@ -40,9 +41,10 @@ export default function ModulesPage() {
       setCreating(false);
       setForm({ number: '', title: '', description: '' });
       await load();
+      toast.success(`Modul ${form.number.trim()} erstellt.`);
     } catch (e: unknown) {
       const err = e as { body?: { title?: string } };
-      setError(err.body?.title ?? String(e));
+      toast.error(err.body?.title ?? 'Modul konnte nicht erstellt werden.');
     }
   }
 
@@ -51,9 +53,10 @@ export default function ModulesPage() {
     try {
       await modules.remove(id);
       await load();
+      toast.success(`Modul ${number} gelöscht.`);
     } catch (e: unknown) {
       const err = e as { body?: { title?: string } };
-      setError(err.body?.title ?? String(e));
+      toast.error(err.body?.title ?? 'Löschen fehlgeschlagen.');
     }
   }
 
@@ -69,8 +72,6 @@ export default function ModulesPage() {
           + Neues Modul
         </button>
       </div>
-
-      {error && <div className="error">{error}</div>}
 
       {creating && (
         <div className="panel">

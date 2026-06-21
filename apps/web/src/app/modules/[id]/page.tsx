@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import AppShell from '../../../components/AppShell';
 import TrashIcon from '../../../components/TrashIcon';
 import FieldEvidenceModal from '../../../components/FieldEvidenceModal';
+import { useToast } from '../../../components/ToastProvider';
 import {
   modules,
   actionGoals,
@@ -34,8 +35,9 @@ const LEVELS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'] as const;
 export default function ModuleDetailPage({ params }: { params: { id: string } }) {
   const id = params.id;
   const router = useRouter();
+  const toast = useToast();
   const [mod, setMod] = useState<ModuleDetail | null>(null);
-  const [error, setError] = useState('');
+  const [loadFailed, setLoadFailed] = useState(false);
 
   // Modul-Bearbeitung
   const [editMod, setEditMod] = useState(false);
@@ -80,9 +82,10 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
     try {
       setMod(await modules.get(id));
     } catch (e: unknown) {
-      setError(String(e));
+      setLoadFailed(true);
+      toast.error('Modul konnte nicht geladen werden.');
     }
-  }, [id]);
+  }, [id, toast]);
 
   useEffect(() => {
     void load();
@@ -90,7 +93,7 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
 
   function showError(e: unknown) {
     const err = e as { body?: { title?: string } };
-    setError(err.body?.title ?? String(e));
+    toast.error(err.body?.title ?? 'Aktion fehlgeschlagen.');
   }
 
   // ── Modul bearbeiten (FA-01) ──────────────────────────────────
@@ -201,7 +204,7 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
     e.preventDefault();
     if (!bandForm.code || !mod?.matrix) return;
     if (bandForm.goalIds.length === 0) {
-      setError('Ein Kompetenzband muss mindestens ein Handlungsziel referenzieren.');
+      toast.error('Ein Kompetenzband muss mindestens ein Handlungsziel referenzieren.');
       return;
     }
     try {
@@ -231,7 +234,7 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
     e.preventDefault();
     if (!editBand) return;
     if (editBand.goalIds.length === 0) {
-      setError('Ein Kompetenzband muss mindestens ein Handlungsziel referenzieren.');
+      toast.error('Ein Kompetenzband muss mindestens ein Handlungsziel referenzieren.');
       return;
     }
     try {
@@ -295,7 +298,9 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
   if (!mod) {
     return (
       <AppShell>
-        {error ? <div className="error">{error}</div> : <div className="loading">Lade Modul…</div>}
+        <div className="loading">
+          {loadFailed ? 'Modul konnte nicht geladen werden.' : 'Lade Modul…'}
+        </div>
       </AppShell>
     );
   }
@@ -327,8 +332,6 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
           </button>
         </div>
       </div>
-
-      {error && <div className="error">{error}</div>}
 
       {/* Modul bearbeiten (FA-01) */}
       {editMod && (

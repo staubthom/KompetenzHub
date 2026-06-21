@@ -152,21 +152,60 @@ export const evidence = {
   // Lernende
   studentList: () => apiFetch<StudentEvidence[]>('/evidence/student/list'),
   studentGet: (id: string) => apiFetch<StudentEvidence>(`/evidence/student/${id}`),
-  requestUpload: (id: string, fileName: string, contentType: string, sizeBytes: number) =>
+  requestUpload: (
+    id: string,
+    fileName: string,
+    contentType: string,
+    sizeBytes: number,
+    kind: 'file' | 'screenshot' = 'file',
+  ) =>
     apiFetch<{ uploadUrl: string; key: string }>(`/evidence/${id}/upload-url`, {
       method: 'POST',
-      body: JSON.stringify({ fileName, contentType, sizeBytes }),
+      body: JSON.stringify({ fileName, contentType, sizeBytes, kind }),
     }),
-  confirmUpload: (id: string, key: string, fileName: string) =>
-    apiFetch<{ submissionId: string; status: string }>(`/evidence/${id}/upload-confirm`, {
-      method: 'POST',
-      body: JSON.stringify({ key, fileName }),
-    }),
-  submitContent: (id: string, payload: { text?: string; link?: string }) =>
-    apiFetch<{ submissionId: string; status: string }>(`/evidence/${id}/submissions`, {
+  /** Zentrale Einreichung: Text + Link + Dateien/Screenshots zusammen. */
+  submit: (
+    id: string,
+    payload: {
+      text?: string;
+      link?: string;
+      files?: { key: string; name: string; kind: 'file' | 'screenshot' }[];
+    },
+  ) =>
+    apiFetch<{ submissionId: string; status: string }>(`/evidence/${id}/submit`, {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+};
+
+/** Lade eine Datei/Screenshot zur Einreichung hoch → liefert Storage-Key. */
+export async function uploadSubmissionFile(
+  evidenceId: string,
+  file: Blob,
+  fileName: string,
+  kind: 'file' | 'screenshot' = 'file',
+): Promise<string> {
+  const contentType =
+    file.type || (kind === 'screenshot' ? 'image/png' : 'application/octet-stream');
+  const { uploadUrl, key } = await evidence.requestUpload(
+    evidenceId,
+    fileName,
+    contentType,
+    file.size,
+    kind,
+  );
+  const put = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': contentType },
+    body: file,
+  });
+  if (!put.ok) throw new Error('Upload zum Speicher fehlgeschlagen.');
+  return key;
+}
+
+// Dashboard / Fortschritt (FA-90, 91)
+export const dashboard = {
+  progress: (classId: string) => apiFetch<ClassProgress>(`/classes/${classId}/progress`),
 };
 
 // Rich-Text-Assets (Bild-Upload vom PC)
@@ -176,7 +215,27 @@ export const assets = {
       method: 'POST',
       body: JSON.stringify({ fileName, contentType, sizeBytes }),
     }),
+  attachmentUploadUrl: (fileName: string, contentType: string) =>
+    apiFetch<{ uploadUrl: string; key: string }>('/assets/attachment-upload-url', {
+      method: 'POST',
+      body: JSON.stringify({ fileName, contentType }),
+    }),
 };
+
+/** Lehrer-Anhang hochladen → liefert {key, name}. */
+export async function uploadAttachment(file: File): Promise<{ key: string; name: string }> {
+  const { uploadUrl, key } = await assets.attachmentUploadUrl(
+    file.name,
+    file.type || 'application/octet-stream',
+  );
+  const put = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': file.type || 'application/octet-stream' },
+    body: file,
+  });
+  if (!put.ok) throw new Error('Anhang-Upload fehlgeschlagen.');
+  return { key, name: file.name };
+}
 
 // Submissions / Bewertung (FA-50, 53, 60, 62, 65)
 export const submissions = {
@@ -349,6 +408,10 @@ export interface EvidenceConfig {
   allowFile?: boolean;
   allowLink?: boolean;
   allowText?: boolean;
+  allowScreenshot?: boolean;
+  allowPaste?: boolean;
+  attachmentKey?: string;
+  attachmentName?: string;
 }
 
 export interface EvidenceInput {
@@ -397,6 +460,7 @@ export interface StudentEvidence {
   dueAt: string | null;
   isOverdue: boolean;
   config: EvidenceConfig;
+  attachmentUrl: string | null;
   lastSubmission: LastSubmission | null;
 }
 
@@ -422,13 +486,57 @@ export interface HistoryEntry {
   changedBy: { displayName: string };
 }
 
+// ── Dashboard ───────────────────────────────────────────────────────
+
+export interface ProgressCell {
+  status: 'OPEN' | 'SUBMITTED' | 'REJECTED' | 'GRADED';
+  points: number | null;
+  maxPoints: number | null;
+}
+export interface ProgressStudent {
+  enrollmentId: string;
+  displayName: string;
+  cells: Record<string, ProgressCell>;
+  gradedFields: number;
+  toGradeCount: number;
+  progress: number;
+}
+export interface ProgressField {
+  id: string;
+  code: string;
+  level: string;
+  evidenceCount: number;
+}
+export interface ClassProgress {
+  class: { id: string; name: string };
+  module: { id: string; number: string; title: Record<string, string> } | null;
+  studentCount: number;
+  toGrade: number;
+  graded: number;
+  avgProgress: number;
+  bands: {
+    id: string;
+    code: string;
+    description: Record<string, string>;
+    fields: ProgressField[];
+  }[];
+  fieldStats: { fieldId: string; gradedCount: number; percent: number }[];
+  students: ProgressStudent[];
+}
+
 export interface SubmissionDetail {
   id: string;
   status: string;
-  content: { kind?: string; text?: string; link?: string };
+  content: {
+    kind?: string;
+    text?: string;
+    link?: string;
+    files?: { key: string; name: string; kind: string }[];
+  };
   fileKey: string | null;
   fileName: string | null;
   fileUrl: string | null;
+  files?: { name: string; kind: string; url: string }[];
   submittedAt: string | null;
   points: string | null;
   evidence: {
