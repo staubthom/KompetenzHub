@@ -21,6 +21,31 @@ const LEVEL_LABEL: Record<string, string> = {
 };
 const LEVELS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'] as const;
 
+function chipIcon(status?: string): string {
+  switch (status) {
+    case 'GRADED':
+      return '✅';
+    case 'REJECTED':
+      return '↩';
+    case 'SUBMITTED':
+      return '⏳';
+    default:
+      return '📎';
+  }
+}
+function chipStatusLabel(status?: string): string {
+  switch (status) {
+    case 'GRADED':
+      return 'Bewertet';
+    case 'REJECTED':
+      return 'Zurückgewiesen';
+    case 'SUBMITTED':
+      return 'Eingereicht';
+    default:
+      return 'Nachweis öffnen';
+  }
+}
+
 export default function LernendeMatrixPage() {
   const [enrollments, setEnrollments] = useState<MyEnrollment[] | null>(null);
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
@@ -60,6 +85,15 @@ export default function LernendeMatrixPage() {
   useEffect(() => {
     void loadEnrollments();
   }, [loadEnrollments]);
+
+  async function reloadMatrix() {
+    if (!selectedModuleId) return;
+    try {
+      setMatrix(await matrixApi.get(selectedModuleId));
+    } catch (e: unknown) {
+      setError(String(e));
+    }
+  }
 
   useEffect(() => {
     if (!selectedModuleId) {
@@ -189,18 +223,21 @@ export default function LernendeMatrixPage() {
                             className="field-evidence"
                             style={{ borderTop: 'none', padding: '8px 0 0' }}
                           >
-                            {evidences.map((e) => (
-                              <button
-                                key={e.evidence.id}
-                                className="evidence-chip evidence-chip-btn"
-                                title={`Nachweis öffnen: ${e.evidence.title?.de}`}
-                                onClick={() => {
-                                  void openEvidenceDetail(e.evidence.id);
-                                }}
-                              >
-                                📎 {e.evidence.title?.de}
-                              </button>
-                            ))}
+                            {evidences.map((e) => {
+                              const st = e.evidence.submissions?.[0]?.status;
+                              return (
+                                <button
+                                  key={e.evidence.id}
+                                  className={`evidence-chip evidence-chip-btn${st ? ` chip-${st.toLowerCase()}` : ''}`}
+                                  title={`${chipStatusLabel(st)}: ${e.evidence.title?.de}`}
+                                  onClick={() => {
+                                    void openEvidenceDetail(e.evidence.id);
+                                  }}
+                                >
+                                  {chipIcon(st)} {e.evidence.title?.de}
+                                </button>
+                              );
+                            })}
                           </div>
                         )}
                       </div>
@@ -251,16 +288,29 @@ export default function LernendeMatrixPage() {
 
       {/* Nachweis einreichen (Modal) */}
       {openEvidence && (
-        <div className="modal-overlay" onClick={() => setOpenEvidence(null)}>
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            setOpenEvidence(null);
+            void reloadMatrix();
+          }}
+        >
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-head">
               <h2>{openEvidence.title?.de}</h2>
-              <button className="btn-icon" title="Schliessen" onClick={() => setOpenEvidence(null)}>
+              <button
+                className="btn-icon"
+                title="Schliessen"
+                onClick={() => {
+                  setOpenEvidence(null);
+                  void reloadMatrix();
+                }}
+              >
                 ✕
               </button>
             </div>
             <div className="modal-body">
-              <EvidenceSubmitPanel ev={openEvidence} />
+              <EvidenceSubmitPanel ev={openEvidence} onSubmitted={() => void reloadMatrix()} />
             </div>
           </div>
         </div>

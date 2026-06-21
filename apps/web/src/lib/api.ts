@@ -276,6 +276,8 @@ export interface FieldEvidence {
   maxPoints: string | null;
   config: EvidenceConfig;
   _count?: { submissions: number };
+  /** Letzte Einreichung des/der aufrufenden Lernenden (für Chip-Status). */
+  submissions?: { status: string }[];
 }
 
 export interface Descriptor {

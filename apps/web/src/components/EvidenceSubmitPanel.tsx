@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { evidence, type StudentEvidence } from '../lib/api';
+import Celebration, { randomEffect } from './Celebration';
 
 /**
  * Aufgabenstellung (Rich-Text) + Einreichung als Datei / Link / Text.
@@ -18,11 +19,19 @@ export default function EvidenceSubmitPanel({
   const [status, setStatus] = useState('');
   const [text, setText] = useState('');
   const [link, setLink] = useState('');
+  const [justSubmitted, setJustSubmitted] = useState(false);
+  const [celebration, setCelebration] = useState<number | null>(null);
   const cfg = ev.config ?? {};
 
   function showError(e: unknown) {
     const err = e as { body?: { title?: string }; message?: string };
     setError(err.body?.title ?? err.message ?? 'Aktion fehlgeschlagen.');
+  }
+
+  function celebrate() {
+    setJustSubmitted(true);
+    setCelebration(randomEffect());
+    onSubmitted?.();
   }
 
   async function uploadFile(file: File) {
@@ -43,7 +52,7 @@ export default function EvidenceSubmitPanel({
       if (!put.ok) throw new Error('Upload zum Speicher fehlgeschlagen.');
       await evidence.confirmUpload(ev.id, key, file.name);
       setStatus(`✓ "${file.name}" eingereicht`);
-      onSubmitted?.();
+      celebrate();
     } catch (e: unknown) {
       setStatus('');
       showError(e);
@@ -56,7 +65,7 @@ export default function EvidenceSubmitPanel({
       await evidence.submitContent(ev.id, { link: link.trim() });
       setStatus('✓ Link eingereicht');
       setLink('');
-      onSubmitted?.();
+      celebrate();
     } catch (e: unknown) {
       showError(e);
     }
@@ -68,7 +77,7 @@ export default function EvidenceSubmitPanel({
       await evidence.submitContent(ev.id, { text: text.trim() });
       setStatus('✓ Text eingereicht');
       setText('');
-      onSubmitted?.();
+      celebrate();
     } catch (e: unknown) {
       showError(e);
     }
@@ -81,6 +90,8 @@ export default function EvidenceSubmitPanel({
     REJECTED: 'Zurückgewiesen – bitte überarbeiten',
     OPEN: 'Offen',
   };
+  // Einreichen nur, wenn nichts Offenes existiert (oder zurückgewiesen) und nicht gerade eingereicht.
+  const canSubmit = !justSubmitted && (!sub || sub.status === 'REJECTED');
 
   return (
     <>
@@ -112,78 +123,94 @@ export default function EvidenceSubmitPanel({
         <div className="rte-content" dangerouslySetInnerHTML={{ __html: ev.instructions.de }} />
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 16 }}>
-        {cfg.allowFile !== false && (
-          <div>
-            <div className="field-label">Datei hochladen</div>
-            <label className="btn primary sm" style={{ cursor: 'pointer' }}>
-              Datei wählen
-              <input
-                type="file"
-                style={{ display: 'none' }}
-                accept={(cfg.allowedFileTypes ?? []).map((t) => `.${t}`).join(',')}
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) void uploadFile(f);
-                  e.target.value = '';
-                }}
-              />
-            </label>
-            <span className="kh-muted" style={{ marginLeft: 10, fontSize: 12 }}>
-              {(cfg.allowedFileTypes ?? []).length > 0 &&
-                `erlaubt: ${(cfg.allowedFileTypes ?? []).join(', ')}`}
-              {cfg.maxFileSizeMb ? ` · max. ${cfg.maxFileSizeMb} MB` : ''}
-            </span>
-          </div>
-        )}
+      {!canSubmit && (
+        <p className="kh-muted" style={{ marginTop: 16 }}>
+          {justSubmitted || sub?.status === 'SUBMITTED'
+            ? '⏳ Bereits eingereicht – eine erneute Einreichung ist erst nach einer Rückweisung durch die Lehrperson möglich.'
+            : sub?.status === 'GRADED'
+              ? '✓ Dieser Nachweis wurde bereits bewertet.'
+              : ''}
+        </p>
+      )}
 
-        {cfg.allowLink !== false && (
-          <div>
-            <div className="field-label">Link einreichen</div>
-            <div className="join-form">
-              <input
-                className="link-input"
-                placeholder="https://…"
-                value={link}
-                onChange={(e) => setLink(e.target.value)}
-              />
-              <button
-                className="btn primary"
-                disabled={!link.trim()}
-                onClick={() => {
-                  void submitLink();
-                }}
-              >
-                Link senden
-              </button>
+      {canSubmit && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 16 }}>
+          {cfg.allowFile !== false && (
+            <div>
+              <div className="field-label">Datei hochladen</div>
+              <label className="btn primary sm" style={{ cursor: 'pointer' }}>
+                Datei wählen
+                <input
+                  type="file"
+                  style={{ display: 'none' }}
+                  accept={(cfg.allowedFileTypes ?? []).map((t) => `.${t}`).join(',')}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) void uploadFile(f);
+                    e.target.value = '';
+                  }}
+                />
+              </label>
+              <span className="kh-muted" style={{ marginLeft: 10, fontSize: 12 }}>
+                {(cfg.allowedFileTypes ?? []).length > 0 &&
+                  `erlaubt: ${(cfg.allowedFileTypes ?? []).join(', ')}`}
+                {cfg.maxFileSizeMb ? ` · max. ${cfg.maxFileSizeMb} MB` : ''}
+              </span>
             </div>
-          </div>
-        )}
+          )}
 
-        {cfg.allowText !== false && (
-          <div>
-            <div className="field-label">Text einreichen</div>
-            <textarea
-              className="text-input"
-              rows={4}
-              placeholder="Deine Antwort …"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-            />
-            <div style={{ marginTop: 8 }}>
-              <button
-                className="btn primary"
-                disabled={!text.trim()}
-                onClick={() => {
-                  void submitText();
-                }}
-              >
-                Text senden
-              </button>
+          {cfg.allowLink !== false && (
+            <div>
+              <div className="field-label">Link einreichen</div>
+              <div className="join-form">
+                <input
+                  className="link-input"
+                  placeholder="https://…"
+                  value={link}
+                  onChange={(e) => setLink(e.target.value)}
+                />
+                <button
+                  className="btn primary"
+                  disabled={!link.trim()}
+                  onClick={() => {
+                    void submitLink();
+                  }}
+                >
+                  Link senden
+                </button>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+
+          {cfg.allowText !== false && (
+            <div>
+              <div className="field-label">Text einreichen</div>
+              <textarea
+                className="text-input"
+                rows={4}
+                placeholder="Deine Antwort …"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+              />
+              <div style={{ marginTop: 8 }}>
+                <button
+                  className="btn primary"
+                  disabled={!text.trim()}
+                  onClick={() => {
+                    void submitText();
+                  }}
+                >
+                  Text senden
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {celebration !== null && (
+        <Celebration effect={celebration} onDone={() => setCelebration(null)} />
+      )}
     </>
   );
 }

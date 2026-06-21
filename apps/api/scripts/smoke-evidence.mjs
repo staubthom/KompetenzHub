@@ -77,11 +77,16 @@ const sView = await req('GET', `/evidence/student/${evId}`, null, student);
 check('Student-Sicht → 200', sView.status === 200);
 check('Student sieht Rich-Text', sView.body?.instructions?.de?.includes('Dockerfile'));
 
-// ── FA-30: Datei-Upload (presigned + PUT + confirm) ───────────────
+// ── Validierung (noch keine Einreichung vorhanden) ────────────────
 const badType = await req('POST', `/evidence/${evId}/upload-url`,
   { fileName: 'schad.exe', contentType: 'application/octet-stream', sizeBytes: 1000 }, student);
 check('Upload falscher Typ → 422', badType.status === 422);
+const badLink = await req('POST', `/evidence/${evId}/submissions`, { link: 'kein-link' }, student);
+check('Ungültiger Link → 422', badLink.status === 422);
+const emptySub = await req('POST', `/evidence/${evId}/submissions`, {}, student);
+check('Leere Einreichung → 400', emptySub.status === 400);
 
+// ── FA-30: Datei-Upload (presigned + PUT + confirm) ───────────────
 const presign = await req('POST', `/evidence/${evId}/upload-url`,
   { fileName: 'nachweis.pdf', contentType: 'application/pdf', sizeBytes: 1024 }, student);
 check('Upload gültig → presigned URL', presign.status === 201 && presign.body?.uploadUrl?.startsWith('http'));
@@ -93,18 +98,18 @@ const confirm = await req('POST', `/evidence/${evId}/upload-confirm`,
   { key: presign.body.key, fileName: 'nachweis.pdf' }, student);
 check('Upload bestätigt → submitted', confirm.body?.status === 'SUBMITTED');
 
-// ── Einreichung per Link ──────────────────────────────────────────
-const badLink = await req('POST', `/evidence/${evId}/submissions`, { link: 'kein-link' }, student);
-check('Ungültiger Link → 422', badLink.status === 422);
+// ── Sperre: erneutes Einreichen vor Rückweisung nicht möglich ─────
+const blocked = await req('POST', `/evidence/${evId}/submissions`, { text: 'Nochmal' }, student);
+check('Erneute Einreichung gesperrt → 409', blocked.status === 409);
+
+// Lehrperson weist zurück → erneute Einreichung möglich
+await req('POST', `/submissions/${confirm.body.submissionId}/reject`, { reason: 'Bitte ergänzen.' }, teacher);
 const linkSub = await req('POST', `/evidence/${evId}/submissions`, { link: 'https://github.com/me/repo' }, student);
-check('Link-Einreichung → submitted', linkSub.body?.status === 'SUBMITTED');
+check('Nach Rückweisung Link-Einreichung → submitted', linkSub.body?.status === 'SUBMITTED');
 
-// ── Einreichung per Text ──────────────────────────────────────────
+await req('POST', `/submissions/${linkSub.body.submissionId}/reject`, { reason: 'Link defekt.' }, teacher);
 const textSub = await req('POST', `/evidence/${evId}/submissions`, { text: 'Meine Lösung als Text.' }, student);
-check('Text-Einreichung → submitted', textSub.body?.status === 'SUBMITTED');
-
-const emptySub = await req('POST', `/evidence/${evId}/submissions`, {}, student);
-check('Leere Einreichung → 400', emptySub.status === 400);
+check('Nach Rückweisung Text-Einreichung → submitted', textSub.body?.status === 'SUBMITTED');
 
 // ── FA-36: Sichtbarkeit ───────────────────────────────────────────
 await req('PATCH', `/evidence/${evId}`, { isVisible: false }, teacher);

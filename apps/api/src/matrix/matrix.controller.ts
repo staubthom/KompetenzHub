@@ -63,6 +63,13 @@ export class MatrixController {
                         sortOrder: true,
                         config: true,
                         _count: { select: { submissions: true } },
+                        // Letzte Einreichung des/der aufrufenden Lernenden (für Chip-Status)
+                        submissions: {
+                          where: { enrollment: { userId: user.userId } },
+                          orderBy: { createdAt: 'desc' },
+                          take: 1,
+                          select: { status: true },
+                        },
                       },
                     },
                   },

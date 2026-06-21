@@ -319,6 +319,16 @@ function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
                     max={max ?? undefined}
                     onChange={(e) => setPoints(e.target.value)}
                   />
+                  {max != null && (
+                    <button
+                      type="button"
+                      className="btn sm"
+                      title={`Volle Punktzahl (${max}) vergeben`}
+                      onClick={() => setPoints(String(max))}
+                    >
+                      Max ({max})
+                    </button>
+                  )}
                   {pct != null && <span className="badge b-published">{pct}%</span>}
                 </div>
               </label>

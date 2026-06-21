@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -207,7 +208,8 @@ export class EvidenceService {
     sizeBytes: number,
   ) {
     const ev = await this.loadVisibleEvidence(id, tenantId);
-    await this.resolveEnrollment(ev.moduleId, tenantId, userId);
+    const enrollment = await this.resolveEnrollment(ev.moduleId, tenantId, userId);
+    await this.assertCanSubmit(id, enrollment.id);
     const cfg = (ev.config ?? {}) as UploadConfig;
     if (cfg.allowFile === false) throw new BadRequestException('Datei-Upload ist nicht erlaubt.');
     this.validateFile(cfg, fileName, sizeBytes);
@@ -221,6 +223,7 @@ export class EvidenceService {
   async confirmUpload(id: string, tenantId: string, userId: string, key: string, fileName: string) {
     const ev = await this.loadVisibleEvidence(id, tenantId);
     const enrollment = await this.resolveEnrollment(ev.moduleId, tenantId, userId);
+    await this.assertCanSubmit(id, enrollment.id);
     const submission = await this.prisma.submission.create({
       data: {
         evidenceId: id,
@@ -249,6 +252,7 @@ export class EvidenceService {
     const text = payload.text?.trim();
     const link = payload.link?.trim();
     if (!text && !link) throw new BadRequestException('Text oder Link erforderlich.');
+    await this.assertCanSubmit(id, enrollment.id);
     if (link) {
       if (cfg.allowLink === false) throw new BadRequestException('Links sind nicht erlaubt.');
       if (!/^https?:\/\//i.test(link)) {
@@ -287,6 +291,24 @@ export class EvidenceService {
       throw new ForbiddenException('Keine aktive Klassenmitgliedschaft für diesen Nachweis.');
     }
     return enrollment;
+  }
+
+  /**
+   * Verhindert erneutes Einreichen, solange eine Einreichung offen/bewertet ist.
+   * Erlaubt ist eine neue Einreichung nur, wenn es keine gibt oder die letzte
+   * zurückgewiesen wurde.
+   */
+  private async assertCanSubmit(evidenceId: string, enrollmentId: string) {
+    const last = await this.prisma.submission.findFirst({
+      where: { evidenceId, enrollmentId },
+      orderBy: { createdAt: 'desc' },
+      select: { status: true },
+    });
+    if (last && last.status !== SubmissionStatus.REJECTED) {
+      throw new ConflictException(
+        'Bereits eingereicht. Eine erneute Einreichung ist erst nach einer Rückweisung möglich.',
+      );
+    }
   }
 
   private normalizeConfig(config: UploadConfig | undefined): UploadConfig {
