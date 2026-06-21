@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import RichTextEditor from './RichTextEditor';
 import TrashIcon from './TrashIcon';
-import { evidence, uploadRichTextImage, type Evidence } from '../lib/api';
+import { useToast } from './ToastProvider';
+import { evidence, uploadRichTextImage, uploadAttachment, type Evidence } from '../lib/api';
 
 interface Draft {
   title: string;
@@ -13,9 +14,13 @@ interface Draft {
   allowFile: boolean;
   allowLink: boolean;
   allowText: boolean;
+  allowScreenshot: boolean;
+  allowPaste: boolean;
   allowedFileTypes: string;
   maxFileSizeMb: string;
   maxPoints: string;
+  attachmentKey: string;
+  attachmentName: string;
 }
 
 function emptyDraft(): Draft {
@@ -27,9 +32,13 @@ function emptyDraft(): Draft {
     allowFile: true,
     allowLink: true,
     allowText: true,
+    allowScreenshot: false,
+    allowPaste: false,
     allowedFileTypes: 'pdf, png, jpg',
     maxFileSizeMb: '10',
     maxPoints: '',
+    attachmentKey: '',
+    attachmentName: '',
   };
 }
 
@@ -46,19 +55,20 @@ export default function FieldEvidenceModal({
   onClose: () => void;
   onChanged: () => void;
 }) {
+  const toast = useToast();
   const [list, setList] = useState<Evidence[] | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
-  const [error, setError] = useState('');
+  const [attBusy, setAttBusy] = useState(false);
 
   const load = useCallback(async () => {
     try {
       const all = await evidence.list(moduleId);
       setList(all.filter((e) => e.fields.some((f) => f.fieldId === fieldId)));
-    } catch (e: unknown) {
-      setError(String(e));
+    } catch {
+      toast.error('Nachweise konnten nicht geladen werden.');
     }
-  }, [moduleId, fieldId]);
+  }, [moduleId, fieldId, toast]);
 
   useEffect(() => {
     void load();
@@ -66,7 +76,21 @@ export default function FieldEvidenceModal({
 
   function showError(e: unknown) {
     const err = e as { body?: { title?: string } };
-    setError(err.body?.title ?? String(e));
+    toast.error(err.body?.title ?? 'Aktion fehlgeschlagen.');
+  }
+
+  async function uploadTeacherAttachment(file: File) {
+    if (!draft) return;
+    setAttBusy(true);
+    try {
+      const { key, name } = await uploadAttachment(file);
+      setDraft({ ...draft, attachmentKey: key, attachmentName: name });
+      toast.success(`Anhang „${name}" hochgeladen.`);
+    } catch (e: unknown) {
+      showError(e);
+    } finally {
+      setAttBusy(false);
+    }
   }
 
   function startCreate() {
@@ -84,16 +108,20 @@ export default function FieldEvidenceModal({
       allowFile: ev.config.allowFile !== false,
       allowLink: ev.config.allowLink !== false,
       allowText: ev.config.allowText !== false,
+      allowScreenshot: ev.config.allowScreenshot === true,
+      allowPaste: ev.config.allowPaste === true,
       allowedFileTypes: (ev.config.allowedFileTypes ?? []).join(', '),
       maxFileSizeMb: String(ev.config.maxFileSizeMb ?? 10),
       maxPoints: ev.maxPoints ?? '',
+      attachmentKey: ev.config.attachmentKey ?? '',
+      attachmentName: ev.config.attachmentName ?? '',
     });
   }
 
   async function save() {
     if (!draft) return;
     if (!draft.title.trim()) {
-      setError('Titel ist erforderlich.');
+      toast.error('Titel ist erforderlich.');
       return;
     }
     const payload = {
@@ -106,11 +134,16 @@ export default function FieldEvidenceModal({
         allowFile: draft.allowFile,
         allowLink: draft.allowLink,
         allowText: draft.allowText,
+        allowScreenshot: draft.allowScreenshot,
+        allowPaste: draft.allowPaste,
         allowedFileTypes: draft.allowedFileTypes
           .split(',')
           .map((s) => s.trim())
           .filter(Boolean),
         maxFileSizeMb: draft.maxFileSizeMb ? Number(draft.maxFileSizeMb) : undefined,
+        ...(draft.attachmentKey
+          ? { attachmentKey: draft.attachmentKey, attachmentName: draft.attachmentName }
+          : {}),
       },
     };
     try {
@@ -123,6 +156,7 @@ export default function FieldEvidenceModal({
       setEditId(null);
       await load();
       onChanged();
+      toast.success('Nachweis gespeichert.');
     } catch (e: unknown) {
       showError(e);
     }
@@ -177,8 +211,6 @@ export default function FieldEvidenceModal({
             ✕
           </button>
         </div>
-
-        {error && <div className="error">{error}</div>}
 
         <div className="modal-body">
           {!draft && (
@@ -302,8 +334,27 @@ export default function FieldEvidenceModal({
                     />
                     Text
                   </label>
+                  <label className="goal-check">
+                    <input
+                      type="checkbox"
+                      checked={draft.allowScreenshot}
+                      onChange={(e) => setDraft({ ...draft, allowScreenshot: e.target.checked })}
+                    />
+                    Screenshot
+                  </label>
                 </div>
               </div>
+
+              {draft.allowText && (
+                <label className="goal-check">
+                  <input
+                    type="checkbox"
+                    checked={draft.allowPaste}
+                    onChange={(e) => setDraft({ ...draft, allowPaste: e.target.checked })}
+                  />
+                  Einfügen (Paste) im Textfeld erlauben (Standard: aus – Lernende schreiben selbst)
+                </label>
+              )}
 
               {draft.allowFile && (
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -325,6 +376,39 @@ export default function FieldEvidenceModal({
                   </label>
                 </div>
               )}
+
+              {/* Lehrer-Anhang zum Download */}
+              <div>
+                <div className="field-label">Anhang für Lernende (optional)</div>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <label className="btn sm" style={{ cursor: 'pointer' }}>
+                    {attBusy ? '…' : '⬆ Datei anhängen'}
+                    <input
+                      type="file"
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) void uploadTeacherAttachment(f);
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
+                  {draft.attachmentName && (
+                    <span className="kh-muted" style={{ fontSize: 13 }}>
+                      📎 {draft.attachmentName}
+                      <button
+                        className="btn-icon"
+                        title="Anhang entfernen"
+                        onClick={() =>
+                          setDraft({ ...draft, attachmentKey: '', attachmentName: '' })
+                        }
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  )}
+                </div>
+              </div>
 
               <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
                 <label style={{ width: 120 }}>
@@ -359,7 +443,6 @@ export default function FieldEvidenceModal({
                   onClick={() => {
                     setDraft(null);
                     setEditId(null);
-                    setError('');
                   }}
                 >
                   Abbrechen

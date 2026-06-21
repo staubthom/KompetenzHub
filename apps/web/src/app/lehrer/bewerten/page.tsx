@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import AppShell from '../../../components/AppShell';
+import { useToast } from '../../../components/ToastProvider';
 import {
   submissions,
   classes,
@@ -36,7 +37,7 @@ export default function BewertenPage() {
   const [statusFilter, setStatusFilter] = useState('SUBMITTED');
   const [classFilter, setClassFilter] = useState('');
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [error, setError] = useState('');
+  const toast = useToast();
 
   async function loadList() {
     try {
@@ -46,8 +47,8 @@ export default function BewertenPage() {
           ...(classFilter ? { classId: classFilter } : {}),
         }),
       );
-    } catch (e: unknown) {
-      setError(String(e));
+    } catch {
+      toast.error('Einreichungen konnten nicht geladen werden.');
     }
   }
   useEffect(() => {
@@ -112,8 +113,6 @@ export default function BewertenPage() {
         </div>
       </div>
 
-      {error && <div className="error">{error}</div>}
-
       <div className="panel">
         {!list ? (
           <div className="loading">Lade Einreichungen…</div>
@@ -164,8 +163,9 @@ export default function BewertenPage() {
 }
 
 function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
+  const toast = useToast();
   const [sub, setSub] = useState<SubmissionDetail | null>(null);
-  const [error, setError] = useState('');
+  const [loadFailed, setLoadFailed] = useState(false);
   const [points, setPoints] = useState('');
   const [level, setLevel] = useState('');
   const [feedback, setFeedback] = useState('');
@@ -179,8 +179,9 @@ function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
       setPoints(d.evaluation?.points ?? '');
       setLevel(d.evaluation?.achievedLevel ?? '');
       setFeedback(d.evaluation?.feedback ?? '');
-    } catch (e: unknown) {
-      setError(String(e));
+    } catch {
+      setLoadFailed(true);
+      toast.error('Einreichung konnte nicht geladen werden.');
     }
   }
   useEffect(() => {
@@ -189,12 +190,11 @@ function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
 
   function showError(e: unknown) {
     const err = e as { body?: { title?: string } };
-    setError(err.body?.title ?? String(e));
+    toast.error(err.body?.title ?? 'Aktion fehlgeschlagen.');
   }
 
   async function save() {
     setBusy(true);
-    setError('');
     try {
       await submissions.evaluate(id, {
         points: points === '' ? undefined : Number(points),
@@ -202,6 +202,7 @@ function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
         feedback,
       });
       await load();
+      toast.success('Bewertung gespeichert.');
     } catch (e: unknown) {
       showError(e);
     } finally {
@@ -211,15 +212,15 @@ function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
 
   async function doReject() {
     if (!reason.trim()) {
-      setError('Begründung für die Rückweisung ist erforderlich.');
+      toast.error('Begründung für die Rückweisung ist erforderlich.');
       return;
     }
     setBusy(true);
-    setError('');
     try {
       await submissions.reject(id, reason.trim());
       setReason('');
       await load();
+      toast.info('Einreichung zurückgewiesen.');
     } catch (e: unknown) {
       showError(e);
     } finally {
@@ -228,7 +229,11 @@ function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
   }
 
   if (!sub) {
-    return error ? <div className="error">{error}</div> : <div className="loading">Lade…</div>;
+    return (
+      <div className="loading">
+        {loadFailed ? 'Einreichung konnte nicht geladen werden.' : 'Lade…'}
+      </div>
+    );
   }
 
   const max = sub.evidence.maxPoints ? Number(sub.evidence.maxPoints) : null;
@@ -258,8 +263,6 @@ function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
           ← Zurück
         </button>
       </div>
-
-      {error && <div className="error">{error}</div>}
 
       <div className="grid2">
         {/* Links: Einreichung */}

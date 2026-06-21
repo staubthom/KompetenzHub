@@ -16,6 +16,18 @@ interface UploadConfig {
   allowFile?: boolean;
   allowLink?: boolean;
   allowText?: boolean;
+  allowScreenshot?: boolean;
+  /** Einfügen (Paste) im Text-Feld erlauben (Default: nein). */
+  allowPaste?: boolean;
+  /** Vom Lehrer angehängte Datei zum Download. */
+  attachmentKey?: string;
+  attachmentName?: string;
+}
+
+interface SubmissionFile {
+  key: string;
+  name: string;
+  kind: 'file' | 'screenshot';
 }
 
 export interface CreateEvidenceDto {
@@ -163,9 +175,11 @@ export class EvidenceService {
       },
       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
     });
-    return evidences
+    const views = evidences
       .filter((e) => !e.availableFrom || e.availableFrom <= now)
       .map((e) => this.toStudentView(e, now));
+    await Promise.all(views.map((v) => this.attachDownloadUrl(v)));
+    return views;
   }
 
   async getForStudent(id: string, tenantId: string, userId: string) {
@@ -193,12 +207,22 @@ export class EvidenceService {
     if (ev.availableFrom && ev.availableFrom > now) {
       throw new ForbiddenException('Nachweis ist noch nicht freigeschaltet.');
     }
-    return this.toStudentView(ev, now);
+    const view = this.toStudentView(ev, now);
+    await this.attachDownloadUrl(view);
+    return view;
+  }
+
+  /** Presigned Download-URL für den Lehrer-Anhang ergänzen. */
+  private async attachDownloadUrl(view: { config: unknown; attachmentUrl: string | null }) {
+    const cfg = (view.config ?? {}) as UploadConfig;
+    if (cfg.attachmentKey) {
+      view.attachmentUrl = await this.s3.presignDownload(cfg.attachmentKey);
+    }
   }
 
   // ── Einreichung: Datei / Link / Text (FA-30/50) ───────────────
 
-  /** Presigned-URL für den direkten Datei-Upload anfordern. */
+  /** Presigned-URL für den direkten Upload (Datei oder Screenshot) anfordern. */
   async requestUpload(
     id: string,
     tenantId: string,
@@ -206,13 +230,23 @@ export class EvidenceService {
     fileName: string,
     contentType: string,
     sizeBytes: number,
+    kind: 'file' | 'screenshot' = 'file',
   ) {
     const ev = await this.loadVisibleEvidence(id, tenantId);
     const enrollment = await this.resolveEnrollment(ev.moduleId, tenantId, userId);
     await this.assertCanSubmit(id, enrollment.id);
     const cfg = (ev.config ?? {}) as UploadConfig;
-    if (cfg.allowFile === false) throw new BadRequestException('Datei-Upload ist nicht erlaubt.');
-    this.validateFile(cfg, fileName, sizeBytes);
+    if (kind === 'screenshot') {
+      if (cfg.allowScreenshot === false || cfg.allowScreenshot === undefined) {
+        throw new BadRequestException('Screenshot ist nicht erlaubt.');
+      }
+      if (cfg.maxFileSizeMb && sizeBytes > cfg.maxFileSizeMb * 1024 * 1024) {
+        throw new UnprocessableEntityException(`Bild zu gross (max. ${cfg.maxFileSizeMb} MB).`);
+      }
+    } else {
+      if (cfg.allowFile === false) throw new BadRequestException('Datei-Upload ist nicht erlaubt.');
+      this.validateFile(cfg, fileName, sizeBytes);
+    }
 
     const key = this.s3.buildKey(`evidence/${id}`, fileName);
     const url = await this.s3.presignUpload(key, contentType || 'application/octet-stream');
@@ -273,6 +307,51 @@ export class EvidenceService {
     return { submissionId: submission.id, status: submission.status };
   }
 
+  /**
+   * Zentrale Einreichung: kombiniert Text, Link und Dateien/Screenshots
+   * (bereits hochgeladene Keys) zu EINER Einreichung.
+   */
+  async submit(
+    id: string,
+    tenantId: string,
+    userId: string,
+    payload: { text?: string; link?: string; files?: SubmissionFile[] },
+  ) {
+    const ev = await this.loadVisibleEvidence(id, tenantId);
+    const enrollment = await this.resolveEnrollment(ev.moduleId, tenantId, userId);
+    const cfg = (ev.config ?? {}) as UploadConfig;
+
+    const text = payload.text?.trim();
+    const link = payload.link?.trim();
+    const files = Array.isArray(payload.files) ? payload.files : [];
+
+    if (!text && !link && files.length === 0) {
+      throw new BadRequestException('Mindestens Text, Link oder Datei erforderlich.');
+    }
+    if (text && cfg.allowText === false) throw new BadRequestException('Text ist nicht erlaubt.');
+    if (link) {
+      if (cfg.allowLink === false) throw new BadRequestException('Links sind nicht erlaubt.');
+      if (!/^https?:\/\//i.test(link)) {
+        throw new UnprocessableEntityException('Link muss mit http(s):// beginnen.');
+      }
+    }
+    await this.assertCanSubmit(id, enrollment.id);
+
+    const primary = files[0];
+    const submission = await this.prisma.submission.create({
+      data: {
+        evidenceId: id,
+        enrollmentId: enrollment.id,
+        status: SubmissionStatus.SUBMITTED,
+        content: { kind: 'multi', text, link, files } as unknown as Prisma.InputJsonValue,
+        fileKey: primary?.key ?? null,
+        fileName: primary?.name ?? null,
+        submittedAt: new Date(),
+      },
+    });
+    return { submissionId: submission.id, status: submission.status };
+  }
+
   // ── Helfer ────────────────────────────────────────────────────
 
   private async loadVisibleEvidence(id: string, tenantId: string) {
@@ -316,10 +395,15 @@ export class EvidenceService {
     return {
       allowedFileTypes: cfg.allowedFileTypes ?? [],
       maxFileSizeMb: cfg.maxFileSizeMb ?? 10,
-      // Standard: alle drei Einreichungsarten erlaubt
+      // Standard: Datei/Link/Text erlaubt, Screenshot optional
       allowFile: cfg.allowFile ?? true,
       allowLink: cfg.allowLink ?? true,
       allowText: cfg.allowText ?? true,
+      allowScreenshot: cfg.allowScreenshot ?? false,
+      // Einfügen standardmässig gesperrt (Lernende sollen selbst schreiben)
+      allowPaste: cfg.allowPaste ?? false,
+      ...(cfg.attachmentKey ? { attachmentKey: cfg.attachmentKey } : {}),
+      ...(cfg.attachmentName ? { attachmentName: cfg.attachmentName } : {}),
     };
   }
 
@@ -374,6 +458,7 @@ export class EvidenceService {
       isOverdue: !!ev.dueAt && ev.dueAt < now,
       config: ev.config,
       fields: ev.fields,
+      attachmentUrl: null as string | null,
       lastSubmission: sub
         ? {
             id: sub.id,

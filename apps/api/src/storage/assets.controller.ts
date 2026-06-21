@@ -32,4 +32,19 @@ export class AssetsController {
     const uploadUrl = await this.s3.presignUpload(key, dto?.contentType || 'image/png');
     return { uploadUrl, publicUrl: this.s3.publicUrl(key) };
   }
+
+  /** Presigned PUT für einen Lehrer-Anhang am Nachweis (privat). */
+  @Post('attachment-upload-url')
+  @Roles(Role.TEACHER, Role.ADMIN)
+  async attachmentUploadUrl(
+    @Body() dto: { fileName: string; contentType: string },
+  ): Promise<{ uploadUrl: string; key: string }> {
+    const fileName = dto?.fileName ?? 'anhang';
+    const key = this.s3.buildKey('attachments', fileName);
+    const uploadUrl = await this.s3.presignUpload(
+      key,
+      dto?.contentType || 'application/octet-stream',
+    );
+    return { uploadUrl, key };
+  }
 }

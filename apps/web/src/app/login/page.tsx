@@ -3,14 +3,15 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { devLogin } from '../../lib/api';
+import { useToast } from '../../components/ToastProvider';
 import { getUser, homePathForRole, type Role } from '../../lib/session';
 
 export default function LoginPage() {
   const router = useRouter();
+  const toast = useToast();
   const [role, setRole] = useState<Role>('TEACHER');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   // Bereits eingeloggt? → direkt weiterleiten
   useEffect(() => {
@@ -27,13 +28,12 @@ export default function LoginPage() {
   async function handleDevLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    setError('');
     try {
       const mail = email.trim() || (role === 'TEACHER' ? 'lehrperson@demo.ch' : 'lernende@demo.ch');
       const result = await devLogin(mail, role);
       router.replace(homePathForRole(result.user));
     } catch {
-      setError('Login fehlgeschlagen. Läuft die API?');
+      toast.error('Login fehlgeschlagen. Läuft die API?');
     } finally {
       setLoading(false);
     }
@@ -41,9 +41,9 @@ export default function LoginPage() {
 
   function handleOAuth(provider: 'microsoft' | 'google') {
     // FA-08: OIDC-Flow folgt (NextAuth.js, BFF /auth/exchange).
-    setError(
-      `${provider === 'microsoft' ? 'Microsoft' : 'Google'}-Login wird in einem ` +
-        `späteren Schritt aktiviert. Bitte vorerst den Dev-Login verwenden.`,
+    toast.info(
+      `${provider === 'microsoft' ? 'Microsoft' : 'Google'}-Login wird später aktiviert. ` +
+        `Bitte vorerst den Dev-Login verwenden.`,
     );
   }
 
@@ -54,8 +54,6 @@ export default function LoginPage() {
           Kompetenz<span>Hub</span>
         </h1>
         <p className="login-sub">Anmelden, um fortzufahren</p>
-
-        {error && <div className="error">{error}</div>}
 
         {/* OAuth-Provider (FA-08) */}
         <button className="provider-btn" onClick={() => handleOAuth('microsoft')} type="button">

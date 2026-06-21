@@ -3,33 +3,67 @@
 import { useEffect, useState } from 'react';
 import AppShell from '../../../components/AppShell';
 import EvidenceSubmitPanel from '../../../components/EvidenceSubmitPanel';
+import { useToast } from '../../../components/ToastProvider';
 import { evidence, type StudentEvidence } from '../../../lib/api';
 
-function statusLabel(ev: StudentEvidence): string {
+function statusBadge(ev: StudentEvidence) {
   const sub = ev.lastSubmission;
-  if (!sub) return 'offen';
+  if (!sub) return <span className="badge b-archived">offen</span>;
   switch (sub.status) {
     case 'GRADED':
-      return `✓ bewertet${sub.points != null ? ` · ${sub.points} P` : ''}`;
+      return (
+        <span className="badge b-published">
+          ✓ bewertet{sub.points != null ? ` · ${sub.points} P` : ''}
+        </span>
+      );
     case 'REJECTED':
-      return '↩ zurückgewiesen';
+      return <span className="badge b-rejected">↩ zurückgewiesen</span>;
     case 'SUBMITTED':
-      return '⏳ eingereicht';
+      return <span className="badge b-draft">⏳ eingereicht</span>;
     default:
-      return sub.status.toLowerCase();
+      return <span className="badge b-archived">{sub.status.toLowerCase()}</span>;
   }
 }
 
+function EvidenceRow({ ev, onOpen }: { ev: StudentEvidence; onOpen: () => void }) {
+  return (
+    <div className="evidence-item">
+      <div>
+        <strong>{ev.title?.de}</strong>
+        <div className="evidence-meta">
+          {ev.maxPoints ? `max. ${ev.maxPoints} Punkte` : 'ohne Punktewertung'}
+          {ev.dueAt && (
+            <>
+              {' · '}
+              {ev.isOverdue ? (
+                <span className="overdue">überfällig</span>
+              ) : (
+                `fällig ${new Date(ev.dueAt).toLocaleDateString('de-CH')}`
+              )}
+            </>
+          )}
+        </div>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {statusBadge(ev)}
+        <button className="btn primary sm" onClick={onOpen}>
+          Öffnen
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function NachweisePage() {
+  const toast = useToast();
   const [list, setList] = useState<StudentEvidence[] | null>(null);
-  const [error, setError] = useState('');
   const [active, setActive] = useState<StudentEvidence | null>(null);
 
   async function load() {
     try {
       setList(await evidence.studentList());
-    } catch (e: unknown) {
-      setError(String(e));
+    } catch {
+      toast.error('Nachweise konnten nicht geladen werden.');
     }
   }
   useEffect(() => {
@@ -76,12 +110,20 @@ export default function NachweisePage() {
         </div>
         <div className="panel">
           <div className="panel-body">
-            <EvidenceSubmitPanel ev={active} />
+            <EvidenceSubmitPanel ev={active} onSubmitted={() => void load()} />
           </div>
         </div>
       </AppShell>
     );
   }
+
+  // Aufteilen: zu erledigen (offen / zurückgewiesen) vs. erledigt (eingereicht / bewertet)
+  const todo = (list ?? []).filter(
+    (e) => !e.lastSubmission || e.lastSubmission.status === 'REJECTED',
+  );
+  const done = (list ?? []).filter(
+    (e) => e.lastSubmission && e.lastSubmission.status !== 'REJECTED',
+  );
 
   return (
     <AppShell>
@@ -89,49 +131,52 @@ export default function NachweisePage() {
       <div className="page-head">
         <div>
           <h1>Meine Nachweise</h1>
-          <p>Belege als Datei, Link oder Text einreichen</p>
+          <p>Belege als Datei, Link, Text oder Screenshot einreichen</p>
         </div>
       </div>
 
-      {error && <div className="error">{error}</div>}
-
-      <div className="panel">
-        {!list ? (
-          <div className="loading">Lade Nachweise…</div>
-        ) : list.length === 0 ? (
+      {!list ? (
+        <div className="loading">Lade Nachweise…</div>
+      ) : list.length === 0 ? (
+        <div className="panel">
           <div className="empty">
             <span className="ic">📄</span>
             <p>Aktuell sind keine Nachweise verfügbar.</p>
           </div>
-        ) : (
-          <div className="evidence-list">
-            {list.map((ev) => (
-              <div key={ev.id} className="evidence-item">
-                <div>
-                  <strong>{ev.title?.de}</strong>
-                  <div className="evidence-meta">
-                    {statusLabel(ev)}
-                    {ev.maxPoints ? ` · max. ${ev.maxPoints} Punkte` : ''}
-                    {ev.dueAt && (
-                      <>
-                        {' · '}
-                        {ev.isOverdue ? (
-                          <span className="overdue">überfällig</span>
-                        ) : (
-                          `fällig ${new Date(ev.dueAt).toLocaleDateString('de-CH')}`
-                        )}
-                      </>
-                    )}
-                  </div>
-                </div>
-                <button className="btn primary sm" onClick={() => setActive(ev)}>
-                  Öffnen
-                </button>
+        </div>
+      ) : (
+        <>
+          <div className="panel">
+            <div className="panel-head">
+              <h2>Zu erledigen ({todo.length})</h2>
+            </div>
+            {todo.length === 0 ? (
+              <div className="empty">
+                <p>Alles erledigt – aktuell nichts offen. 🎉</p>
               </div>
-            ))}
+            ) : (
+              <div className="evidence-list">
+                {todo.map((ev) => (
+                  <EvidenceRow key={ev.id} ev={ev} onOpen={() => setActive(ev)} />
+                ))}
+              </div>
+            )}
           </div>
-        )}
-      </div>
+
+          {done.length > 0 && (
+            <div className="panel">
+              <div className="panel-head">
+                <h2>Eingereicht &amp; bewertet ({done.length})</h2>
+              </div>
+              <div className="evidence-list">
+                {done.map((ev) => (
+                  <EvidenceRow key={ev.id} ev={ev} onOpen={() => setActive(ev)} />
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </AppShell>
   );
 }

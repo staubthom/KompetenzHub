@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AppShell from '../../components/AppShell';
+import { useToast } from '../../components/ToastProvider';
 import { classes, dashboard, type ClassSummary, type ClassProgress } from '../../lib/api';
 
 const LEVEL_SHORT: Record<string, string> = {
@@ -14,20 +15,20 @@ const LEVEL_SHORT: Record<string, string> = {
 
 export default function LehrerDashboardPage() {
   const router = useRouter();
+  const toast = useToast();
   const [list, setList] = useState<ClassSummary[] | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [progress, setProgress] = useState<ClassProgress | null>(null);
-  const [error, setError] = useState('');
 
   const loadList = useCallback(async () => {
     try {
       const cs = await classes.list();
       setList(cs);
       if (cs.length > 0 && !selectedId) setSelectedId(cs[0].id);
-    } catch (e: unknown) {
-      setError(String(e));
+    } catch {
+      toast.error('Modulanlässe konnten nicht geladen werden.');
     }
-  }, [selectedId]);
+  }, [selectedId, toast]);
 
   useEffect(() => {
     void loadList();
@@ -43,10 +44,10 @@ export default function LehrerDashboardPage() {
         setProgress(await dashboard.progress(selectedId));
       } catch (e: unknown) {
         const err = e as { body?: { title?: string } };
-        setError(err.body?.title ?? String(e));
+        toast.error(err.body?.title ?? 'Fortschritt konnte nicht geladen werden.');
       }
     })();
-  }, [selectedId]);
+  }, [selectedId, toast]);
 
   const fields =
     progress?.bands.flatMap((b) => b.fields.map((f) => ({ ...f, band: b.code }))) ?? [];
@@ -63,8 +64,6 @@ export default function LehrerDashboardPage() {
           + Modul &amp; Matrix
         </Link>
       </div>
-
-      {error && <div className="error">{error}</div>}
 
       {/* Modulanlass-Auswahl */}
       {list && list.length > 1 && (

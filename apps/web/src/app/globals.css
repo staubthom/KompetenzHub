@@ -427,6 +427,10 @@ a {
   background: var(--st-open-bg);
   color: var(--st-open);
 }
+.b-rejected {
+  background: var(--st-rejected-bg);
+  color: var(--st-rejected);
+}
 
 /* Empty state */
 .empty {
@@ -1553,6 +1557,131 @@ a {
   .celebrate {
     display: none;
   }
+}
+
+/* ===== Lernenden-Matrix (Tabelle mit Scroll) ===== */
+.smatrix {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  min-width: 760px;
+}
+.smatrix th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fg-muted);
+  font-weight: 700;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+.smatrix th:first-child {
+  width: 160px;
+}
+.smatrix td {
+  vertical-align: top;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+}
+.smatrix td:first-child {
+  border-left: none;
+}
+.smatrix-band .band-code {
+  font-weight: 700;
+  color: var(--brand-primary);
+}
+.smatrix-cell .field-evidence {
+  flex-wrap: wrap;
+}
+.smatrix-cell .evidence-chip {
+  white-space: normal;
+  text-align: left;
+  max-width: 100%;
+}
+
+/* Kopierschutz (Aufgabenstellung / Deskriptoren für Lernende) */
+.no-copy {
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
+/* ===== Toasts (globale Benachrichtigungen) ===== */
+.toast-container {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: min(380px, calc(100vw - 32px));
+}
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--fg-muted);
+  box-shadow: var(--shadow);
+  font-size: 14px;
+  cursor: pointer;
+  animation: toast-in 0.2s ease-out;
+}
+@keyframes toast-in {
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+.toast-success {
+  border-left-color: var(--st-graded);
+}
+.toast-success .toast-icon {
+  color: var(--st-graded);
+}
+.toast-error {
+  border-left-color: var(--st-rejected);
+}
+.toast-error .toast-icon {
+  color: var(--st-rejected);
+}
+.toast-info {
+  border-left-color: var(--brand-primary);
+}
+.toast-info .toast-icon {
+  color: var(--brand-primary);
+}
+.toast-icon {
+  font-weight: 700;
+  line-height: 1.4;
+}
+.toast-msg {
+  flex: 1;
+  color: var(--fg);
+  line-height: 1.4;
+}
+.toast-close {
+  background: none;
+  border: none;
+  color: var(--fg-muted);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0 2px;
+  line-height: 1.4;
+}
+.toast-close:hover {
+  color: var(--fg);
 }
 
 /* ===== Login ===== */
