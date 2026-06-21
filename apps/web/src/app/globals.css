@@ -536,17 +536,23 @@ a {
   font-weight: 700;
   padding: 0 6px;
 }
+/* Höhere Spezifität als ".form label" (column), damit Zeile statt Stapel gilt. */
+.form .goal-check,
 .goal-check {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 8px;
   font-size: 13px;
   font-weight: 400;
   color: var(--fg);
-  flex-direction: row;
 }
 .goal-check input {
   width: auto;
+  flex: none;
+}
+.goal-check .hz-code {
+  min-width: 0;
 }
 .band-goals {
   display: flex;
