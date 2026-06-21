@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import AppShell from '../../../components/AppShell';
-import { submissions, type SubmissionListItem, type SubmissionDetail } from '../../../lib/api';
+import {
+  submissions,
+  classes,
+  type SubmissionListItem,
+  type SubmissionDetail,
+  type ClassSummary,
+} from '../../../lib/api';
 
 const STATUS_LABEL: Record<string, string> = {
   OPEN: 'offen',
@@ -26,20 +32,37 @@ const LEVELS = [
 
 export default function BewertenPage() {
   const [list, setList] = useState<SubmissionListItem[] | null>(null);
+  const [classList, setClassList] = useState<ClassSummary[]>([]);
   const [statusFilter, setStatusFilter] = useState('SUBMITTED');
+  const [classFilter, setClassFilter] = useState('');
   const [activeId, setActiveId] = useState<string | null>(null);
   const [error, setError] = useState('');
 
   async function loadList() {
     try {
-      setList(await submissions.list(statusFilter ? { status: statusFilter } : undefined));
+      setList(
+        await submissions.list({
+          ...(statusFilter ? { status: statusFilter } : {}),
+          ...(classFilter ? { classId: classFilter } : {}),
+        }),
+      );
     } catch (e: unknown) {
       setError(String(e));
     }
   }
   useEffect(() => {
     void loadList();
-  }, [statusFilter]);
+  }, [statusFilter, classFilter]);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        setClassList(await classes.list());
+      } catch {
+        /* ignore */
+      }
+    })();
+  }, []);
 
   if (activeId) {
     return (
@@ -63,12 +86,29 @@ export default function BewertenPage() {
           <h1>Bewerten</h1>
           <p>Eingereichte Nachweise prüfen und bewerten</p>
         </div>
-        <div className="seg" role="group" aria-label="Filter">
-          {['SUBMITTED', 'GRADED', 'REJECTED'].map((s) => (
-            <button key={s} aria-pressed={statusFilter === s} onClick={() => setStatusFilter(s)}>
-              {STATUS_LABEL[s]}
-            </button>
-          ))}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          {classList.length > 0 && (
+            <select
+              className="inline-select"
+              style={{ minWidth: 180 }}
+              value={classFilter}
+              onChange={(e) => setClassFilter(e.target.value)}
+            >
+              <option value="">Alle Modulanlässe</option>
+              {classList.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          )}
+          <div className="seg" role="group" aria-label="Status">
+            {['SUBMITTED', 'GRADED', 'REJECTED'].map((s) => (
+              <button key={s} aria-pressed={statusFilter === s} onClick={() => setStatusFilter(s)}>
+                {STATUS_LABEL[s]}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

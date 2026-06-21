@@ -169,6 +169,11 @@ export const evidence = {
     }),
 };
 
+// Dashboard / Fortschritt (FA-90, 91)
+export const dashboard = {
+  progress: (classId: string) => apiFetch<ClassProgress>(`/classes/${classId}/progress`),
+};
+
 // Rich-Text-Assets (Bild-Upload vom PC)
 export const assets = {
   imageUploadUrl: (fileName: string, contentType: string, sizeBytes: number) =>
@@ -420,6 +425,44 @@ export interface HistoryEntry {
   source: string;
   createdAt: string;
   changedBy: { displayName: string };
+}
+
+// ── Dashboard ───────────────────────────────────────────────────────
+
+export interface ProgressCell {
+  status: 'OPEN' | 'SUBMITTED' | 'REJECTED' | 'GRADED';
+  points: number | null;
+  maxPoints: number | null;
+}
+export interface ProgressStudent {
+  enrollmentId: string;
+  displayName: string;
+  cells: Record<string, ProgressCell>;
+  gradedFields: number;
+  toGradeCount: number;
+  progress: number;
+}
+export interface ProgressField {
+  id: string;
+  code: string;
+  level: string;
+  evidenceCount: number;
+}
+export interface ClassProgress {
+  class: { id: string; name: string };
+  module: { id: string; number: string; title: Record<string, string> } | null;
+  studentCount: number;
+  toGrade: number;
+  graded: number;
+  avgProgress: number;
+  bands: {
+    id: string;
+    code: string;
+    description: Record<string, string>;
+    fields: ProgressField[];
+  }[];
+  fieldStats: { fieldId: string; gradedCount: number; percent: number }[];
+  students: ProgressStudent[];
 }
 
 export interface SubmissionDetail {
