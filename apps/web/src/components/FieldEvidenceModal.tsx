@@ -74,6 +74,15 @@ export default function FieldEvidenceModal({
     void load();
   }, [load]);
 
+  // Komplexes Modal: schliesst NICHT beim Klick daneben, aber via Escape.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
   function showError(e: unknown) {
     const err = e as { body?: { title?: string } };
     toast.error(err.body?.title ?? 'Aktion fehlgeschlagen.');
@@ -203,8 +212,8 @@ export default function FieldEvidenceModal({
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-overlay">
+      <div className="modal">
         <div className="modal-head">
           <h2>Kompetenznachweise · {fieldLabel}</h2>
           <button className="btn-icon" title="Schliessen" onClick={onClose}>

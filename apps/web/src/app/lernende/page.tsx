@@ -70,6 +70,21 @@ export default function LernendeMatrixPage() {
     }
   }
 
+  const closeEvidence = useCallback(() => {
+    setOpenEvidence(null);
+    void reloadMatrix();
+  }, []);
+
+  // Komplexes Modal: schliesst NICHT beim Klick daneben, aber via Escape.
+  useEffect(() => {
+    if (!openEvidence) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeEvidence();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [openEvidence, closeEvidence]);
+
   const loadEnrollments = useCallback(async () => {
     try {
       const mine = await classes.mine();
@@ -314,24 +329,11 @@ export default function LernendeMatrixPage() {
 
       {/* Nachweis einreichen (Modal) */}
       {openEvidence && (
-        <div
-          className="modal-overlay"
-          onClick={() => {
-            setOpenEvidence(null);
-            void reloadMatrix();
-          }}
-        >
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-overlay">
+          <div className="modal">
             <div className="modal-head">
               <h2>{openEvidence.title?.de}</h2>
-              <button
-                className="btn-icon"
-                title="Schliessen"
-                onClick={() => {
-                  setOpenEvidence(null);
-                  void reloadMatrix();
-                }}
-              >
+              <button className="btn-icon" title="Schliessen" onClick={closeEvidence}>
                 ✕
               </button>
             </div>
