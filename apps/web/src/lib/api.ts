@@ -218,6 +218,16 @@ export const ai = {
   status: () => apiFetch<{ configured: boolean; enabled: boolean }>('/ai/status'),
 };
 
+// Matrix-Export/-Import (FA-100)
+export const matrixIo = {
+  export: (matrixId: string) => apiFetch<MatrixExport>(`/matrices/${matrixId}/export`),
+  import: (data: MatrixExport) =>
+    apiFetch<{ moduleId: string; matrixId: string; number: string }>('/matrices/import', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+};
+
 // Lernpfade (FA-84)
 export const learningPaths = {
   list: (matrixId: string) => apiFetch<LearningPath[]>(`/matrices/${matrixId}/paths`),
@@ -370,6 +380,15 @@ export interface AiAssessment {
   model: string | null;
   createdAt: string;
 }
+
+// Generischer Matrix-Export (FA-100) – Struktur wird 1:1 wieder importiert.
+export type MatrixExport = {
+  schemaVersion: number;
+  kind: string;
+  exportedAt: string;
+  module: { number: string; title: Record<string, string>; [k: string]: unknown };
+  [k: string]: unknown;
+};
 
 export interface LearningPathStepDef {
   id: string;

@@ -20,6 +20,7 @@
     "smoke:ai-grading": "node scripts/smoke-ai-grading.mjs",
     "smoke:expert-talk": "node scripts/smoke-expert-talk.mjs",
     "smoke:learning-paths": "node scripts/smoke-learning-paths.mjs",
+    "smoke:matrix-io": "node scripts/smoke-matrix-io.mjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "dotenv -e ../../.env -- prisma migrate dev",
     "prisma:seed": "dotenv -e ../../.env -- prisma db seed",

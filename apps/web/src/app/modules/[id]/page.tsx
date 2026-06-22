@@ -11,6 +11,7 @@ import {
   modules,
   actionGoals,
   matrix as matrixApi,
+  matrixIo,
   descriptors,
   type ModuleDetail,
   type Band,
@@ -97,6 +98,24 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
   }
 
   // ── Modul bearbeiten (FA-01) ──────────────────────────────────
+  async function handleExport() {
+    if (!mod?.matrix) return;
+    try {
+      const data = await matrixIo.export(mod.matrix.id);
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `matrix-modul-${mod.number}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Matrix exportiert.');
+    } catch (e: unknown) {
+      const err = e as { body?: { title?: string } };
+      toast.error(err.body?.title ?? 'Export fehlgeschlagen.');
+    }
+  }
+
   function startEditMod() {
     if (!mod) return;
     setModForm({
@@ -330,6 +349,15 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
           <Link className="btn sm" href={`/modules/${id}/lernpfade`}>
             Lernpfade
           </Link>
+          <button
+            className="btn sm"
+            disabled={!mod.matrix}
+            onClick={() => {
+              void handleExport();
+            }}
+          >
+            ⬇ Export
+          </button>
           <button className="btn sm" onClick={startEditMod}>
             Modul bearbeiten
           </button>
