@@ -10,6 +10,7 @@ interface PendingFile {
   key: string;
   name: string;
   kind: 'file' | 'screenshot';
+  previewUrl?: string; // lokale Vorschau (Object-URL) für Bilder/Screenshots
 }
 
 /**
@@ -52,7 +53,8 @@ export default function EvidenceSubmitPanel({
     setBusy(true);
     try {
       const key = await uploadSubmissionFile(ev.id, file, file.name, 'file');
-      setFiles((f) => [...f, { key, name: file.name, kind: 'file' }]);
+      const previewUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined;
+      setFiles((f) => [...f, { key, name: file.name, kind: 'file', previewUrl }]);
       toast.success(`„${file.name}" hochgeladen.`);
     } catch (e: unknown) {
       showError(e);
@@ -86,8 +88,9 @@ export default function EvidenceSubmitPanel({
       if (!blob) throw new Error('Screenshot konnte nicht erstellt werden.');
       const name = `screenshot-${Date.now()}.png`;
       const key = await uploadSubmissionFile(ev.id, blob, name, 'screenshot');
-      setFiles((f) => [...f, { key, name, kind: 'screenshot' }]);
-      toast.success('Screenshot aufgenommen.');
+      const previewUrl = URL.createObjectURL(blob);
+      setFiles((f) => [...f, { key, name, kind: 'screenshot', previewUrl }]);
+      toast.success('Screenshot aufgenommen – du kannst ihn vor der Abgabe ansehen.');
     } catch (e: unknown) {
       const err = e as { name?: string };
       if (err?.name === 'NotAllowedError') return; // Nutzer hat abgebrochen
@@ -98,7 +101,11 @@ export default function EvidenceSubmitPanel({
   }
 
   function removeFile(key: string) {
-    setFiles((f) => f.filter((x) => x.key !== key));
+    setFiles((f) => {
+      const target = f.find((x) => x.key === key);
+      if (target?.previewUrl) URL.revokeObjectURL(target.previewUrl);
+      return f.filter((x) => x.key !== key);
+    });
   }
 
   async function submitAll() {
@@ -115,6 +122,7 @@ export default function EvidenceSubmitPanel({
       });
       setText('');
       setLink('');
+      files.forEach((f) => f.previewUrl && URL.revokeObjectURL(f.previewUrl));
       setFiles([]);
       setJustSubmitted(true);
       setCelebration(randomEffect());
@@ -184,10 +192,34 @@ export default function EvidenceSubmitPanel({
           {files.length > 0 && (
             <ul className="hz-list" style={{ border: '1px solid var(--border)', borderRadius: 8 }}>
               {files.map((f) => (
-                <li key={f.key} className="hz-item">
+                <li key={f.key} className="hz-item" style={{ alignItems: 'center' }}>
+                  {f.previewUrl ? (
+                    <a href={f.previewUrl} target="_blank" rel="noopener" title="Vorschau öffnen">
+                      <img
+                        src={f.previewUrl}
+                        alt={f.name}
+                        style={{
+                          width: 64,
+                          height: 48,
+                          objectFit: 'cover',
+                          borderRadius: 6,
+                          border: '1px solid var(--border)',
+                          display: 'block',
+                        }}
+                      />
+                    </a>
+                  ) : (
+                    <span>📄</span>
+                  )}
                   <span style={{ flex: 1 }}>
-                    {f.kind === 'screenshot' ? '🖼' : '📄'} {f.name}
+                    {f.kind === 'screenshot' ? '🖼 ' : ''}
+                    {f.name}
                   </span>
+                  {f.previewUrl && (
+                    <a className="btn sm" href={f.previewUrl} target="_blank" rel="noopener">
+                      Ansehen
+                    </a>
+                  )}
                   <button className="btn-icon" title="Entfernen" onClick={() => removeFile(f.key)}>
                     <TrashIcon />
                   </button>
