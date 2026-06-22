@@ -26,7 +26,12 @@ export class MatrixIoController {
   @Get('matrices/:id/export')
   @Roles(Role.TEACHER, Role.ADMIN)
   async export(@Param('id') id: string, @CurrentUser() user: RequestContext, @Res() res: Response) {
-    const { buffer, filename } = await this.io.exportZip(id, user.tenantId);
+    const { buffer, filename } = await this.io.exportZip(
+      id,
+      user.tenantId,
+      user.userId,
+      user.roles,
+    );
     res.set({
       'Content-Type': 'application/zip',
       'Content-Disposition': `attachment; filename="${filename}"`,

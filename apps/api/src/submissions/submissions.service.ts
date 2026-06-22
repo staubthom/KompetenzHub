@@ -34,17 +34,24 @@ export class SubmissionsService {
     private readonly ai: AiService,
   ) {}
 
-  /** Liste der Einreichungen im aktiven Tenant (Lehrperson/Admin), filterbar. */
+  /** Liste der Einreichungen – nur eigene Modulanlässe (Admin: alle), filterbar. */
   async list(
     tenantId: string,
+    userId: string,
+    roles: Role[],
     filter: { status?: SubmissionStatus; classId?: string; evidenceId?: string },
   ) {
+    const isAdmin = roles.includes(Role.ADMIN);
     const subs = await this.prisma.submission.findMany({
       where: {
         evidence: { tenantId },
         ...(filter.status ? { status: filter.status } : {}),
         ...(filter.evidenceId ? { evidenceId: filter.evidenceId } : {}),
-        ...(filter.classId ? { enrollment: { classId: filter.classId } } : {}),
+        // Lehrperson sieht nur Einreichungen aus eigenen Klassen/Modulanlässen.
+        enrollment: {
+          ...(filter.classId ? { classId: filter.classId } : {}),
+          ...(isAdmin ? {} : { class: { ownerId: userId } }),
+        },
       },
       select: {
         id: true,
@@ -75,7 +82,7 @@ export class SubmissionsService {
           select: {
             userId: true,
             displayName: true,
-            class: { select: { id: true, name: true } },
+            class: { select: { id: true, name: true, ownerId: true } },
           },
         },
         evaluation: true,
@@ -87,10 +94,11 @@ export class SubmissionsService {
     });
     if (!sub) throw new NotFoundException('Einreichung nicht gefunden.');
 
-    // Zugriff: Lehrperson/Admin im Tenant ODER der/die einreichende Lernende
-    const isTeacher = roles.includes(Role.TEACHER) || roles.includes(Role.ADMIN);
+    // Zugriff: Admin; ODER Lehrperson, der die Klasse gehört; ODER einreichende:r Lernende:r.
+    const isAdmin = roles.includes(Role.ADMIN);
+    const isOwningTeacher = roles.includes(Role.TEACHER) && sub.enrollment.class.ownerId === userId;
     const isOwner = sub.enrollment.userId === userId;
-    if (!isTeacher && !isOwner) {
+    if (!isAdmin && !isOwningTeacher && !isOwner) {
       throw new ForbiddenException('Kein Zugriff auf diese Einreichung.');
     }
 
@@ -115,8 +123,8 @@ export class SubmissionsService {
   }
 
   /** Bewerten (FA-60): Punkte/Level/Feedback, Status → graded, Historie. */
-  async evaluate(id: string, dto: EvaluateDto, tenantId: string, userId: string) {
-    const sub = await this.loadInTenant(id, tenantId);
+  async evaluate(id: string, dto: EvaluateDto, tenantId: string, userId: string, roles: Role[]) {
+    const sub = await this.loadInTenant(id, tenantId, userId, roles);
 
     if (dto.points !== undefined && dto.points !== null) {
       if (dto.points < 0)
@@ -174,10 +182,10 @@ export class SubmissionsService {
   }
 
   /** Zurückweisen (FA-62): Pflicht-Begründung, Status → rejected, Historie. */
-  async reject(id: string, reason: string, tenantId: string, userId: string) {
+  async reject(id: string, reason: string, tenantId: string, userId: string, roles: Role[]) {
     const trimmed = reason?.trim();
     if (!trimmed) throw new UnprocessableEntityException('Begründung ist erforderlich.');
-    await this.loadInTenant(id, tenantId);
+    await this.loadInTenant(id, tenantId, userId, roles);
 
     const evaluation = await this.prisma.evaluation.upsert({
       where: { submissionId: id },
@@ -212,11 +220,12 @@ export class SubmissionsService {
   async history(id: string, tenantId: string, userId: string, roles: Role[]) {
     const sub = await this.prisma.submission.findFirst({
       where: { id, evidence: { tenantId } },
-      select: { enrollment: { select: { userId: true } } },
+      select: { enrollment: { select: { userId: true, class: { select: { ownerId: true } } } } },
     });
     if (!sub) throw new NotFoundException('Einreichung nicht gefunden.');
-    const isTeacher = roles.includes(Role.TEACHER) || roles.includes(Role.ADMIN);
-    if (!isTeacher && sub.enrollment.userId !== userId) {
+    const isAdmin = roles.includes(Role.ADMIN);
+    const isOwningTeacher = roles.includes(Role.TEACHER) && sub.enrollment.class.ownerId === userId;
+    if (!isAdmin && !isOwningTeacher && sub.enrollment.userId !== userId) {
       throw new ForbiddenException('Kein Zugriff.');
     }
     return this.prisma.evaluationHistory.findMany({
@@ -232,7 +241,8 @@ export class SubmissionsService {
    * FA-70: Erzeugt einen KI-Bewertungsvorschlag (Punkte/Level/Feedback + Begründung
    * je Kriterium) und speichert ihn. Reiner Vorschlag – keine automatische Bewertung.
    */
-  async generateAssessment(id: string, tenantId: string, userId: string) {
+  async generateAssessment(id: string, tenantId: string, userId: string, roles: Role[]) {
+    await this.detailGuard(id, tenantId, userId, roles, true);
     const ctx = await this.loadAiContext(id, tenantId);
     const maxPoints = ctx.maxPoints;
 
@@ -309,7 +319,8 @@ export class SubmissionsService {
    * FA-72: Erzeugt einen editierbaren KI-Feedback-Entwurf (wird nicht als Bewertung
    * gespeichert; die Lehrperson übernimmt/überarbeitet ihn beim Bewerten).
    */
-  async generateFeedback(id: string, tenantId: string, userId: string) {
+  async generateFeedback(id: string, tenantId: string, userId: string, roles: Role[]) {
+    await this.detailGuard(id, tenantId, userId, roles, true);
     const ctx = await this.loadAiContext(id, tenantId);
     const system =
       'Du bist eine wohlwollende Lehrperson an einer Schweizer Berufsfachschule. ' +
@@ -334,12 +345,20 @@ export class SubmissionsService {
 
   // ── Helfer ────────────────────────────────────────────────────
 
-  private async loadInTenant(id: string, tenantId: string) {
+  private async loadInTenant(id: string, tenantId: string, userId: string, roles: Role[]) {
     const sub = await this.prisma.submission.findFirst({
       where: { id, evidence: { tenantId } },
-      include: { evidence: { select: { maxPoints: true } } },
+      include: {
+        evidence: { select: { maxPoints: true } },
+        enrollment: { select: { class: { select: { ownerId: true } } } },
+      },
     });
     if (!sub) throw new NotFoundException('Einreichung nicht gefunden.');
+    const isAdmin = roles.includes(Role.ADMIN);
+    const isOwningTeacher = roles.includes(Role.TEACHER) && sub.enrollment.class.ownerId === userId;
+    if (!isAdmin && !isOwningTeacher) {
+      throw new ForbiddenException('Kein Zugriff auf diese Einreichung.');
+    }
     return sub;
   }
 
@@ -371,12 +390,13 @@ export class SubmissionsService {
   ) {
     const sub = await this.prisma.submission.findFirst({
       where: { id, evidence: { tenantId } },
-      select: { enrollment: { select: { userId: true } } },
+      select: { enrollment: { select: { userId: true, class: { select: { ownerId: true } } } } },
     });
     if (!sub) throw new NotFoundException('Einreichung nicht gefunden.');
-    const isTeacher = roles.includes(Role.TEACHER) || roles.includes(Role.ADMIN);
-    if (teacherOnly && !isTeacher) throw new ForbiddenException('Kein Zugriff.');
-    if (!isTeacher && sub.enrollment.userId !== userId) {
+    const isAdmin = roles.includes(Role.ADMIN);
+    const isOwningTeacher = roles.includes(Role.TEACHER) && sub.enrollment.class.ownerId === userId;
+    if (teacherOnly && !isAdmin && !isOwningTeacher) throw new ForbiddenException('Kein Zugriff.');
+    if (!isAdmin && !isOwningTeacher && sub.enrollment.userId !== userId) {
       throw new ForbiddenException('Kein Zugriff.');
     }
   }

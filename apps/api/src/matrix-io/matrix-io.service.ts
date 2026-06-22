@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { CompetenceLevel, EvidenceType, Prisma } from '@prisma/client';
+import { CompetenceLevel, EvidenceType, Prisma, Role } from '@prisma/client';
 import AdmZip from 'adm-zip';
 import { PrismaService } from '../prisma/prisma.service';
 import { S3Service } from '../storage/s3.service';
@@ -83,9 +83,14 @@ export class MatrixIoService {
   async exportZip(
     matrixId: string,
     tenantId: string,
+    userId: string,
+    roles: Role[],
   ): Promise<{ buffer: Buffer; filename: string }> {
+    const ownerFilter = roles.includes(Role.ADMIN)
+      ? {}
+      : { OR: [{ ownerId: userId }, { ownerId: null }] };
     const matrix = await this.prisma.competenceMatrix.findFirst({
-      where: { id: matrixId, module: { tenantId } },
+      where: { id: matrixId, module: { tenantId, ...ownerFilter } },
       include: {
         module: { include: { actionGoals: { orderBy: { sortOrder: 'asc' } } } },
         bands: {

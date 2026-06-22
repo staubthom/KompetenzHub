@@ -11,13 +11,13 @@ export class ModulesController {
   @Get()
   @Roles(Role.TEACHER, Role.ADMIN, Role.LEARNER)
   list(@CurrentUser() user: RequestContext) {
-    return this.modules.list(user.tenantId);
+    return this.modules.list(user.tenantId, user.userId, user.roles);
   }
 
   @Get(':id')
   @Roles(Role.TEACHER, Role.ADMIN, Role.LEARNER)
   findOne(@Param('id') id: string, @CurrentUser() user: RequestContext) {
-    return this.modules.findOne(id, user.tenantId);
+    return this.modules.findOne(id, user.tenantId, user.userId, user.roles);
   }
 
   @Post()
@@ -33,13 +33,13 @@ export class ModulesController {
     @Body() dto: Record<string, unknown>,
     @CurrentUser() user: RequestContext,
   ) {
-    return this.modules.update(id, dto as never, user.tenantId);
+    return this.modules.update(id, dto as never, user.tenantId, user.userId, user.roles);
   }
 
   @Delete(':id')
   @HttpCode(204)
   @Roles(Role.TEACHER, Role.ADMIN)
   remove(@Param('id') id: string, @CurrentUser() user: RequestContext) {
-    return this.modules.remove(id, user.tenantId);
+    return this.modules.remove(id, user.tenantId, user.userId, user.roles);
   }
 }
