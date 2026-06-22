@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   GoneException,
   Injectable,
@@ -32,11 +33,15 @@ const CODE_LENGTH = 6;
 export class ClassesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Klassen der Lehrperson (Admins sehen alle des Tenants). */
-  async list(tenantId: string, userId: string, roles: Role[]) {
+  /** Klassen der Lehrperson (Admins sehen alle des Tenants). Standard: ohne archivierte. */
+  async list(tenantId: string, userId: string, roles: Role[], archived = false) {
     const isAdmin = roles.includes(Role.ADMIN);
     return this.prisma.class.findMany({
-      where: { tenantId, ...(isAdmin ? {} : { ownerId: userId }) },
+      where: {
+        tenantId,
+        ...(isAdmin ? {} : { ownerId: userId }),
+        status: archived ? ClassStatus.ARCHIVED : ClassStatus.ACTIVE,
+      },
       select: {
         id: true,
         name: true,
@@ -110,7 +115,10 @@ export class ClassesService {
   }
 
   async update(id: string, dto: UpdateClassDto, tenantId: string, userId: string, roles: Role[]) {
-    await this.assertOwner(id, tenantId, userId, roles);
+    const cls = await this.assertOwner(id, tenantId, userId, roles);
+    if (cls.status === ClassStatus.ARCHIVED) {
+      throw new ConflictException('Archivierter Modulanlass ist read-only.');
+    }
     if (dto.moduleId) await this.assertModuleInTenant(dto.moduleId, tenantId);
 
     return this.prisma.class.update({
@@ -132,8 +140,29 @@ export class ClassesService {
   }
 
   async remove(id: string, tenantId: string, userId: string, roles: Role[]) {
+    // Auch archivierte Modulanlässe dürfen gelöscht werden.
     await this.assertOwner(id, tenantId, userId, roles);
     await this.prisma.class.delete({ where: { id } });
+  }
+
+  /** FA-103: Modulanlass archivieren (read-only, aus Standardlisten ausgeblendet). */
+  async archive(id: string, tenantId: string, userId: string, roles: Role[]) {
+    await this.assertOwner(id, tenantId, userId, roles);
+    return this.prisma.class.update({
+      where: { id },
+      data: { status: ClassStatus.ARCHIVED },
+      select: { id: true, name: true, status: true },
+    });
+  }
+
+  /** FA-103: Archivierten Modulanlass wiederherstellen. */
+  async restore(id: string, tenantId: string, userId: string, roles: Role[]) {
+    await this.assertOwner(id, tenantId, userId, roles);
+    return this.prisma.class.update({
+      where: { id },
+      data: { status: ClassStatus.ACTIVE },
+      select: { id: true, name: true, status: true },
+    });
   }
 
   // ── Beitrittscode (FA-23) ─────────────────────────────────────
@@ -146,7 +175,10 @@ export class ClassesService {
     roles: Role[],
     expiresAt?: Date,
   ) {
-    await this.assertOwner(id, tenantId, userId, roles);
+    const cls = await this.assertOwner(id, tenantId, userId, roles);
+    if (cls.status === ClassStatus.ARCHIVED) {
+      throw new ConflictException('Archivierter Modulanlass ist read-only.');
+    }
     await this.prisma.joinCode.updateMany({
       where: { classId: id, isActive: true },
       data: { isActive: false },
@@ -218,7 +250,10 @@ export class ClassesService {
     userId: string,
     roles: Role[],
   ) {
-    await this.assertOwner(id, tenantId, userId, roles);
+    const cls = await this.assertOwner(id, tenantId, userId, roles);
+    if (cls.status === ClassStatus.ARCHIVED) {
+      throw new ConflictException('Archivierter Modulanlass ist read-only.');
+    }
     const enrollment = await this.prisma.enrollment.findFirst({
       where: { classId: id, userId: memberUserId },
     });

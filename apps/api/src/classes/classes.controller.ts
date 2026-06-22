@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { CurrentUser, Roles } from '../auth/decorators';
 import type { RequestContext } from '../common/request-context';
@@ -12,8 +12,8 @@ export class ClassesController {
 
   @Get()
   @Roles(Role.TEACHER, Role.ADMIN)
-  list(@CurrentUser() user: RequestContext) {
-    return this.classes.list(user.tenantId, user.userId, user.roles);
+  list(@Query('archived') archived: string | undefined, @CurrentUser() user: RequestContext) {
+    return this.classes.list(user.tenantId, user.userId, user.roles, archived === 'true');
   }
 
   /** Eigene Klassenmitgliedschaften der/des Lernenden (inkl. Modul). */
@@ -50,6 +50,20 @@ export class ClassesController {
   @Roles(Role.TEACHER, Role.ADMIN)
   remove(@Param('id') id: string, @CurrentUser() user: RequestContext) {
     return this.classes.remove(id, user.tenantId, user.userId, user.roles);
+  }
+
+  // ── FA-103: Archivieren / Wiederherstellen ────────────────────
+
+  @Post(':id/archive')
+  @Roles(Role.TEACHER, Role.ADMIN)
+  archive(@Param('id') id: string, @CurrentUser() user: RequestContext) {
+    return this.classes.archive(id, user.tenantId, user.userId, user.roles);
+  }
+
+  @Post(':id/restore')
+  @Roles(Role.TEACHER, Role.ADMIN)
+  restore(@Param('id') id: string, @CurrentUser() user: RequestContext) {
+    return this.classes.restore(id, user.tenantId, user.userId, user.roles);
   }
 
   // ── FA-23: Beitrittscode ──────────────────────────────────────

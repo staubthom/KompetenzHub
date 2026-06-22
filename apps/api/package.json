@@ -22,6 +22,7 @@
     "smoke:learning-paths": "node scripts/smoke-learning-paths.mjs",
     "smoke:matrix-io": "node scripts/smoke-matrix-io.mjs",
     "smoke:isolation": "node scripts/smoke-isolation.mjs",
+    "smoke:class-archive": "node scripts/smoke-class-archive.mjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "dotenv -e ../../.env -- prisma migrate dev",
     "prisma:seed": "dotenv -e ../../.env -- prisma db seed",
