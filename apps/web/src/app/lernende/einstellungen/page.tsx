@@ -157,7 +157,7 @@ export default function LernendeEinstellungenPage() {
                 background: cfg.enabled && cfg.hasApiKey ? 'var(--st-graded)' : 'var(--fg-muted)',
               }}
             />
-            {cfg.enabled && cfg.hasApiKey ? 'eigene KI aktiv' : 'keine eigene KI'}
+            {cfg.enabled && cfg.hasApiKey ? t('ki.active') : t('ki.inactive')}
           </span>
         )}
       </div>
@@ -205,12 +205,11 @@ export default function LernendeEinstellungenPage() {
         </div>
         <div className="form">
           <p className="kh-muted" style={{ marginTop: 0 }}>
-            Optional: Hinterlege deine eigene KI. Ist eine eigene KI aktiv, wird immer diese
-            verwendet – sonst die von deiner Lehrperson freigegebene KI (falls vorhanden).
+            {t('settings.aiOwnHint')}
           </p>
 
           <label>
-            Provider
+            {t('ki.provider')}
             <select value={provider} onChange={(e) => onProviderChange(e.target.value)}>
               {PROVIDERS.map((p) => (
                 <option key={p.value} value={p.value}>
@@ -221,7 +220,7 @@ export default function LernendeEinstellungenPage() {
           </label>
 
           <label>
-            Endpoint (baseUrl)
+            {t('ki.endpoint')}
             <input
               type="url"
               placeholder="https://api.openai.com/v1"
@@ -231,7 +230,7 @@ export default function LernendeEinstellungenPage() {
           </label>
 
           <label>
-            Modell
+            {t('ki.model')}
             <input
               type="text"
               placeholder="z. B. gpt-4o-mini"
@@ -241,15 +240,11 @@ export default function LernendeEinstellungenPage() {
           </label>
 
           <label>
-            API-Key
+            {t('ki.apiKey')}
             <input
               type="password"
               autoComplete="off"
-              placeholder={
-                cfg?.hasApiKey
-                  ? `gespeichert (${cfg.apiKeyMask}) – leer lassen zum Beibehalten`
-                  : 'API-Key eingeben'
-              }
+              placeholder={cfg?.hasApiKey ? `•••• ${cfg.apiKeyMask ?? ''}` : t('ki.apiKey')}
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
             />
@@ -262,7 +257,7 @@ export default function LernendeEinstellungenPage() {
               disabled={saving}
               onClick={() => void clearKey()}
             >
-              API-Key entfernen
+              {t('ki.removeKey')}
             </button>
           )}
 
@@ -273,11 +268,8 @@ export default function LernendeEinstellungenPage() {
               style={{ width: 'auto' }}
               onChange={(e) => setEnabled(e.target.checked)}
             />
-            Meine eigene KI verwenden
+            {t('settings.useOwnAi')}
           </label>
-          <p className="kh-muted" style={{ fontSize: 12, marginTop: -8 }}>
-            Der API-Key wird verschlüsselt gespeichert und nie im Klartext angezeigt.
-          </p>
 
           {testResult && (
             <div
@@ -289,19 +281,17 @@ export default function LernendeEinstellungenPage() {
                 {testResult.message}
               </strong>
               {testResult.ok && testResult.models && testResult.models.length > 0 && (
-                <div className="sub-feedback">
-                  Verfügbare Modelle: {testResult.models.join(', ')}
-                </div>
+                <div className="sub-feedback">{testResult.models.join(', ')}</div>
               )}
             </div>
           )}
 
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button className="btn" disabled={testing} onClick={() => void test()}>
-              {testing ? 'Teste…' : 'Verbindung testen'}
+              {testing ? t('ki.testing') : t('ki.test')}
             </button>
             <button className="btn primary" disabled={saving} onClick={() => void save()}>
-              {saving ? 'Speichert…' : 'Speichern'}
+              {saving ? t('common.saving') : t('common.save')}
             </button>
           </div>
         </div>

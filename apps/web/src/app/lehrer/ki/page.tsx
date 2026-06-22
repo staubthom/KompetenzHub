@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import AppShell from '../../../components/AppShell';
 import { useToast } from '../../../components/ToastProvider';
+import { useI18n } from '../../../lib/i18n';
 import { ai, type AiConfig, type AiTestResult } from '../../../lib/api';
 
 const PROVIDERS: { value: string; label: string; baseUrl?: string }[] = [
@@ -14,6 +15,7 @@ const PROVIDERS: { value: string; label: string; baseUrl?: string }[] = [
 
 export default function KiSettingsPage() {
   const toast = useToast();
+  const { t } = useI18n();
   const [cfg, setCfg] = useState<AiConfig | null>(null);
   const [provider, setProvider] = useState('openai');
   const [baseUrl, setBaseUrl] = useState('');
@@ -118,11 +120,13 @@ export default function KiSettingsPage() {
 
   return (
     <AppShell>
-      <div className="breadcrumb">Übersicht / KI-Einstellungen</div>
+      <div className="breadcrumb">
+        {t('common.overview')} / {t('ki.title')}
+      </div>
       <div className="page-head">
         <div>
-          <h1>KI-Einstellungen</h1>
-          <p>Eigener KI-Endpoint für Bewertungsvorschläge, Feedback &amp; Fachgespräch</p>
+          <h1>{t('ki.title')}</h1>
+          <p>{t('ki.subtitle')}</p>
         </div>
         {cfg && (
           <span className={`badge ${cfg.enabled && cfg.hasApiKey ? 'b-published' : 'b-archived'}`}>
@@ -132,18 +136,18 @@ export default function KiSettingsPage() {
                 background: cfg.enabled && cfg.hasApiKey ? 'var(--st-graded)' : 'var(--fg-muted)',
               }}
             />
-            {cfg.enabled && cfg.hasApiKey ? 'KI aktiv' : 'KI inaktiv'}
+            {cfg.enabled && cfg.hasApiKey ? t('ki.active') : t('ki.inactive')}
           </span>
         )}
       </div>
 
       <div className="panel" style={{ maxWidth: 640 }}>
         <div className="panel-head">
-          <h2>Anbindung</h2>
+          <h2>{t('ki.connection')}</h2>
         </div>
         <div className="form">
           <label>
-            Provider
+            {t('ki.provider')}
             <select value={provider} onChange={(e) => onProviderChange(e.target.value)}>
               {PROVIDERS.map((p) => (
                 <option key={p.value} value={p.value}>
@@ -154,7 +158,7 @@ export default function KiSettingsPage() {
           </label>
 
           <label>
-            Endpoint (baseUrl)
+            {t('ki.endpoint')}
             <input
               type="url"
               placeholder="https://api.openai.com/v1"
@@ -164,7 +168,7 @@ export default function KiSettingsPage() {
           </label>
 
           <label>
-            Modell
+            {t('ki.model')}
             <input
               type="text"
               placeholder="z. B. gpt-4o-mini"
@@ -174,15 +178,11 @@ export default function KiSettingsPage() {
           </label>
 
           <label>
-            API-Key
+            {t('ki.apiKey')}
             <input
               type="password"
               autoComplete="off"
-              placeholder={
-                cfg?.hasApiKey
-                  ? `gespeichert (${cfg.apiKeyMask}) – leer lassen zum Beibehalten`
-                  : 'API-Key eingeben'
-              }
+              placeholder={cfg?.hasApiKey ? `•••• ${cfg.apiKeyMask ?? ''}` : t('ki.apiKey')}
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
             />
@@ -195,7 +195,7 @@ export default function KiSettingsPage() {
               disabled={saving}
               onClick={() => void clearKey()}
             >
-              API-Key entfernen
+              {t('ki.removeKey')}
             </button>
           )}
 
@@ -206,7 +206,7 @@ export default function KiSettingsPage() {
               style={{ width: 'auto' }}
               onChange={(e) => setEnabled(e.target.checked)}
             />
-            KI-Funktionen aktivieren
+            {t('ki.enable')}
           </label>
 
           <label style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -216,12 +216,10 @@ export default function KiSettingsPage() {
               style={{ width: 'auto' }}
               onChange={(e) => setShareWithLearners(e.target.checked)}
             />
-            Diese KI auch für Lernende freigeben
+            {t('ki.share')}
           </label>
           <p className="kh-muted" style={{ fontSize: 12, marginTop: -8 }}>
-            Ohne gültige Konfiguration (Endpoint, Modell, API-Key) bleiben KI-Funktionen
-            deaktiviert. Der API-Key wird verschlüsselt gespeichert und nie im Klartext angezeigt.
-            Lernende mit eigener KI nutzen immer ihre eigene.
+            {t('ki.hint')}
           </p>
 
           {testResult && (
@@ -234,19 +232,17 @@ export default function KiSettingsPage() {
                 {testResult.message}
               </strong>
               {testResult.ok && testResult.models && testResult.models.length > 0 && (
-                <div className="sub-feedback">
-                  Verfügbare Modelle: {testResult.models.join(', ')}
-                </div>
+                <div className="sub-feedback">{testResult.models.join(', ')}</div>
               )}
             </div>
           )}
 
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button className="btn" disabled={testing} onClick={() => void test()}>
-              {testing ? 'Teste…' : 'Verbindung testen'}
+              {testing ? t('ki.testing') : t('ki.test')}
             </button>
             <button className="btn primary" disabled={saving} onClick={() => void save()}>
-              {saving ? 'Speichert…' : 'Speichern'}
+              {saving ? t('common.saving') : t('common.save')}
             </button>
           </div>
         </div>

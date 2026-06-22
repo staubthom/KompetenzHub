@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import AppShell from '../../../components/AppShell';
 import { useToast } from '../../../components/ToastProvider';
+import { useI18n, localized } from '../../../lib/i18n';
 import {
   classes,
   expertTalk,
@@ -13,6 +14,7 @@ import {
 
 export default function ModulUebenPage() {
   const toast = useToast();
+  const { t, locale } = useI18n();
   const [enrollments, setEnrollments] = useState<MyEnrollment[] | null>(null);
   const [moduleId, setModuleId] = useState<string | null>(null);
   const [sessions, setSessions] = useState<ExpertTalkSummary[] | null>(null);
@@ -133,29 +135,31 @@ export default function ModulUebenPage() {
       <AppShell>
         <div className="breadcrumb">
           <button className="linklike" onClick={() => setActive(null)}>
-            Modul mit KI üben
+            {t('talk.title')}
           </button>{' '}
           / {active.topic}
         </div>
         <div className="page-head">
           <div>
-            <h1>Modul mit KI üben</h1>
-            <p>Die KI prüft dich quer durchs Modul · {active.topic}</p>
+            <h1>{t('talk.title')}</h1>
+            <p>{active.topic}</p>
           </div>
           <span className={`badge ${done ? 'b-published' : 'b-draft'}`}>
-            {done ? 'abgeschlossen' : 'Übungsmodus'}
+            {done ? t('talk.completed') : t('talk.practiceMode')}
           </span>
         </div>
 
         <div className="panel">
           <div className="panel-head">
-            <h2>💬 Gespräch</h2>
+            <h2>💬 {t('talk.conversation')}</h2>
             <span className="badge b-draft">KI-Tutor</span>
           </div>
           <div className="chat">
             {active.messages.map((m) => (
               <div key={m.id} className={`msg ${m.role === 'assistant' ? 'ai' : 'me'}`}>
-                <div className="who">{m.role === 'assistant' ? 'KI-Tutor' : 'Du'}</div>
+                <div className="who">
+                  {m.role === 'assistant' ? 'KI-Tutor' : t('header.roleStudent')}
+                </div>
                 {m.content}
               </div>
             ))}
@@ -164,14 +168,14 @@ export default function ModulUebenPage() {
           {done ? (
             <div className="chatbar">
               <button className="btn" onClick={() => setActive(null)}>
-                ← Zur Übersicht
+                ← {t('talk.toOverview')}
               </button>
             </div>
           ) : (
             <div className="chatbar">
               <input
                 type="text"
-                placeholder="Antwort schreiben …"
+                placeholder={t('talk.answerPlaceholder')}
                 value={input}
                 disabled={sending}
                 onChange={(e) => setInput(e.target.value)}
@@ -184,7 +188,7 @@ export default function ModulUebenPage() {
                 disabled={sending || !input.trim()}
                 onClick={() => void send()}
               >
-                {sending ? '…' : 'Senden'}
+                {sending ? '…' : t('talk.send')}
               </button>
             </div>
           )}
@@ -193,16 +197,15 @@ export default function ModulUebenPage() {
         {!done && (
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button className="btn" onClick={() => setActive(null)}>
-              Übersicht
+              {t('talk.toOverview')}
             </button>
             <button className="btn" onClick={() => void finish()}>
-              Gespräch abschliessen
+              {t('talk.finish')}
             </button>
           </div>
         )}
         <p className="kh-muted" style={{ fontSize: 12, textAlign: 'center', marginTop: 8 }}>
-          Übungsmodus – keine Note. Die KI gibt dir Feedback zur Qualität deiner Antworten und
-          Lerntipps.
+          {t('talk.footer')}
         </p>
       </AppShell>
     );
@@ -213,32 +216,31 @@ export default function ModulUebenPage() {
 
   return (
     <AppShell>
-      <div className="breadcrumb">Übersicht / Modul mit KI üben</div>
+      <div className="breadcrumb">
+        {t('common.overview')} / {t('talk.title')}
+      </div>
       <div className="page-head">
         <div>
-          <h1>Modul mit KI üben</h1>
-          <p>
-            Die KI führt ein Lerngespräch über das ganze Modul, fragt verschiedene Kompetenzen ab,
-            gibt Lerntipps und Feedback zu deinen Antworten – ganz ohne Note.
-          </p>
+          <h1>{t('talk.title')}</h1>
+          <p>{t('talk.subtitle')}</p>
         </div>
       </div>
 
       <div className="panel">
         <div className="panel-head">
-          <h2>Neues Lerngespräch starten</h2>
+          <h2>{t('talk.start')}</h2>
         </div>
         <div className="panel-body">
           {enrollments === null ? (
-            <div className="loading">Lade…</div>
+            <div className="loading">{t('common.loading')}</div>
           ) : modules.length === 0 ? (
             <p className="kh-muted" style={{ marginTop: 0 }}>
-              Du bist noch keinem Modulanlass mit Modul beigetreten.
+              {t('talk.noModuleJoined')}
             </p>
           ) : (
             <>
               <p className="kh-muted" style={{ marginTop: 0 }}>
-                Wähle ein Modul – die KI nutzt alle Kompetenzen der Matrix als Grundlage.
+                {t('talk.chooseModule')}
               </p>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                 <select
@@ -249,12 +251,13 @@ export default function ModulUebenPage() {
                 >
                   {modules.map((e) => (
                     <option key={e.enrollmentId} value={e.class.module!.id}>
-                      Modul {e.class.module!.number} · {e.class.module!.title?.de ?? e.class.name}
+                      {t('common.module')} {e.class.module!.number} ·{' '}
+                      {localized(e.class.module!.title, locale) || e.class.name}
                     </option>
                   ))}
                 </select>
                 <button className="btn primary" disabled={starting} onClick={() => void start()}>
-                  {starting ? 'Starte…' : '💬 Modul mit KI üben'}
+                  {starting ? t('talk.starting') : t('talk.startBtn')}
                 </button>
               </div>
             </>
@@ -264,14 +267,14 @@ export default function ModulUebenPage() {
 
       <div className="panel">
         <div className="panel-head">
-          <h2>Frühere Lerngespräche</h2>
+          <h2>{t('talk.previous')}</h2>
         </div>
         {!sessions ? (
-          <div className="loading">Lade…</div>
+          <div className="loading">{t('common.loading')}</div>
         ) : sessions.length === 0 ? (
           <div className="empty">
             <span className="ic">💬</span>
-            <p>Noch keine Lerngespräche. Starte oben dein erstes!</p>
+            <p>{t('talk.none')}</p>
           </div>
         ) : (
           <ul className="hz-list">
@@ -280,14 +283,14 @@ export default function ModulUebenPage() {
                 <div style={{ flex: 1 }}>
                   <strong>{s.topic}</strong>
                   <div className="kh-muted" style={{ fontSize: 12 }}>
-                    {s.messageCount} Nachricht(en) · {new Date(s.updatedAt).toLocaleString('de-CH')}
+                    {s.messageCount} · {new Date(s.updatedAt).toLocaleString()}
                   </div>
                 </div>
                 <span className={`badge ${s.status === 'COMPLETED' ? 'b-published' : 'b-draft'}`}>
-                  {s.status === 'COMPLETED' ? 'abgeschlossen' : 'aktiv'}
+                  {s.status === 'COMPLETED' ? t('talk.completed') : t('cl.active')}
                 </span>
                 <button className="btn sm" onClick={() => void open(s.id)}>
-                  Öffnen
+                  {t('common.open')}
                 </button>
               </li>
             ))}

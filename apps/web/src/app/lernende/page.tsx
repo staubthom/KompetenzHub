@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import AppShell from '../../components/AppShell';
 import EvidenceSubmitPanel from '../../components/EvidenceSubmitPanel';
 import { useToast } from '../../components/ToastProvider';
+import { useI18n, localized } from '../../lib/i18n';
 import {
   classes,
   matrix as matrixApi,
@@ -15,11 +16,6 @@ import {
   type StudentEvidence,
 } from '../../lib/api';
 
-const LEVEL_LABEL: Record<string, string> = {
-  BEGINNER: 'Beginner',
-  INTERMEDIATE: 'Intermediate',
-  ADVANCED: 'Advanced',
-};
 const LEVELS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'] as const;
 
 function chipIcon(status?: string): string {
@@ -34,21 +30,11 @@ function chipIcon(status?: string): string {
       return '📎';
   }
 }
-function chipStatusLabel(status?: string): string {
-  switch (status) {
-    case 'GRADED':
-      return 'Bewertet';
-    case 'REJECTED':
-      return 'Zurückgewiesen';
-    case 'SUBMITTED':
-      return 'Eingereicht';
-    default:
-      return 'Nachweis öffnen';
-  }
-}
 
 export default function LernendeMatrixPage() {
   const toast = useToast();
+  const { t, locale } = useI18n();
+  const chipStatusLabel = (status?: string) => (status ? t(`chip.${status}`) : t('chip.OPEN'));
   const [enrollments, setEnrollments] = useState<MyEnrollment[] | null>(null);
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
   const [matrix, setMatrix] = useState<MatrixResponse | null>(null);
@@ -172,11 +158,13 @@ export default function LernendeMatrixPage() {
 
   return (
     <AppShell>
-      <div className="breadcrumb">Übersicht / Meine Matrix</div>
+      <div className="breadcrumb">
+        {t('common.overview')} / {t('mx.title')}
+      </div>
       <div className="page-head">
         <div>
-          <h1>Meine Matrix</h1>
-          <p>Deine Kompetenzbänder pro Modulanlass</p>
+          <h1>{t('mx.title')}</h1>
+          <p>{t('mx.subtitle')}</p>
         </div>
       </div>
 
@@ -198,8 +186,8 @@ export default function LernendeMatrixPage() {
                 </div>
                 <div className="kh-muted" style={{ fontSize: 13 }}>
                   {mod
-                    ? `Modul ${mod.number} · ${mod.title?.de ?? ''}`
-                    : 'noch kein Modul zugeordnet'}
+                    ? `${t('common.module')} ${mod.number} · ${localized(mod.title, locale)}`
+                    : t('common.noModule')}
                 </div>
               </button>
             );
@@ -213,23 +201,23 @@ export default function LernendeMatrixPage() {
           <div className="panel-head">
             <h2>
               {matrix?.module
-                ? `Modul ${matrix.module.number} · ${matrix.module.title?.de ?? ''}`
-                : 'Kompetenzmatrix'}
+                ? `${t('common.module')} ${matrix.module.number} · ${localized(matrix.module.title, locale)}`
+                : t('nav.matrix')}
             </h2>
           </div>
           {bands.length === 0 ? (
             <div className="empty">
               <span className="ic">▦</span>
-              <p>Für dieses Modul wurde noch keine Matrix erfasst.</p>
+              <p>{t('mx.noMatrix')}</p>
             </div>
           ) : (
             <div className="tablewrap">
               <table className="smatrix">
                 <thead>
                   <tr>
-                    <th>Band</th>
+                    <th>{t('mx.band')}</th>
                     {LEVELS.map((lvl) => (
-                      <th key={lvl}>{LEVEL_LABEL[lvl]}</th>
+                      <th key={lvl}>{t(`level.${lvl}`)}</th>
                     ))}
                   </tr>
                 </thead>
@@ -238,21 +226,20 @@ export default function LernendeMatrixPage() {
                     <tr key={band.id}>
                       <td className="smatrix-band">
                         <div className="band-code">{band.code}</div>
-                        {band.description?.de && (
-                          <div className="band-desc">{band.description.de}</div>
+                        {localized(band.description, locale) && (
+                          <div className="band-desc">{localized(band.description, locale)}</div>
                         )}
                       </td>
                       {LEVELS.map((lvl) => {
                         const field = band.fields.find((f: CompetenceField) => f.level === lvl);
                         const evidences = field?.evidences ?? [];
+                        const descText = localized(field?.descriptor?.text, locale);
                         return (
                           <td key={lvl} className="smatrix-cell">
-                            {field?.descriptor?.text?.de ? (
+                            {descText ? (
                               <>
-                                <span className="field-code">{field.code}</span>
-                                <span className="descriptor-text no-copy">
-                                  {field.descriptor.text.de}
-                                </span>
+                                <span className="field-code">{field!.code}</span>
+                                <span className="descriptor-text no-copy">{descText}</span>
                               </>
                             ) : (
                               <span className="descriptor-empty">—</span>
@@ -268,12 +255,12 @@ export default function LernendeMatrixPage() {
                                     <button
                                       key={e.evidence.id}
                                       className={`evidence-chip evidence-chip-btn${st ? ` chip-${st.toLowerCase()}` : ''}`}
-                                      title={`${chipStatusLabel(st)}: ${e.evidence.title?.de}`}
+                                      title={`${chipStatusLabel(st)}: ${localized(e.evidence.title, locale)}`}
                                       onClick={() => {
                                         void openEvidenceDetail(e.evidence.id);
                                       }}
                                     >
-                                      {chipIcon(st)} {e.evidence.title?.de}
+                                      {chipIcon(st)} {localized(e.evidence.title, locale)}
                                     </button>
                                   );
                                 })}
@@ -294,11 +281,11 @@ export default function LernendeMatrixPage() {
       {/* Klasse beitreten (FA-23) */}
       <div className="panel">
         <div className="panel-head">
-          <h2>{hasClasses ? 'Weiterem Modulanlass beitreten' : 'Modulanlass beitreten'}</h2>
+          <h2>{hasClasses ? t('mx.joinMore') : t('mx.joinTitle')}</h2>
         </div>
         <div className="panel-body">
           <p className="kh-muted" style={{ marginTop: 0 }}>
-            Gib den Beitrittscode deiner Lehrperson ein.
+            {t('mx.joinHint')}
           </p>
           <form
             className="join-form"
@@ -314,7 +301,7 @@ export default function LernendeMatrixPage() {
               onChange={(e) => setCode(e.target.value.toUpperCase())}
             />
             <button type="submit" className="btn primary" disabled={joining}>
-              {joining ? 'Beitreten…' : 'Beitreten'}
+              {joining ? t('mx.joining') : t('mx.join')}
             </button>
           </form>
         </div>
@@ -322,8 +309,7 @@ export default function LernendeMatrixPage() {
 
       {!hasClasses && enrollments !== null && (
         <p className="kh-muted" style={{ textAlign: 'center' }}>
-          Du bist noch keinem Modulanlass beigetreten. Sobald du beigetreten bist, erscheint hier
-          deine Kompetenzmatrix.
+          {t('mx.notJoined')}
         </p>
       )}
 
@@ -332,8 +318,8 @@ export default function LernendeMatrixPage() {
         <div className="modal-overlay">
           <div className="modal">
             <div className="modal-head">
-              <h2>{openEvidence.title?.de}</h2>
-              <button className="btn-icon" title="Schliessen" onClick={closeEvidence}>
+              <h2>{localized(openEvidence.title, locale)}</h2>
+              <button className="btn-icon" title={t('common.cancel')} onClick={closeEvidence}>
                 ✕
               </button>
             </div>
