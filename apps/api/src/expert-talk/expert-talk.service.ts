@@ -15,18 +15,37 @@ export class ExpertTalkService {
     private readonly ai: AiService,
   ) {}
 
-  private systemPrompt(topic: string, context: string): string {
+  private systemPrompt(topic: string, context: string, mode = 'topic'): string {
+    const base =
+      'Du bist ein wohlwollender, geduldiger KI-Tutor an einer Schweizer Berufsfachschule. ' +
+      'Es gibt KEINE Note – es ist reine Übung. Schreibe auf Deutsch und fasse dich kurz (2–4 Sätze). ' +
+      'Stelle jeweils genau EINE Frage.';
+
+    if (mode === 'module') {
+      const ctx = context.trim()
+        ? ' Die folgenden Kompetenzen des Moduls bilden deinen inhaltlichen Rahmen:\n' +
+          context.trim()
+        : '';
+      return (
+        base +
+        ` Du führst ein Lerngespräch zum gesamten Modul „${topic}" und prüfst die lernende Person ` +
+        'abwechslungsweise zu den verschiedenen Themen/Kompetenzen ab.' +
+        ctx +
+        ' Gib zu jeder Antwort kurzes Feedback zur Qualität (was war gut, was fehlt) UND einen ' +
+        'konkreten Lernhinweis, wie die Person das Thema vertiefen/lernen kann. Wechsle die Themen, ' +
+        'damit nach und nach das ganze Modul abgedeckt wird.'
+      );
+    }
+
     const ctx = context.trim()
       ? ' Die zugehörige Aufgabenstellung des Kompetenznachweises lautet: ' +
         `„${context.trim()}". Richte deine Fragen konsequent an dieser Aufgabenstellung aus.`
       : '';
     return (
-      'Du bist ein wohlwollender, geduldiger KI-Tutor an einer Schweizer Berufsfachschule. ' +
-      `Du führst ein ÜBUNGS-Fachgespräch zum Thema „${topic}".` +
+      base +
+      ` Du führst ein ÜBUNGS-Fachgespräch zum Thema „${topic}".` +
       ctx +
-      ' Ziel ist, dass die lernende Person ihr Fachwissen mündlich übt – es gibt KEINE Note. ' +
-      'Stelle jeweils genau EINE Frage, gib kurzes, konstruktives Feedback zur vorigen Antwort, ' +
-      'und vertiefe schrittweise. Bleib beim Thema, schreibe auf Deutsch und fasse dich kurz (2–4 Sätze).'
+      ' Gib kurzes, konstruktives Feedback zur vorigen Antwort und vertiefe schrittweise.'
     );
   }
 
@@ -50,11 +69,83 @@ export class ExpertTalkService {
 
     const reply = await this.ai.tenantChat(
       tenantId,
+      userId,
       [
         { role: 'system', content: this.systemPrompt(topic, context) },
         {
           role: 'user',
           content: `Starte das Übungs-Fachgespräch mit einer ersten, einladenden Frage – ausgerichtet an der Aufgabenstellung.`,
+        },
+      ],
+      stub,
+    );
+
+    await this.prisma.expertTalkMessage.create({
+      data: { sessionId: session.id, role: 'assistant', content: reply },
+    });
+
+    return this.getSession(tenantId, userId, session.id);
+  }
+
+  /**
+   * Modul-weites Lerngespräch: Kontext = alle Kompetenzen (Deskriptoren) der Matrix.
+   * Die KI prüft verschiedene Themen ab, gibt Lernhinweise und Qualitäts-Feedback.
+   */
+  async createModuleSession(tenantId: string, userId: string, moduleId: string) {
+    const module = await this.prisma.module.findFirst({
+      where: { id: moduleId, tenantId },
+      select: { number: true, title: true },
+    });
+    if (!module) throw new NotFoundException('Modul nicht gefunden.');
+
+    const matrix = await this.prisma.competenceMatrix.findUnique({
+      where: { moduleId },
+      include: {
+        bands: {
+          orderBy: { sortOrder: 'asc' },
+          include: {
+            fields: { orderBy: { level: 'asc' }, include: { descriptor: true } },
+          },
+        },
+      },
+    });
+
+    // Kontext aus allen Kompetenzen/Deskriptoren der Matrix zusammensetzen.
+    const lines: string[] = [];
+    for (const band of matrix?.bands ?? []) {
+      for (const f of band.fields) {
+        const desc = this.de((f.descriptor?.text as Record<string, string> | undefined) ?? {});
+        if (desc) lines.push(`- ${f.code}: ${desc}`);
+      }
+    }
+    const context = lines.join('\n').slice(0, 6000);
+    if (!context) {
+      throw new UnprocessableEntityException(
+        'Für dieses Modul sind noch keine Kompetenzen erfasst.',
+      );
+    }
+
+    const title = module.title as Record<string, string>;
+    const topic = `Modul ${module.number} – ${this.de(title)}`.slice(0, 200);
+
+    const session = await this.prisma.expertTalkSession.create({
+      data: { tenantId, userId, topic, context, mode: 'module' },
+    });
+
+    const stub =
+      `Hallo! Wir üben gemeinsam das ganze Modul „${topic}". Ich stelle dir Fragen zu ` +
+      'verschiedenen Kompetenzen, gebe dir Feedback und Lerntipps. Erste Frage: Erkläre mit eigenen ' +
+      'Worten eine der Kompetenzen, die du dir am wenigsten zutraust – wir vertiefen sie gemeinsam.';
+
+    const reply = await this.ai.tenantChat(
+      tenantId,
+      userId,
+      [
+        { role: 'system', content: this.systemPrompt(topic, context, 'module') },
+        {
+          role: 'user',
+          content:
+            'Starte das modulweite Lerngespräch mit einer ersten, einladenden Frage zu einer der Kompetenzen.',
         },
       ],
       stub,
@@ -85,7 +176,7 @@ export class ExpertTalkService {
       orderBy: { createdAt: 'asc' },
     });
     const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
-      { role: 'system', content: this.systemPrompt(session.topic, session.context) },
+      { role: 'system', content: this.systemPrompt(session.topic, session.context, session.mode) },
       ...history.map((m) => ({
         role: m.role === 'assistant' ? ('assistant' as const) : ('user' as const),
         content: m.content,
@@ -96,7 +187,7 @@ export class ExpertTalkService {
       'Danke für deine Antwort – das ist ein guter Ansatz. ' +
       'Kannst du das noch etwas vertiefen und begründen, warum das in der Praxis wichtig ist?';
 
-    const reply = await this.ai.tenantChat(tenantId, messages, stub);
+    const reply = await this.ai.tenantChat(tenantId, userId, messages, stub);
 
     const assistantMsg = await this.prisma.expertTalkMessage.create({
       data: { sessionId, role: 'assistant', content: reply },
@@ -123,9 +214,9 @@ export class ExpertTalkService {
     return this.getSession(tenantId, userId, sessionId);
   }
 
-  /** Ob im Mandanten eine aktive KI vorhanden ist (für die KI-Übung im Abgabe-Dialog). */
-  async available(tenantId: string) {
-    return { available: await this.ai.tenantHasEnabled(tenantId) };
+  /** Ob für diese:n Lernende:n eine KI nutzbar ist (eigene oder freigegebene Lehrer-KI). */
+  async available(tenantId: string, userId: string) {
+    return { available: await this.ai.hasAiForUser(tenantId, userId) };
   }
 
   async listSessions(tenantId: string, userId: string) {
@@ -137,6 +228,7 @@ export class ExpertTalkService {
     return sessions.map((s) => ({
       id: s.id,
       topic: s.topic,
+      mode: s.mode,
       status: s.status,
       messageCount: s._count.messages,
       createdAt: s.createdAt.toISOString(),
@@ -153,6 +245,7 @@ export class ExpertTalkService {
     return {
       id: session.id,
       topic: session.topic,
+      mode: session.mode,
       status: session.status,
       createdAt: session.createdAt.toISOString(),
       messages: messages.map((m) => ({
@@ -162,6 +255,15 @@ export class ExpertTalkService {
         createdAt: m.createdAt.toISOString(),
       })),
     };
+  }
+
+  private de(json: unknown): string {
+    if (json && typeof json === 'object') {
+      const rec = json as Record<string, unknown>;
+      const v = rec.de ?? Object.values(rec)[0];
+      return typeof v === 'string' ? v : '';
+    }
+    return typeof json === 'string' ? json : '';
   }
 
   private stripHtml(html: string): string {

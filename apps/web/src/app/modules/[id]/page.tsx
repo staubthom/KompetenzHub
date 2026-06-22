@@ -327,6 +327,9 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
                 ? 'Veröffentlicht'
                 : 'Archiviert'}
           </span>
+          <Link className="btn sm" href={`/modules/${id}/lernpfade`}>
+            Lernpfade
+          </Link>
           <button className="btn sm" onClick={startEditMod}>
             Modul bearbeiten
           </button>

@@ -3,13 +3,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import AppShell from '../../../components/AppShell';
 import { useToast } from '../../../components/ToastProvider';
-import { expertTalk, type ExpertTalkSession, type ExpertTalkSummary } from '../../../lib/api';
+import {
+  classes,
+  expertTalk,
+  type ExpertTalkSession,
+  type ExpertTalkSummary,
+  type MyEnrollment,
+} from '../../../lib/api';
 
-export default function FachgespraechPage() {
+export default function ModulUebenPage() {
   const toast = useToast();
+  const [enrollments, setEnrollments] = useState<MyEnrollment[] | null>(null);
+  const [moduleId, setModuleId] = useState<string | null>(null);
   const [sessions, setSessions] = useState<ExpertTalkSummary[] | null>(null);
   const [active, setActive] = useState<ExpertTalkSession | null>(null);
-  const [topic, setTopic] = useState('');
   const [input, setInput] = useState('');
   const [starting, setStarting] = useState(false);
   const [sending, setSending] = useState(false);
@@ -17,15 +24,26 @@ export default function FachgespraechPage() {
 
   const loadSessions = useCallback(async () => {
     try {
-      setSessions(await expertTalk.list());
+      const all = await expertTalk.list();
+      setSessions(all.filter((s) => s.mode === 'module'));
     } catch {
       toast.error('Gespräche konnten nicht geladen werden.');
     }
   }, [toast]);
 
   useEffect(() => {
+    void (async () => {
+      try {
+        const mine = await classes.mine();
+        setEnrollments(mine);
+        const first = mine.find((e) => e.class.module);
+        if (first?.class.module) setModuleId(first.class.module.id);
+      } catch {
+        toast.error('Modulanlässe konnten nicht geladen werden.');
+      }
+    })();
     void loadSessions();
-  }, [loadSessions]);
+  }, [loadSessions, toast]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -37,15 +55,14 @@ export default function FachgespraechPage() {
   }
 
   async function start() {
-    if (!topic.trim()) {
-      toast.error('Bitte ein Thema eingeben.');
+    if (!moduleId) {
+      toast.error('Bitte zuerst ein Modul wählen.');
       return;
     }
     setStarting(true);
     try {
-      const s = await expertTalk.create(topic.trim());
+      const s = await expertTalk.createModule(moduleId);
       setActive(s);
-      setTopic('');
       void loadSessions();
     } catch (e: unknown) {
       showError(e);
@@ -67,7 +84,6 @@ export default function FachgespraechPage() {
     const content = input.trim();
     setInput('');
     setSending(true);
-    // optimistisch eigene Nachricht anzeigen
     setActive((cur) =>
       cur
         ? {
@@ -89,7 +105,6 @@ export default function FachgespraechPage() {
       setActive((cur) => (cur ? { ...cur, messages: [...cur.messages, reply] } : cur));
     } catch (e: unknown) {
       showError(e);
-      // bei Fehler eigene optimistische Nachricht wieder entfernen
       setActive((cur) =>
         cur ? { ...cur, messages: cur.messages.filter((m) => !m.id.startsWith('tmp-')) } : cur,
       );
@@ -118,14 +133,14 @@ export default function FachgespraechPage() {
       <AppShell>
         <div className="breadcrumb">
           <button className="linklike" onClick={() => setActive(null)}>
-            Fachgespräch
+            Modul mit KI üben
           </button>{' '}
           / {active.topic}
         </div>
         <div className="page-head">
           <div>
-            <h1>Fachgespräch üben</h1>
-            <p>Übungsdialog mit dem KI-Tutor · Thema: {active.topic}</p>
+            <h1>Modul mit KI üben</h1>
+            <p>Die KI prüft dich quer durchs Modul · {active.topic}</p>
           </div>
           <span className={`badge ${done ? 'b-published' : 'b-draft'}`}>
             {done ? 'abgeschlossen' : 'Übungsmodus'}
@@ -186,60 +201,77 @@ export default function FachgespraechPage() {
           </div>
         )}
         <p className="kh-muted" style={{ fontSize: 12, textAlign: 'center', marginTop: 8 }}>
-          Übungsmodus – es gibt keine Note. Der KI-Tutor hilft dir beim Üben.
+          Übungsmodus – keine Note. Die KI gibt dir Feedback zur Qualität deiner Antworten und
+          Lerntipps.
         </p>
       </AppShell>
     );
   }
 
   // ── Ansicht: Übersicht / neues Gespräch ───────────────────────
+  const modules = (enrollments ?? []).filter((e) => e.class.module);
+
   return (
     <AppShell>
-      <div className="breadcrumb">Übersicht / Fachgespräch üben</div>
+      <div className="breadcrumb">Übersicht / Modul mit KI üben</div>
       <div className="page-head">
         <div>
-          <h1>Fachgespräch üben</h1>
-          <p>Übe ein mündliches Fachgespräch mit dem KI-Tutor – ganz ohne Note.</p>
+          <h1>Modul mit KI üben</h1>
+          <p>
+            Die KI führt ein Lerngespräch über das ganze Modul, fragt verschiedene Kompetenzen ab,
+            gibt Lerntipps und Feedback zu deinen Antworten – ganz ohne Note.
+          </p>
         </div>
       </div>
 
       <div className="panel">
         <div className="panel-head">
-          <h2>Neues Gespräch starten</h2>
+          <h2>Neues Lerngespräch starten</h2>
         </div>
         <div className="panel-body">
-          <p className="kh-muted" style={{ marginTop: 0 }}>
-            Gib ein Thema oder eine Kompetenz ein, zu der du das Fachgespräch üben möchtest.
-          </p>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <input
-              className="link-input"
-              style={{ flex: 1, minWidth: 220 }}
-              placeholder="z. B. Betriebssysteme konfigurieren"
-              value={topic}
-              disabled={starting}
-              onChange={(e) => setTopic(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') void start();
-              }}
-            />
-            <button className="btn primary" disabled={starting} onClick={() => void start()}>
-              {starting ? 'Starte…' : '💬 Gespräch starten'}
-            </button>
-          </div>
+          {enrollments === null ? (
+            <div className="loading">Lade…</div>
+          ) : modules.length === 0 ? (
+            <p className="kh-muted" style={{ marginTop: 0 }}>
+              Du bist noch keinem Modulanlass mit Modul beigetreten.
+            </p>
+          ) : (
+            <>
+              <p className="kh-muted" style={{ marginTop: 0 }}>
+                Wähle ein Modul – die KI nutzt alle Kompetenzen der Matrix als Grundlage.
+              </p>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                <select
+                  className="inline-select"
+                  style={{ minWidth: 240 }}
+                  value={moduleId ?? ''}
+                  onChange={(e) => setModuleId(e.target.value)}
+                >
+                  {modules.map((e) => (
+                    <option key={e.enrollmentId} value={e.class.module!.id}>
+                      Modul {e.class.module!.number} · {e.class.module!.title?.de ?? e.class.name}
+                    </option>
+                  ))}
+                </select>
+                <button className="btn primary" disabled={starting} onClick={() => void start()}>
+                  {starting ? 'Starte…' : '💬 Modul mit KI üben'}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
       <div className="panel">
         <div className="panel-head">
-          <h2>Frühere Gespräche</h2>
+          <h2>Frühere Lerngespräche</h2>
         </div>
         {!sessions ? (
           <div className="loading">Lade…</div>
         ) : sessions.length === 0 ? (
           <div className="empty">
             <span className="ic">💬</span>
-            <p>Noch keine Übungsgespräche. Starte oben dein erstes!</p>
+            <p>Noch keine Lerngespräche. Starte oben dein erstes!</p>
           </div>
         ) : (
           <ul className="hz-list">

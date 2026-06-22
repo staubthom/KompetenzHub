@@ -218,6 +218,21 @@ export const ai = {
   status: () => apiFetch<{ configured: boolean; enabled: boolean }>('/ai/status'),
 };
 
+// Lernpfade (FA-84)
+export const learningPaths = {
+  list: (matrixId: string) => apiFetch<LearningPath[]>(`/matrices/${matrixId}/paths`),
+  create: (matrixId: string, data: { name: string; fieldIds: string[]; isActive?: boolean }) =>
+    apiFetch<LearningPath>(`/matrices/${matrixId}/paths`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  update: (id: string, data: { name?: string; fieldIds?: string[]; isActive?: boolean }) =>
+    apiFetch<LearningPath>(`/paths/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  remove: (id: string) => apiFetch<void>(`/paths/${id}`, { method: 'DELETE' }),
+  activeForModule: (moduleId: string) =>
+    apiFetch<ActiveLearningPath>(`/modules/${moduleId}/learning-path`),
+};
+
 // KI-Fachgespräch / Übungsmodus (FA-80)
 export const expertTalk = {
   available: () => apiFetch<{ available: boolean }>('/expert-talk/available'),
@@ -226,6 +241,11 @@ export const expertTalk = {
     apiFetch<ExpertTalkSession>('/expert-talk/sessions', {
       method: 'POST',
       body: JSON.stringify({ topic, context }),
+    }),
+  createModule: (moduleId: string) =>
+    apiFetch<ExpertTalkSession>('/expert-talk/module-sessions', {
+      method: 'POST',
+      body: JSON.stringify({ moduleId }),
     }),
   get: (id: string) => apiFetch<ExpertTalkSession>(`/expert-talk/sessions/${id}`),
   send: (id: string, content: string) =>
@@ -320,6 +340,7 @@ export interface AiConfig {
   baseUrl: string;
   model: string;
   enabled: boolean;
+  shareWithLearners: boolean;
   hasApiKey: boolean;
   apiKeyMask: string | null;
   updatedAt: string | null;
@@ -331,6 +352,7 @@ export interface AiConfigInput {
   model?: string;
   apiKey?: string | null; // weglassen = unverändert; '' = löschen
   enabled?: boolean;
+  shareWithLearners?: boolean;
 }
 
 export interface AiTestResult {
@@ -349,6 +371,49 @@ export interface AiAssessment {
   createdAt: string;
 }
 
+export interface LearningPathStepDef {
+  id: string;
+  fieldId: string;
+  code: string;
+  level: string;
+  sortOrder: number;
+}
+
+export interface LearningPath {
+  id: string;
+  name: string;
+  isActive: boolean;
+  steps: LearningPathStepDef[];
+}
+
+export interface ActivePathStep {
+  id: string;
+  fieldId: string;
+  code: string;
+  level: string;
+  bandCode: string;
+  descriptor: Record<string, string> | null;
+  status: 'OPEN' | 'SUBMITTED' | 'GRADED' | 'REJECTED';
+  isNext: boolean;
+  evidences: {
+    id: string;
+    title: Record<string, string>;
+    status: 'OPEN' | 'SUBMITTED' | 'GRADED' | 'REJECTED';
+  }[];
+}
+
+export interface ActiveLearningPath {
+  module: { number: string; title: Record<string, string> } | null;
+  path: {
+    id: string;
+    name: string;
+    steps: ActivePathStep[];
+    doneCount: number;
+    total: number;
+    hasEnrollment: boolean;
+  } | null;
+}
+
 export interface ExpertTalkMessage {
   id: string;
   role: string; // "user" | "assistant"
@@ -359,6 +424,7 @@ export interface ExpertTalkMessage {
 export interface ExpertTalkSession {
   id: string;
   topic: string;
+  mode?: string; // topic | module
   status: string; // ACTIVE | COMPLETED
   createdAt: string;
   messages: ExpertTalkMessage[];
@@ -367,6 +433,7 @@ export interface ExpertTalkSession {
 export interface ExpertTalkSummary {
   id: string;
   topic: string;
+  mode?: string;
   status: string;
   messageCount: number;
   createdAt: string;

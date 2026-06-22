@@ -237,6 +237,7 @@ model CompetenceMatrix {
 
   module Module          @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   bands  CompetenceBand[]
+  paths  LearningPath[]
 }
 
 model CompetenceBand {
@@ -278,6 +279,7 @@ model CompetenceField {
   band       CompetenceBand  @relation(fields: [bandId], references: [id], onDelete: Cascade)
   descriptor Descriptor?
   evidences  EvidenceField[]
+  pathSteps  LearningPathStep[]
 
   @@unique([bandId, level])
   @@index([bandId])
@@ -462,6 +464,7 @@ model AiConfig {
   model     String   @default("gpt-4o-mini")
   apiKeyEnc String? // verschlüsselter API-Key (null = keiner hinterlegt)
   enabled   Boolean  @default(false) // Feature-Gate: KI-Funktionen aktiv
+  shareWithLearners Boolean @default(false) // Lehrer-KI auch für Lernende nutzbar
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -496,7 +499,8 @@ model ExpertTalkSession {
   tenantId  String
   userId    String
   topic     String
-  context   String   @default("") // Aufgabenstellung des Nachweises (Klartext)
+  context   String   @default("") // Aufgabenstellung / Kompetenz-Kontext (Klartext)
+  mode      String   @default("topic") // topic = Nachweis/Thema · module = ganzes Modul
   status    String   @default("ACTIVE") // ACTIVE | COMPLETED
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -517,4 +521,37 @@ model ExpertTalkMessage {
   session ExpertTalkSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId, createdAt])
+}
+
+// ============================================================
+// Lernpfade (FA-84) – alternative Reihenfolge durch die Matrix
+// ============================================================
+
+/// Geordneter Lernpfad je Matrix. Mehrere Pfade möglich; einer kann „aktiv"
+/// (= den Lernenden empfohlen) sein.
+model LearningPath {
+  id        String   @id @default(uuid())
+  matrixId  String
+  name      String
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  matrix CompetenceMatrix   @relation(fields: [matrixId], references: [id], onDelete: Cascade)
+  steps  LearningPathStep[]
+
+  @@index([matrixId])
+}
+
+model LearningPathStep {
+  id        String @id @default(uuid())
+  pathId    String
+  fieldId   String
+  sortOrder Int    @default(0)
+
+  path  LearningPath    @relation(fields: [pathId], references: [id], onDelete: Cascade)
+  field CompetenceField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+
+  @@index([pathId, sortOrder])
+  @@index([fieldId])
 }

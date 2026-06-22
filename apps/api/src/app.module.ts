@@ -14,6 +14,7 @@ import { SubmissionsModule } from './submissions/submissions.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { AiModule } from './ai/ai.module';
 import { ExpertTalkModule } from './expert-talk/expert-talk.module';
+import { LearningPathsModule } from './learning-paths/learning-paths.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { ExpertTalkModule } from './expert-talk/expert-talk.module';
     DashboardModule,
     AiModule,
     ExpertTalkModule,
+    LearningPathsModule,
   ],
   controllers: [HealthController],
   providers: [

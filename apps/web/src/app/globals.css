@@ -1891,3 +1891,74 @@ a {
   outline: 2px solid color-mix(in srgb, var(--brand-primary) 40%, transparent);
   border-color: var(--brand-primary);
 }
+
+/* ===== Lernpfad-Timeline (Sprint 8, FA-84) ===== */
+.path {
+  padding: 8px 18px 18px;
+}
+.path .step {
+  display: flex;
+  gap: 14px;
+  padding: 4px 0;
+}
+.path .step .line {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.path .step .node {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 800;
+  flex-shrink: 0;
+  border: 2px solid var(--border);
+  background: var(--surface, var(--bg));
+  color: var(--fg-muted);
+}
+.path .step.done .node {
+  background: var(--st-graded);
+  border-color: var(--st-graded);
+  color: #fff;
+}
+.path .step.current .node {
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
+  color: #fff;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
+.path .step .connector {
+  flex: 1;
+  width: 2px;
+  background: var(--border);
+  margin: 2px 0;
+  min-height: 18px;
+}
+.path .step.done .connector {
+  background: var(--st-graded);
+}
+.path .step .body {
+  flex: 1;
+  padding-bottom: 16px;
+}
+.path .step .ti {
+  font-weight: 700;
+  font-size: 14px;
+}
+.path .step .meta {
+  font-size: 12px;
+  color: var(--fg-muted);
+  margin: 2px 0 8px;
+}
+.path .step .card-mini {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}

@@ -14,7 +14,7 @@ export class ExpertTalkController {
   @Get('available')
   @Roles(Role.LEARNER, Role.TEACHER, Role.ADMIN)
   available(@CurrentUser() user: RequestContext) {
-    return this.expertTalk.available(user.tenantId);
+    return this.expertTalk.available(user.tenantId, user.userId);
   }
 
   /** Eigene Übungs-Gespräche auflisten. */
@@ -34,6 +34,13 @@ export class ExpertTalkController {
       dto?.topic ?? '',
       dto?.context ?? '',
     );
+  }
+
+  /** Modul-weites Lerngespräch starten (Kontext = alle Kompetenzen der Matrix). */
+  @Post('module-sessions')
+  @Roles(Role.LEARNER, Role.TEACHER, Role.ADMIN)
+  createModule(@Body() dto: { moduleId?: string }, @CurrentUser() user: RequestContext) {
+    return this.expertTalk.createModuleSession(user.tenantId, user.userId, dto?.moduleId ?? '');
   }
 
   /** Gesprächsverlauf abrufen. */
