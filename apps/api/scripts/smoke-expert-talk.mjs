@@ -60,7 +60,7 @@ const avail = await req('GET', '/expert-talk/available', null, studentA);
 check('GET /expert-talk/available → available true', avail.status === 200 && avail.body?.available === true);
 
 // ── FA-80: Gespräch starten (KI stellt erste Frage) ──────────────
-const created = await req('POST', '/expert-talk/sessions', { topic: 'Betriebssysteme konfigurieren' }, studentA);
+const created = await req('POST', '/expert-talk/sessions', { topic: 'Betriebssysteme konfigurieren', context: '<p>Beschreibe die <strong>UAC</strong>-Konfiguration.</p>' }, studentA);
 check('Gespräch starten → 201', created.status === 201, `status=${created.status}`);
 const sessionId = created.body?.id;
 check('Session hat Thema', created.body?.topic === 'Betriebssysteme konfigurieren');

@@ -27,8 +27,13 @@ export class ExpertTalkController {
   /** Neues Übungs-Gespräch zu einem Thema starten (KI stellt die erste Frage). */
   @Post('sessions')
   @Roles(Role.LEARNER, Role.TEACHER, Role.ADMIN)
-  create(@Body() dto: { topic?: string }, @CurrentUser() user: RequestContext) {
-    return this.expertTalk.createSession(user.tenantId, user.userId, dto?.topic ?? '');
+  create(@Body() dto: { topic?: string; context?: string }, @CurrentUser() user: RequestContext) {
+    return this.expertTalk.createSession(
+      user.tenantId,
+      user.userId,
+      dto?.topic ?? '',
+      dto?.context ?? '',
+    );
   }
 
   /** Gesprächsverlauf abrufen. */

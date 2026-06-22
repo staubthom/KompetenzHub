@@ -222,10 +222,10 @@ export const ai = {
 export const expertTalk = {
   available: () => apiFetch<{ available: boolean }>('/expert-talk/available'),
   list: () => apiFetch<ExpertTalkSummary[]>('/expert-talk/sessions'),
-  create: (topic: string) =>
+  create: (topic: string, context?: string) =>
     apiFetch<ExpertTalkSession>('/expert-talk/sessions', {
       method: 'POST',
-      body: JSON.stringify({ topic }),
+      body: JSON.stringify({ topic, context }),
     }),
   get: (id: string) => apiFetch<ExpertTalkSession>(`/expert-talk/sessions/${id}`),
   send: (id: string, content: string) =>

@@ -15,24 +15,32 @@ export class ExpertTalkService {
     private readonly ai: AiService,
   ) {}
 
-  private systemPrompt(topic: string): string {
+  private systemPrompt(topic: string, context: string): string {
+    const ctx = context.trim()
+      ? ' Die zugehörige Aufgabenstellung des Kompetenznachweises lautet: ' +
+        `„${context.trim()}". Richte deine Fragen konsequent an dieser Aufgabenstellung aus.`
+      : '';
     return (
       'Du bist ein wohlwollender, geduldiger KI-Tutor an einer Schweizer Berufsfachschule. ' +
-      `Du führst ein ÜBUNGS-Fachgespräch zum Thema „${topic}". ` +
-      'Ziel ist, dass die lernende Person ihr Fachwissen mündlich übt – es gibt KEINE Note. ' +
+      `Du führst ein ÜBUNGS-Fachgespräch zum Thema „${topic}".` +
+      ctx +
+      ' Ziel ist, dass die lernende Person ihr Fachwissen mündlich übt – es gibt KEINE Note. ' +
       'Stelle jeweils genau EINE Frage, gib kurzes, konstruktives Feedback zur vorigen Antwort, ' +
       'und vertiefe schrittweise. Bleib beim Thema, schreibe auf Deutsch und fasse dich kurz (2–4 Sätze).'
     );
   }
 
-  async createSession(tenantId: string, userId: string, topicRaw: string) {
+  async createSession(tenantId: string, userId: string, topicRaw: string, contextRaw = '') {
     const topic = (topicRaw ?? '').trim();
     if (!topic) throw new UnprocessableEntityException('Bitte ein Thema angeben.');
     if (topic.length > 200)
       throw new UnprocessableEntityException('Thema ist zu lang (max. 200 Zeichen).');
 
+    // Aufgabenstellung (HTML) → Klartext, begrenzt auf eine vernünftige Länge.
+    const context = this.stripHtml(contextRaw ?? '').slice(0, 4000);
+
     const session = await this.prisma.expertTalkSession.create({
-      data: { tenantId, userId, topic },
+      data: { tenantId, userId, topic, context },
     });
 
     const stub =
@@ -43,10 +51,10 @@ export class ExpertTalkService {
     const reply = await this.ai.tenantChat(
       tenantId,
       [
-        { role: 'system', content: this.systemPrompt(topic) },
+        { role: 'system', content: this.systemPrompt(topic, context) },
         {
           role: 'user',
-          content: `Starte das Übungs-Fachgespräch zum Thema „${topic}" mit einer ersten, einladenden Frage.`,
+          content: `Starte das Übungs-Fachgespräch mit einer ersten, einladenden Frage – ausgerichtet an der Aufgabenstellung.`,
         },
       ],
       stub,
@@ -77,7 +85,7 @@ export class ExpertTalkService {
       orderBy: { createdAt: 'asc' },
     });
     const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
-      { role: 'system', content: this.systemPrompt(session.topic) },
+      { role: 'system', content: this.systemPrompt(session.topic, session.context) },
       ...history.map((m) => ({
         role: m.role === 'assistant' ? ('assistant' as const) : ('user' as const),
         content: m.content,
@@ -154,6 +162,15 @@ export class ExpertTalkService {
         createdAt: m.createdAt.toISOString(),
       })),
     };
+  }
+
+  private stripHtml(html: string): string {
+    return html
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
   private async loadOwned(tenantId: string, userId: string, sessionId: string) {

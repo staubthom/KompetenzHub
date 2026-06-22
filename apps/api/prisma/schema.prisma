@@ -496,6 +496,7 @@ model ExpertTalkSession {
   tenantId  String
   userId    String
   topic     String
+  context   String   @default("") // Aufgabenstellung des Nachweises (Klartext)
   status    String   @default("ACTIVE") // ACTIVE | COMPLETED
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

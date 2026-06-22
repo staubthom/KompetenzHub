@@ -9,7 +9,7 @@ import { useToast } from './ToastProvider';
  * im Abgabe-Dialog eines Kompetenznachweises. Startet beim Öffnen eine Session zum
  * übergebenen Thema; der Verlauf wird serverseitig gespeichert.
  */
-export default function ExpertTalkChat({ topic }: { topic: string }) {
+export default function ExpertTalkChat({ topic, context }: { topic: string; context?: string }) {
   const toast = useToast();
   const [session, setSession] = useState<ExpertTalkSession | null>(null);
   const [starting, setStarting] = useState(true);
@@ -21,7 +21,7 @@ export default function ExpertTalkChat({ topic }: { topic: string }) {
     let cancelled = false;
     void (async () => {
       try {
-        const s = await expertTalk.create(topic);
+        const s = await expertTalk.create(topic, context);
         if (!cancelled) setSession(s);
       } catch (e: unknown) {
         const err = e as { body?: { title?: string } };
@@ -33,7 +33,7 @@ export default function ExpertTalkChat({ topic }: { topic: string }) {
     return () => {
       cancelled = true;
     };
-  }, [topic, toast]);
+  }, [topic, context, toast]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });

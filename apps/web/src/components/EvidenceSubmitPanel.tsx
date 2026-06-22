@@ -228,7 +228,10 @@ export default function EvidenceSubmitPanel({
             </div>
           ) : (
             <div style={{ marginTop: 10 }}>
-              <ExpertTalkChat topic={ev.title?.de ?? 'Fachgespräch'} />
+              <ExpertTalkChat
+                topic={ev.title?.de ?? 'Fachgespräch'}
+                context={ev.instructions?.de ?? ''}
+              />
             </div>
           )}
         </div>
