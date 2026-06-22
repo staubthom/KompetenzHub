@@ -1,4 +1,4 @@
-import { getToken, saveSession, type Role, type SessionUser } from './session';
+import { getToken, saveSession, saveUser, type Role, type SessionUser } from './session';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -48,6 +48,19 @@ export async function logout(): Promise<void> {
   } catch {
     // Auch bei Fehler lokal abmelden
   }
+}
+
+/** FA-10: Sprache/Anzeigemodus speichern (überlebt Logout); aktualisiert die Session. */
+export async function updatePreferences(prefs: {
+  locale?: string;
+  theme?: string;
+}): Promise<SessionUser> {
+  const user = await apiFetch<SessionUser>('/auth/me', {
+    method: 'PATCH',
+    body: JSON.stringify(prefs),
+  });
+  saveUser(user);
+  return user;
 }
 
 // Modules (FA-01)

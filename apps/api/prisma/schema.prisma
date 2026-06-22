@@ -136,6 +136,7 @@ model User {
   externalId   String
   avatarUrl    String?
   locale       Locale       @default(de)
+  theme        String       @default("light") // Anzeigemodus: light | dark | gray
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 

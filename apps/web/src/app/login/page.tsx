@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation';
 import { devLogin } from '../../lib/api';
 import { useToast } from '../../components/ToastProvider';
 import { getUser, homePathForRole, type Role } from '../../lib/session';
+import { useI18n } from '../../lib/i18n';
 
 export default function LoginPage() {
   const router = useRouter();
   const toast = useToast();
+  const { t } = useI18n();
   const [role, setRole] = useState<Role>('TEACHER');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -53,7 +55,7 @@ export default function LoginPage() {
         <h1 className="login-logo">
           Kompetenz<span>Hub</span>
         </h1>
-        <p className="login-sub">Anmelden, um fortzufahren</p>
+        <p className="login-sub">{t('login.subtitle')}</p>
 
         {/* OAuth-Provider (FA-08) */}
         <button className="provider-btn" onClick={() => handleOAuth('microsoft')} type="button">
@@ -102,14 +104,14 @@ export default function LoginPage() {
               aria-pressed={role === 'TEACHER'}
               onClick={() => setRole('TEACHER')}
             >
-              👩‍🏫 Lehrperson
+              👩‍🏫 {t('header.roleTeacher')}
             </button>
             <button
               type="button"
               aria-pressed={role === 'LEARNER'}
               onClick={() => setRole('LEARNER')}
             >
-              🎓 Lernende:r
+              🎓 {t('header.roleStudent')}
             </button>
           </div>
 
@@ -129,7 +131,7 @@ export default function LoginPage() {
             style={{ width: '100%', justifyContent: 'center', marginTop: 8 }}
             disabled={loading}
           >
-            {loading ? 'Anmelden…' : 'Als Dev anmelden'}
+            {loading ? t('common.loading') : 'Als Dev anmelden'}
           </button>
         </form>
 

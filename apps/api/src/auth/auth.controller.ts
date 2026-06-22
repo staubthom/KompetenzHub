@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   NotFoundException,
+  Patch,
   Post,
   Req,
   Res,
@@ -105,6 +106,17 @@ export class AuthController {
   @Get('me')
   async me(@CurrentUser() user: RequestContext): Promise<unknown> {
     const profile = await this.auth.me(user.userId, user.tenantId);
+    if (!profile) throw new NotFoundException('Benutzer nicht gefunden.');
+    return profile;
+  }
+
+  /** FA-10: Sprache/Anzeigemodus des eingeloggten Nutzers speichern. */
+  @Patch('me')
+  async updateMe(
+    @Body() dto: { locale?: string; theme?: string },
+    @CurrentUser() user: RequestContext,
+  ): Promise<unknown> {
+    const profile = await this.auth.updatePreferences(user.userId, user.tenantId, dto ?? {});
     if (!profile) throw new NotFoundException('Benutzer nicht gefunden.');
     return profile;
   }
