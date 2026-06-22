@@ -106,6 +106,11 @@ const view2 = await req('GET', `/modules/${moduleId}/learning-path`, null, stude
 const step0 = view2.body?.path?.steps?.[0];
 check('A1B jetzt SUBMITTED', step0?.status === 'SUBMITTED');
 check('Nächster Schritt wandert weiter (nicht mehr Schritt 1)', step0?.isNext === false);
+check(
+  'Schritt enthält anklickbaren Nachweis mit Status',
+  Array.isArray(step0?.evidences) &&
+    step0.evidences.some((x) => x.id === ev.body.id && x.status === 'SUBMITTED'),
+);
 
 // ── RBAC: Lernende:r darf keine Pfade verwalten ───────────────────
 const forbidden = await req('POST', `/matrices/${matrixId}/paths`, { name: 'Hack', fieldIds: [fA] }, student);

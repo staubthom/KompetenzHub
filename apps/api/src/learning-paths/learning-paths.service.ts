@@ -115,17 +115,22 @@ export class LearningPathsService {
     });
 
     const fieldIds = path.steps.map((s) => s.fieldId);
-    const statusByField = await this.statusByField(fieldIds, tenantId, userId, isTeacher);
+    const dataByField = await this.collectFieldData(fieldIds, tenantId, userId, isTeacher);
 
-    const steps = path.steps.map((s) => ({
-      id: s.id,
-      fieldId: s.fieldId,
-      code: s.field.code,
-      level: s.field.level,
-      bandCode: s.field.band.code,
-      descriptor: (s.field.descriptor?.text as Record<string, string> | undefined) ?? null,
-      status: statusByField.get(s.fieldId) ?? ('OPEN' as FieldStatus),
-    }));
+    const steps = path.steps.map((s) => {
+      const fd = dataByField.get(s.fieldId);
+      return {
+        id: s.id,
+        fieldId: s.fieldId,
+        code: s.field.code,
+        level: s.field.level,
+        bandCode: s.field.band.code,
+        descriptor: (s.field.descriptor?.text as Record<string, string> | undefined) ?? null,
+        status: fd?.status ?? ('OPEN' as FieldStatus),
+        // Direkt anklickbare Nachweise je Schritt (kein Umweg über die Matrix).
+        evidences: fd?.evidences ?? [],
+      };
+    });
 
     // Empfohlener nächster Schritt: erster offener/zurückgewiesener; sonst erster eingereichter.
     const actionable = steps.find((s) => s.status === 'REJECTED' || s.status === 'OPEN');
@@ -149,14 +154,31 @@ export class LearningPathsService {
 
   // ── Helfer ────────────────────────────────────────────────────
 
-  /** Aggregierter Feld-Status aus den letzten Einreichungen je sichtbarem Nachweis. */
-  private async statusByField(
+  /**
+   * Liefert je Feld den aggregierten Status UND die anklickbaren Nachweise
+   * (sichtbar) inkl. dem Status der letzten Einreichung der/des Lernenden.
+   */
+  private async collectFieldData(
     fieldIds: string[],
     tenantId: string,
     userId: string,
     isTeacher: boolean,
-  ): Promise<Map<string, FieldStatus>> {
-    const result = new Map<string, FieldStatus>();
+  ): Promise<
+    Map<
+      string,
+      {
+        status: FieldStatus;
+        evidences: { id: string; title: Record<string, string>; status: FieldStatus }[];
+      }
+    >
+  > {
+    const result = new Map<
+      string,
+      {
+        status: FieldStatus;
+        evidences: { id: string; title: Record<string, string>; status: FieldStatus }[];
+      }
+    >();
     if (fieldIds.length === 0) return result;
 
     const evidences = await this.prisma.competenceEvidence.findMany({
@@ -165,7 +187,10 @@ export class LearningPathsService {
         isVisible: true,
         fields: { some: { fieldId: { in: fieldIds } } },
       },
+      orderBy: { sortOrder: 'asc' },
       select: {
+        id: true,
+        title: true,
         fields: { select: { fieldId: true } },
         submissions: isTeacher
           ? false
@@ -178,12 +203,20 @@ export class LearningPathsService {
       },
     });
 
-    // Pro Feld die „beste"/relevanteste Statusmeldung bestimmen.
+    for (const fieldId of fieldIds) result.set(fieldId, { status: 'OPEN', evidences: [] });
+
     const collect = new Map<string, SubmissionStatus[]>();
     for (const ev of evidences) {
       const last = isTeacher ? undefined : ev.submissions?.[0]?.status;
+      const evStatus: FieldStatus = (last as FieldStatus | undefined) ?? 'OPEN';
       for (const f of ev.fields) {
-        if (!fieldIds.includes(f.fieldId)) continue;
+        const entry = result.get(f.fieldId);
+        if (!entry) continue; // Feld nicht im Pfad
+        entry.evidences.push({
+          id: ev.id,
+          title: ev.title as Record<string, string>,
+          status: evStatus,
+        });
         const arr = collect.get(f.fieldId) ?? [];
         if (last) arr.push(last);
         collect.set(f.fieldId, arr);
@@ -191,8 +224,8 @@ export class LearningPathsService {
     }
 
     for (const fieldId of fieldIds) {
-      const statuses = collect.get(fieldId) ?? [];
-      result.set(fieldId, this.aggregate(statuses));
+      const entry = result.get(fieldId)!;
+      entry.status = this.aggregate(collect.get(fieldId) ?? []);
     }
     return result;
   }

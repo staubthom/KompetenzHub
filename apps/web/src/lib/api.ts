@@ -388,6 +388,11 @@ export interface ActivePathStep {
   descriptor: Record<string, string> | null;
   status: 'OPEN' | 'SUBMITTED' | 'GRADED' | 'REJECTED';
   isNext: boolean;
+  evidences: {
+    id: string;
+    title: Record<string, string>;
+    status: 'OPEN' | 'SUBMITTED' | 'GRADED' | 'REJECTED';
+  }[];
 }
 
 export interface ActiveLearningPath {

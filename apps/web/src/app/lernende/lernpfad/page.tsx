@@ -3,12 +3,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import AppShell from '../../../components/AppShell';
+import EvidenceSubmitPanel from '../../../components/EvidenceSubmitPanel';
 import { useToast } from '../../../components/ToastProvider';
 import {
   classes,
   learningPaths,
+  evidence as evidenceApi,
   type ActiveLearningPath,
   type MyEnrollment,
+  type StudentEvidence,
 } from '../../../lib/api';
 
 const STATUS_META: Record<string, { label: string; badge: string; node: string }> = {
@@ -18,11 +21,25 @@ const STATUS_META: Record<string, { label: string; badge: string; node: string }
   OPEN: { label: 'offen', badge: 'b-archived', node: '•' },
 };
 
+function chipIcon(status: string): string {
+  switch (status) {
+    case 'GRADED':
+      return '✅';
+    case 'REJECTED':
+      return '↩';
+    case 'SUBMITTED':
+      return '⏳';
+    default:
+      return '📎';
+  }
+}
+
 export default function LernpfadPage() {
   const toast = useToast();
   const [enrollments, setEnrollments] = useState<MyEnrollment[] | null>(null);
   const [moduleId, setModuleId] = useState<string | null>(null);
   const [data, setData] = useState<ActiveLearningPath | null>(null);
+  const [openEvidence, setOpenEvidence] = useState<StudentEvidence | null>(null);
 
   useEffect(() => {
     void (async () => {
@@ -51,6 +68,29 @@ export default function LernpfadPage() {
   useEffect(() => {
     if (moduleId) void loadPath(moduleId);
   }, [moduleId, loadPath]);
+
+  async function openEvidenceDetail(evidenceId: string) {
+    try {
+      setOpenEvidence(await evidenceApi.studentGet(evidenceId));
+    } catch (e: unknown) {
+      const err = e as { body?: { title?: string } };
+      toast.error(err.body?.title ?? 'Nachweis konnte nicht geladen werden.');
+    }
+  }
+
+  const closeEvidence = useCallback(() => {
+    setOpenEvidence(null);
+    if (moduleId) void loadPath(moduleId);
+  }, [moduleId, loadPath]);
+
+  useEffect(() => {
+    if (!openEvidence) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeEvidence();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [openEvidence, closeEvidence]);
 
   const path = data?.path ?? null;
   const next = path?.steps.find((s) => s.isNext) ?? null;
@@ -153,16 +193,25 @@ export default function LernpfadPage() {
                         {s.isNext ? 'Dein nächster Schritt · ' : ''}
                         {meta.label}
                       </div>
-                      <div className="card-mini">
+                      <div className="card-mini" style={{ flexWrap: 'wrap' }}>
                         <span className={`badge ${meta.badge}`}>{meta.label}</span>
-                        {s.isNext && (
-                          <Link
-                            className="btn primary"
-                            style={{ marginLeft: 'auto' }}
-                            href="/lernende"
-                          >
-                            Jetzt bearbeiten →
-                          </Link>
+                        {s.evidences.length === 0 ? (
+                          <span className="kh-muted" style={{ fontSize: 13 }}>
+                            Noch kein Nachweis hinterlegt.
+                          </span>
+                        ) : (
+                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                            {s.evidences.map((ev) => (
+                              <button
+                                key={ev.id}
+                                className={`evidence-chip evidence-chip-btn chip-${ev.status.toLowerCase()}`}
+                                title={`${STATUS_META[ev.status].label}: ${ev.title?.de ?? ''}`}
+                                onClick={() => void openEvidenceDetail(ev.id)}
+                              >
+                                {chipIcon(ev.status)} {ev.title?.de}
+                              </button>
+                            ))}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -172,6 +221,26 @@ export default function LernpfadPage() {
             </div>
           </div>
         </>
+      )}
+
+      {/* Nachweis einreichen (Modal) – direkt aus dem Lernpfad */}
+      {openEvidence && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-head">
+              <h2>{openEvidence.title?.de}</h2>
+              <button className="btn-icon" title="Schliessen" onClick={closeEvidence}>
+                ✕
+              </button>
+            </div>
+            <div className="modal-body">
+              <EvidenceSubmitPanel
+                ev={openEvidence}
+                onSubmitted={() => moduleId && void loadPath(moduleId)}
+              />
+            </div>
+          </div>
+        </div>
       )}
     </AppShell>
   );
