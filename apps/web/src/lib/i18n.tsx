@@ -269,6 +269,35 @@ const de: Record<string, string> = {
   'hist.UPDATED': 'Bewertung geändert',
   'hist.REJECTED': 'Zurückgewiesen',
   'hist.REOPENED': 'Wieder geöffnet',
+  'sub.statusSubmitted': 'Eingereicht – wartet auf Bewertung',
+  'sub.statusGraded': 'Bewertet',
+  'sub.statusRejected': 'Zurückgewiesen – bitte überarbeiten',
+  'sub.statusOpen': 'Offen',
+  'sub.downloadAttachment': 'Anhang herunterladen',
+  'sub.expertTalkTitle': 'Fachgespräch / Präsentation',
+  'sub.aiUnavailable':
+    'Die KI-Übung ist aktuell nicht verfügbar (keine KI freigeschaltet). Bereite dich eigenständig auf das Fachgespräch vor.',
+  'sub.practiceHint':
+    'Übe das Fachgespräch zu diesem Nachweis mit dem KI-Tutor – unverbindlich, ohne Note.',
+  'sub.practiceWithAi': '💬 Mit KI üben',
+  'sub.alreadySubmitted':
+    '⏳ Bereits eingereicht – eine erneute Einreichung ist erst nach einer Rückweisung durch die Lehrperson möglich.',
+  'sub.alreadyGraded': '✓ Dieser Nachweis wurde bereits bewertet.',
+  'sub.view': 'Ansehen',
+  'sub.addFile': '📄 Datei hinzufügen',
+  'sub.screenshot': '🖼 Screenshot aufnehmen',
+  'sub.allowed': 'erlaubt',
+  'sub.link': 'Link',
+  'sub.text': 'Text',
+  'sub.textNoPaste': 'Text (Einfügen deaktiviert – bitte selbst schreiben)',
+  'sub.answerPlaceholder': 'Deine Antwort …',
+  'sub.expertTalkNoFile':
+    'Für dieses Fachgespräch / diese Präsentation ist keine Datei nötig. Du kannst direkt abschicken – die mündliche Leistung wird von der Lehrperson bewertet.',
+  'sub.submit': '✓ Einreichen',
+  'sub.submitting': 'Wird eingereicht…',
+  'sub.needContent': 'Bitte zuerst Text, Link, Datei oder Screenshot hinzufügen.',
+  'sub.success': 'Erfolgreich eingereicht!',
+  'sub.previewOpen': 'Vorschau öffnen',
 };
 
 const fr: Record<string, string> = {
@@ -509,6 +538,35 @@ const fr: Record<string, string> = {
   'hist.UPDATED': 'Évaluation modifiée',
   'hist.REJECTED': 'Renvoyé',
   'hist.REOPENED': 'Rouvert',
+  'sub.statusSubmitted': 'Soumis – en attente d’évaluation',
+  'sub.statusGraded': 'Évalué',
+  'sub.statusRejected': 'Renvoyé – à retravailler',
+  'sub.statusOpen': 'Ouvert',
+  'sub.downloadAttachment': 'Télécharger la pièce jointe',
+  'sub.expertTalkTitle': 'Entretien / présentation',
+  'sub.aiUnavailable':
+    'L’exercice IA n’est pas disponible actuellement (aucune IA activée). Préparez l’entretien de manière autonome.',
+  'sub.practiceHint':
+    'Entraînez-vous à l’entretien sur cette preuve avec le tuteur IA – sans engagement, sans note.',
+  'sub.practiceWithAi': '💬 S’exercer avec l’IA',
+  'sub.alreadySubmitted':
+    '⏳ Déjà soumis – une nouvelle soumission n’est possible qu’après un renvoi par l’enseignant·e.',
+  'sub.alreadyGraded': '✓ Cette preuve a déjà été évaluée.',
+  'sub.view': 'Voir',
+  'sub.addFile': '📄 Ajouter un fichier',
+  'sub.screenshot': '🖼 Faire une capture d’écran',
+  'sub.allowed': 'autorisé',
+  'sub.link': 'Lien',
+  'sub.text': 'Texte',
+  'sub.textNoPaste': 'Texte (collage désactivé – écrivez vous-même)',
+  'sub.answerPlaceholder': 'Ta réponse …',
+  'sub.expertTalkNoFile':
+    'Pour cet entretien / cette présentation, aucun fichier n’est requis. Vous pouvez soumettre directement – la prestation orale est évaluée par l’enseignant·e.',
+  'sub.submit': '✓ Soumettre',
+  'sub.submitting': 'Soumission…',
+  'sub.needContent': 'Ajoutez d’abord un texte, un lien, un fichier ou une capture.',
+  'sub.success': 'Soumis avec succès !',
+  'sub.previewOpen': 'Ouvrir l’aperçu',
 };
 
 const it: Record<string, string> = {
@@ -749,6 +807,35 @@ const it: Record<string, string> = {
   'hist.UPDATED': 'Valutazione modificata',
   'hist.REJECTED': 'Respinto',
   'hist.REOPENED': 'Riaperto',
+  'sub.statusSubmitted': 'Inviato – in attesa di valutazione',
+  'sub.statusGraded': 'Valutato',
+  'sub.statusRejected': 'Respinto – da rivedere',
+  'sub.statusOpen': 'Aperto',
+  'sub.downloadAttachment': 'Scarica allegato',
+  'sub.expertTalkTitle': 'Colloquio / presentazione',
+  'sub.aiUnavailable':
+    'L’esercizio IA non è disponibile al momento (nessuna IA attivata). Preparati al colloquio in autonomia.',
+  'sub.practiceHint':
+    'Esercitati al colloquio su questa prova con il tutor IA – senza impegno, senza voto.',
+  'sub.practiceWithAi': '💬 Esercitati con l’IA',
+  'sub.alreadySubmitted':
+    '⏳ Già inviato – un nuovo invio è possibile solo dopo un rifiuto da parte del/della docente.',
+  'sub.alreadyGraded': '✓ Questa prova è già stata valutata.',
+  'sub.view': 'Visualizza',
+  'sub.addFile': '📄 Aggiungi file',
+  'sub.screenshot': '🖼 Cattura schermata',
+  'sub.allowed': 'consentito',
+  'sub.link': 'Link',
+  'sub.text': 'Testo',
+  'sub.textNoPaste': 'Testo (incolla disattivato – scrivi tu)',
+  'sub.answerPlaceholder': 'La tua risposta …',
+  'sub.expertTalkNoFile':
+    'Per questo colloquio / questa presentazione non serve alcun file. Puoi inviare direttamente – la prestazione orale è valutata dal/dalla docente.',
+  'sub.submit': '✓ Invia',
+  'sub.submitting': 'Invio…',
+  'sub.needContent': 'Aggiungi prima testo, link, file o schermata.',
+  'sub.success': 'Inviato con successo!',
+  'sub.previewOpen': 'Apri anteprima',
 };
 
 const en: Record<string, string> = {
@@ -986,6 +1073,35 @@ const en: Record<string, string> = {
   'hist.UPDATED': 'Grade changed',
   'hist.REJECTED': 'Rejected',
   'hist.REOPENED': 'Reopened',
+  'sub.statusSubmitted': 'Submitted – awaiting grading',
+  'sub.statusGraded': 'Graded',
+  'sub.statusRejected': 'Rejected – please revise',
+  'sub.statusOpen': 'Open',
+  'sub.downloadAttachment': 'Download attachment',
+  'sub.expertTalkTitle': 'Expert talk / presentation',
+  'sub.aiUnavailable':
+    'The AI practice is currently unavailable (no AI enabled). Prepare for the expert talk on your own.',
+  'sub.practiceHint':
+    'Practise the expert talk for this evidence with the AI tutor – non-binding, no grade.',
+  'sub.practiceWithAi': '💬 Practise with AI',
+  'sub.alreadySubmitted':
+    '⏳ Already submitted – you can resubmit only after the teacher returns it.',
+  'sub.alreadyGraded': '✓ This evidence has already been graded.',
+  'sub.view': 'View',
+  'sub.addFile': '📄 Add file',
+  'sub.screenshot': '🖼 Take screenshot',
+  'sub.allowed': 'allowed',
+  'sub.link': 'Link',
+  'sub.text': 'Text',
+  'sub.textNoPaste': 'Text (paste disabled – please type yourself)',
+  'sub.answerPlaceholder': 'Your answer …',
+  'sub.expertTalkNoFile':
+    'No file is needed for this expert talk / presentation. You can submit directly – the oral performance is graded by the teacher.',
+  'sub.submit': '✓ Submit',
+  'sub.submitting': 'Submitting…',
+  'sub.needContent': 'Please add text, link, file or screenshot first.',
+  'sub.success': 'Submitted successfully!',
+  'sub.previewOpen': 'Open preview',
 };
 
 const DICT: Record<Locale, Record<string, string>> = { de, fr, it, en };

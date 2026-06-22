@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { expertTalk, type ExpertTalkSession } from '../lib/api';
 import { useToast } from './ToastProvider';
+import { useI18n } from '../lib/i18n';
 
 /**
  * Kompakter KI-Fachgespräch-Chat (Übungsmodus, FA-80) zum Einbetten – z. B. direkt
@@ -11,6 +12,7 @@ import { useToast } from './ToastProvider';
  */
 export default function ExpertTalkChat({ topic, context }: { topic: string; context?: string }) {
   const toast = useToast();
+  const { t } = useI18n();
   const [session, setSession] = useState<ExpertTalkSession | null>(null);
   const [starting, setStarting] = useState(true);
   const [input, setInput] = useState('');
@@ -75,7 +77,7 @@ export default function ExpertTalkChat({ topic, context }: { topic: string; cont
     }
   }
 
-  if (starting) return <div className="loading">KI-Fachgespräch wird gestartet…</div>;
+  if (starting) return <div className="loading">{t('common.loading')}</div>;
   if (!session) return null;
 
   return (
@@ -83,7 +85,9 @@ export default function ExpertTalkChat({ topic, context }: { topic: string; cont
       <div className="chat" style={{ maxHeight: 320 }}>
         {session.messages.map((m) => (
           <div key={m.id} className={`msg ${m.role === 'assistant' ? 'ai' : 'me'}`}>
-            <div className="who">{m.role === 'assistant' ? 'KI-Tutor' : 'Du'}</div>
+            <div className="who">
+              {m.role === 'assistant' ? 'KI-Tutor' : t('header.roleStudent')}
+            </div>
             {m.content}
           </div>
         ))}
@@ -92,7 +96,7 @@ export default function ExpertTalkChat({ topic, context }: { topic: string; cont
       <div className="chatbar">
         <input
           type="text"
-          placeholder="Antwort schreiben …"
+          placeholder={t('talk.answerPlaceholder')}
           value={input}
           disabled={sending}
           onChange={(e) => setInput(e.target.value)}
@@ -105,7 +109,7 @@ export default function ExpertTalkChat({ topic, context }: { topic: string; cont
           disabled={sending || !input.trim()}
           onClick={() => void send()}
         >
-          {sending ? '…' : 'Senden'}
+          {sending ? '…' : t('talk.send')}
         </button>
       </div>
     </div>
