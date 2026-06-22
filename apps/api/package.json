@@ -17,6 +17,7 @@
     "smoke:bewertung": "node scripts/smoke-bewertung.mjs",
     "smoke:dashboard": "node scripts/smoke-dashboard.mjs",
     "smoke:ai": "node scripts/smoke-ai.mjs",
+    "smoke:ai-grading": "node scripts/smoke-ai-grading.mjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "dotenv -e ../../.env -- prisma migrate dev",
     "prisma:seed": "dotenv -e ../../.env -- prisma db seed",

@@ -269,6 +269,13 @@ export const submissions = {
       method: 'POST',
       body: JSON.stringify({ reason }),
     }),
+  // KI (FA-70/72)
+  aiAssessment: (id: string) =>
+    apiFetch<AiAssessment>(`/submissions/${id}/ai-assessment`, { method: 'POST' }),
+  getAiAssessment: (id: string) =>
+    apiFetch<AiAssessment | null>(`/submissions/${id}/ai-assessment`),
+  aiFeedback: (id: string) =>
+    apiFetch<{ feedback: string }>(`/submissions/${id}/ai-feedback`, { method: 'POST' }),
 };
 
 /** Bild vom PC hochladen → liefert die einbettbare öffentliche URL. */
@@ -311,6 +318,16 @@ export interface AiTestResult {
   ok: boolean;
   message: string;
   models?: string[];
+}
+
+export interface AiAssessment {
+  id: string;
+  suggestedPoints: number | null;
+  suggestedLevel: string | null;
+  feedback: string;
+  reasoning: { criterion: string; comment: string }[];
+  model: string | null;
+  createdAt: string;
 }
 
 export interface ModuleSummary {

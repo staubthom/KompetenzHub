@@ -469,3 +469,19 @@ model AiConfig {
   @@index([tenantId])
   @@index([userId])
 }
+
+/// KI-Bewertungsvorschlag zu einer Einreichung (FA-70). Reiner Vorschlag – die
+/// finale Bewertung (Evaluation) trifft immer die Lehrperson (Override-Prinzip).
+model AiAssessment {
+  id              String         @id @default(uuid())
+  submissionId    String
+  createdById     String
+  suggestedPoints Decimal?       @db.Decimal(6, 2)
+  suggestedLevel  AchievedLevel?
+  feedback        String         @default("")
+  reasoning       Json           @default("[]") // [{ criterion, comment }]
+  model           String?
+  createdAt       DateTime       @default(now())
+
+  @@index([submissionId, createdAt])
+}
