@@ -67,6 +67,7 @@ check('Einreichungsarten default (file/link/text)',
   ev.body?.config?.allowFile && ev.body?.config?.allowLink && ev.body?.config?.allowText);
 check('Default: Einfügen gesperrt, Screenshot aus',
   ev.body?.config?.allowPaste === false && ev.body?.config?.allowScreenshot === false);
+check('Default: Fachgespräch aus', ev.body?.config?.allowExpertTalk === false);
 
 // ── Matrix liefert den Nachweis am Feld ───────────────────────────
 const matrix = await req('GET', `/modules/${moduleId}/matrix`, null, teacher);
@@ -152,10 +153,11 @@ check('Student Bild-Upload → 403', studentImgPost.status === 403);
 // ── Zentrale Einreichung (Text+Link zusammen) + Screenshot-Erlaubnis ─
 const ev3 = await req('POST', '/evidence', {
   moduleId, title: { de: 'Zentral-Einreichung' }, isVisible: true, fieldIds: [fieldId],
-  config: { allowScreenshot: true, allowPaste: true },
+  config: { allowScreenshot: true, allowPaste: true, allowExpertTalk: true },
 }, teacher);
 const evId3 = ev3.body?.id;
 check('Nachweis mit allowScreenshot/allowPaste', ev3.body?.config?.allowScreenshot === true && ev3.body?.config?.allowPaste === true);
+check('Nachweis mit allowExpertTalk', ev3.body?.config?.allowExpertTalk === true);
 const multi = await req('POST', `/evidence/${evId3}/submit`,
   { text: 'Meine Begründung', link: 'https://example.com/x' }, student);
 check('Zentrale Einreichung (Text+Link) → submitted', multi.body?.status === 'SUBMITTED');

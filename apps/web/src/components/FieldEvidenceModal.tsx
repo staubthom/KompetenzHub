@@ -16,6 +16,7 @@ interface Draft {
   allowText: boolean;
   allowScreenshot: boolean;
   allowPaste: boolean;
+  allowExpertTalk: boolean;
   allowedFileTypes: string;
   maxFileSizeMb: string;
   maxPoints: string;
@@ -34,6 +35,7 @@ function emptyDraft(): Draft {
     allowText: true,
     allowScreenshot: false,
     allowPaste: false,
+    allowExpertTalk: false,
     allowedFileTypes: 'pdf, png, jpg',
     maxFileSizeMb: '10',
     maxPoints: '',
@@ -119,6 +121,7 @@ export default function FieldEvidenceModal({
       allowText: ev.config.allowText !== false,
       allowScreenshot: ev.config.allowScreenshot === true,
       allowPaste: ev.config.allowPaste === true,
+      allowExpertTalk: ev.config.allowExpertTalk === true,
       allowedFileTypes: (ev.config.allowedFileTypes ?? []).join(', '),
       maxFileSizeMb: String(ev.config.maxFileSizeMb ?? 10),
       maxPoints: ev.maxPoints ?? '',
@@ -145,6 +148,7 @@ export default function FieldEvidenceModal({
         allowText: draft.allowText,
         allowScreenshot: draft.allowScreenshot,
         allowPaste: draft.allowPaste,
+        allowExpertTalk: draft.allowExpertTalk,
         allowedFileTypes: draft.allowedFileTypes
           .split(',')
           .map((s) => s.trim())
@@ -351,7 +355,21 @@ export default function FieldEvidenceModal({
                     />
                     Screenshot
                   </label>
+                  <label className="goal-check">
+                    <input
+                      type="checkbox"
+                      checked={draft.allowExpertTalk}
+                      onChange={(e) => setDraft({ ...draft, allowExpertTalk: e.target.checked })}
+                    />
+                    Fachgespräch / Präsentation
+                  </label>
                 </div>
+                {draft.allowExpertTalk && (
+                  <p className="kh-muted" style={{ fontSize: 12, margin: '6px 0 0' }}>
+                    Bei aktivem KI-Modus können Lernende das Fachgespräch direkt im Abgabe-Dialog
+                    mit der KI üben.
+                  </p>
+                )}
               </div>
 
               {draft.allowText && (

@@ -10,6 +10,13 @@ export class ExpertTalkController {
 
   // ── FA-80: KI-Fachgespräch (Übungsmodus) ──────────────────────
 
+  /** Ob im Mandanten eine KI aktiv ist (steuert die KI-Übung im Abgabe-Dialog). */
+  @Get('available')
+  @Roles(Role.LEARNER, Role.TEACHER, Role.ADMIN)
+  available(@CurrentUser() user: RequestContext) {
+    return this.expertTalk.available(user.tenantId);
+  }
+
   /** Eigene Übungs-Gespräche auflisten. */
   @Get('sessions')
   @Roles(Role.LEARNER, Role.TEACHER, Role.ADMIN)

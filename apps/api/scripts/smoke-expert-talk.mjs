@@ -55,6 +55,10 @@ await req('PUT', '/ai/config', {
   apiKey: 'sk-stub-tutor-123456', enabled: true,
 }, teacher);
 
+// /available meldet aktive KI (steuert die KI-Übung im Abgabe-Dialog)
+const avail = await req('GET', '/expert-talk/available', null, studentA);
+check('GET /expert-talk/available → available true', avail.status === 200 && avail.body?.available === true);
+
 // ── FA-80: Gespräch starten (KI stellt erste Frage) ──────────────
 const created = await req('POST', '/expert-talk/sessions', { topic: 'Betriebssysteme konfigurieren' }, studentA);
 check('Gespräch starten → 201', created.status === 201, `status=${created.status}`);

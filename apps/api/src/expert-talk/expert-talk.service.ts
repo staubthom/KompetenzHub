@@ -115,6 +115,11 @@ export class ExpertTalkService {
     return this.getSession(tenantId, userId, sessionId);
   }
 
+  /** Ob im Mandanten eine aktive KI vorhanden ist (für die KI-Übung im Abgabe-Dialog). */
+  async available(tenantId: string) {
+    return { available: await this.ai.tenantHasEnabled(tenantId) };
+  }
+
   async listSessions(tenantId: string, userId: string) {
     const sessions = await this.prisma.expertTalkSession.findMany({
       where: { tenantId, userId },

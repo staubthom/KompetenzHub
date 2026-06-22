@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { evidence, uploadSubmissionFile, type StudentEvidence } from '../lib/api';
+import { useEffect, useState } from 'react';
+import { evidence, expertTalk, uploadSubmissionFile, type StudentEvidence } from '../lib/api';
 import Celebration, { randomEffect } from './Celebration';
+import ExpertTalkChat from './ExpertTalkChat';
 import TrashIcon from './TrashIcon';
 import { useToast } from './ToastProvider';
 
@@ -32,10 +33,29 @@ export default function EvidenceSubmitPanel({
   const [shotBusy, setShotBusy] = useState(false);
   const [justSubmitted, setJustSubmitted] = useState(false);
   const [celebration, setCelebration] = useState<number | null>(null);
+  const [talkAvailable, setTalkAvailable] = useState<boolean | null>(null);
+  const [showTalk, setShowTalk] = useState(false);
 
   const cfg = ev.config ?? {};
   const sub = ev.lastSubmission;
   const canSubmit = !justSubmitted && (!sub || sub.status === 'REJECTED');
+
+  // Bei Einreichungsart „Fachgespräch/Präsentation": prüfen, ob KI im Mandanten aktiv ist.
+  useEffect(() => {
+    if (!cfg.allowExpertTalk) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { available } = await expertTalk.available();
+        if (!cancelled) setTalkAvailable(available);
+      } catch {
+        if (!cancelled) setTalkAvailable(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [cfg.allowExpertTalk]);
 
   const statusText: Record<string, string> = {
     SUBMITTED: 'Eingereicht – wartet auf Bewertung',
@@ -174,6 +194,43 @@ export default function EvidenceSubmitPanel({
             ⬇ {cfg.attachmentName ?? 'Anhang herunterladen'}
           </a>
         </p>
+      )}
+
+      {/* Fachgespräch / Präsentation: KI-Übung direkt im Abgabe-Dialog (FA-80) */}
+      {cfg.allowExpertTalk && (
+        <div
+          style={{
+            marginTop: 16,
+            padding: 14,
+            border: '1px solid var(--border)',
+            borderRadius: 8,
+          }}
+        >
+          <strong>🗣 Fachgespräch / Präsentation</strong>
+          {talkAvailable === false ? (
+            <p className="kh-muted" style={{ fontSize: 13, margin: '6px 0 0' }}>
+              Die KI-Übung ist aktuell nicht verfügbar (keine KI freigeschaltet). Bereite dich
+              eigenständig auf das Fachgespräch vor.
+            </p>
+          ) : !showTalk ? (
+            <div style={{ marginTop: 6 }}>
+              <p className="kh-muted" style={{ fontSize: 13, margin: '0 0 8px' }}>
+                Übe das Fachgespräch zu diesem Nachweis mit dem KI-Tutor – unverbindlich, ohne Note.
+              </p>
+              <button
+                className="btn sm"
+                disabled={talkAvailable === null}
+                onClick={() => setShowTalk(true)}
+              >
+                {talkAvailable === null ? '…' : '💬 Mit KI üben'}
+              </button>
+            </div>
+          ) : (
+            <div style={{ marginTop: 10 }}>
+              <ExpertTalkChat topic={ev.title?.de ?? 'Fachgespräch'} />
+            </div>
+          )}
+        </div>
       )}
 
       {!canSubmit && (

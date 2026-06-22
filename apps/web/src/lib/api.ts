@@ -220,6 +220,7 @@ export const ai = {
 
 // KI-Fachgespräch / Übungsmodus (FA-80)
 export const expertTalk = {
+  available: () => apiFetch<{ available: boolean }>('/expert-talk/available'),
   list: () => apiFetch<ExpertTalkSummary[]>('/expert-talk/sessions'),
   create: (topic: string) =>
     apiFetch<ExpertTalkSession>('/expert-talk/sessions', {
@@ -503,6 +504,7 @@ export interface EvidenceConfig {
   allowText?: boolean;
   allowScreenshot?: boolean;
   allowPaste?: boolean;
+  allowExpertTalk?: boolean;
   attachmentKey?: string;
   attachmentName?: string;
 }

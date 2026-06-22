@@ -19,6 +19,8 @@ interface UploadConfig {
   allowScreenshot?: boolean;
   /** Einfügen (Paste) im Text-Feld erlauben (Default: nein). */
   allowPaste?: boolean;
+  /** Einreichungsart Fachgespräch/Präsentation (FA-80): KI-Übung im Abgabe-Dialog. */
+  allowExpertTalk?: boolean;
   /** Vom Lehrer angehängte Datei zum Download. */
   attachmentKey?: string;
   attachmentName?: string;
@@ -402,6 +404,8 @@ export class EvidenceService {
       allowScreenshot: cfg.allowScreenshot ?? false,
       // Einfügen standardmässig gesperrt (Lernende sollen selbst schreiben)
       allowPaste: cfg.allowPaste ?? false,
+      // Fachgespräch/Präsentation optional (KI-Übung im Abgabe-Dialog)
+      allowExpertTalk: cfg.allowExpertTalk ?? false,
       ...(cfg.attachmentKey ? { attachmentKey: cfg.attachmentKey } : {}),
       ...(cfg.attachmentName ? { attachmentName: cfg.attachmentName } : {}),
     };
