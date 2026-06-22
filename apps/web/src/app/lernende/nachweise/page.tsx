@@ -4,50 +4,64 @@ import { useEffect, useState } from 'react';
 import AppShell from '../../../components/AppShell';
 import EvidenceSubmitPanel from '../../../components/EvidenceSubmitPanel';
 import { useToast } from '../../../components/ToastProvider';
+import { useI18n, localized, type Locale } from '../../../lib/i18n';
 import { evidence, type StudentEvidence } from '../../../lib/api';
 
-function statusBadge(ev: StudentEvidence) {
+type T = (k: string) => string;
+
+function statusBadge(ev: StudentEvidence, t: T) {
   const sub = ev.lastSubmission;
-  if (!sub) return <span className="badge b-archived">offen</span>;
+  if (!sub) return <span className="badge b-archived">{t('status.OPEN')}</span>;
   switch (sub.status) {
     case 'GRADED':
       return (
         <span className="badge b-published">
-          ✓ bewertet{sub.points != null ? ` · ${sub.points} P` : ''}
+          ✓ {t('status.GRADED')}
+          {sub.points != null ? ` · ${sub.points} P` : ''}
         </span>
       );
     case 'REJECTED':
-      return <span className="badge b-rejected">↩ zurückgewiesen</span>;
+      return <span className="badge b-rejected">↩ {t('status.REJECTED')}</span>;
     case 'SUBMITTED':
-      return <span className="badge b-draft">⏳ eingereicht</span>;
+      return <span className="badge b-draft">⏳ {t('status.SUBMITTED')}</span>;
     default:
-      return <span className="badge b-archived">{sub.status.toLowerCase()}</span>;
+      return <span className="badge b-archived">{t(`status.${sub.status}`)}</span>;
   }
 }
 
-function EvidenceRow({ ev, onOpen }: { ev: StudentEvidence; onOpen: () => void }) {
+function EvidenceRow({
+  ev,
+  onOpen,
+  t,
+  locale,
+}: {
+  ev: StudentEvidence;
+  onOpen: () => void;
+  t: T;
+  locale: Locale;
+}) {
   return (
     <div className="evidence-item">
       <div>
-        <strong>{ev.title?.de}</strong>
+        <strong>{localized(ev.title, locale)}</strong>
         <div className="evidence-meta">
-          {ev.maxPoints ? `max. ${ev.maxPoints} Punkte` : 'ohne Punktewertung'}
+          {ev.maxPoints ? `max. ${ev.maxPoints} ${t('common.points')}` : ''}
           {ev.dueAt && (
             <>
               {' · '}
               {ev.isOverdue ? (
-                <span className="overdue">überfällig</span>
+                <span className="overdue">{t('status.EXPIRED')}</span>
               ) : (
-                `fällig ${new Date(ev.dueAt).toLocaleDateString('de-CH')}`
+                new Date(ev.dueAt).toLocaleDateString()
               )}
             </>
           )}
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        {statusBadge(ev)}
+        {statusBadge(ev, t)}
         <button className="btn primary sm" onClick={onOpen}>
-          Öffnen
+          {t('nw.open')}
         </button>
       </div>
     </div>
@@ -56,6 +70,7 @@ function EvidenceRow({ ev, onOpen }: { ev: StudentEvidence; onOpen: () => void }
 
 export default function NachweisePage() {
   const toast = useToast();
+  const { t, locale } = useI18n();
   const [list, setList] = useState<StudentEvidence[] | null>(null);
   const [active, setActive] = useState<StudentEvidence | null>(null);
 
@@ -81,19 +96,19 @@ export default function NachweisePage() {
               void load();
             }}
           >
-            Meine Nachweise
+            {t('nw.title')}
           </button>{' '}
-          / {active.title?.de}
+          / {localized(active.title, locale)}
         </div>
         <div className="page-head">
           <div>
-            <h1>{active.title?.de}</h1>
+            <h1>{localized(active.title, locale)}</h1>
             {active.dueAt && (
               <p>
                 {active.isOverdue ? (
-                  <span className="overdue">überfällig</span>
+                  <span className="overdue">{t('status.EXPIRED')}</span>
                 ) : (
-                  `fällig ${new Date(active.dueAt).toLocaleString('de-CH')}`
+                  new Date(active.dueAt).toLocaleString()
                 )}
               </p>
             )}
@@ -105,7 +120,7 @@ export default function NachweisePage() {
               void load();
             }}
           >
-            ← Zurück
+            ← {t('common.back')}
           </button>
         </div>
         <div className="panel">
@@ -127,37 +142,47 @@ export default function NachweisePage() {
 
   return (
     <AppShell>
-      <div className="breadcrumb">Meine Matrix / Meine Nachweise</div>
+      <div className="breadcrumb">
+        {t('nav.matrix')} / {t('nw.title')}
+      </div>
       <div className="page-head">
         <div>
-          <h1>Meine Nachweise</h1>
-          <p>Belege als Datei, Link, Text oder Screenshot einreichen</p>
+          <h1>{t('nw.title')}</h1>
+          <p>{t('nw.subtitle')}</p>
         </div>
       </div>
 
       {!list ? (
-        <div className="loading">Lade Nachweise…</div>
+        <div className="loading">{t('common.loading')}</div>
       ) : list.length === 0 ? (
         <div className="panel">
           <div className="empty">
             <span className="ic">📄</span>
-            <p>Aktuell sind keine Nachweise verfügbar.</p>
+            <p>{t('nw.empty')}</p>
           </div>
         </div>
       ) : (
         <>
           <div className="panel">
             <div className="panel-head">
-              <h2>Zu erledigen ({todo.length})</h2>
+              <h2>
+                {t('nw.todo')} ({todo.length})
+              </h2>
             </div>
             {todo.length === 0 ? (
               <div className="empty">
-                <p>Alles erledigt – aktuell nichts offen. 🎉</p>
+                <p>{t('nw.emptyTodo')}</p>
               </div>
             ) : (
               <div className="evidence-list">
                 {todo.map((ev) => (
-                  <EvidenceRow key={ev.id} ev={ev} onOpen={() => setActive(ev)} />
+                  <EvidenceRow
+                    key={ev.id}
+                    ev={ev}
+                    onOpen={() => setActive(ev)}
+                    t={t}
+                    locale={locale}
+                  />
                 ))}
               </div>
             )}
@@ -166,11 +191,19 @@ export default function NachweisePage() {
           {done.length > 0 && (
             <div className="panel">
               <div className="panel-head">
-                <h2>Eingereicht &amp; bewertet ({done.length})</h2>
+                <h2>
+                  {t('nw.done')} ({done.length})
+                </h2>
               </div>
               <div className="evidence-list">
                 {done.map((ev) => (
-                  <EvidenceRow key={ev.id} ev={ev} onOpen={() => setActive(ev)} />
+                  <EvidenceRow
+                    key={ev.id}
+                    ev={ev}
+                    onOpen={() => setActive(ev)}
+                    t={t}
+                    locale={locale}
+                  />
                 ))}
               </div>
             </div>

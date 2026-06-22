@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AppShell from '../../components/AppShell';
 import { useToast } from '../../components/ToastProvider';
+import { useI18n } from '../../lib/i18n';
 import { classes, dashboard, type ClassSummary, type ClassProgress } from '../../lib/api';
 
 const LEVEL_SHORT: Record<string, string> = {
@@ -16,6 +17,7 @@ const LEVEL_SHORT: Record<string, string> = {
 export default function LehrerDashboardPage() {
   const router = useRouter();
   const toast = useToast();
+  const { t } = useI18n();
   const [list, setList] = useState<ClassSummary[] | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [progress, setProgress] = useState<ClassProgress | null>(null);
@@ -54,14 +56,16 @@ export default function LehrerDashboardPage() {
 
   return (
     <AppShell>
-      <div className="breadcrumb">Übersicht / Dashboard</div>
+      <div className="breadcrumb">
+        {t('common.overview')} / {t('dash.title')}
+      </div>
       <div className="page-head">
         <div>
-          <h1>Dashboard</h1>
-          <p>Fortschritt deiner Modulanlässe auf einen Blick</p>
+          <h1>{t('dash.title')}</h1>
+          <p>{t('dash.subtitle')}</p>
         </div>
         <Link href="/modules" className="btn primary">
-          + Modul &amp; Matrix
+          {t('dash.newModuleMatrix')}
         </Link>
       </div>
 
@@ -86,28 +90,29 @@ export default function LehrerDashboardPage() {
       )}
 
       {!list ? (
-        <div className="loading">Lade…</div>
+        <div className="loading">{t('common.loading')}</div>
       ) : list.length === 0 ? (
         <div className="panel">
           <div className="empty">
             <span className="ic">▦</span>
             <p>
-              Noch keine Modulanlässe. Lege unter <Link href="/lehrer/klassen">Modulanlässe</Link>{' '}
-              einen an.
+              {t('dash.emptyNoClasses')} <Link href="/lehrer/klassen">{t('nav.klassen')}</Link>
             </p>
           </div>
         </div>
       ) : !progress ? (
-        <div className="loading">Lade Fortschritt…</div>
+        <div className="loading">{t('dash.loadingProgress')}</div>
       ) : (
         <>
           {/* Kennzahlen-Karten (FA-91) */}
           <div className="cards">
             <div className="card">
-              <div className="k">Lernende</div>
+              <div className="k">{t('dash.kpiLearners')}</div>
               <div className="v">{progress.studentCount}</div>
               <div className="d">
-                {progress.module ? `Modul ${progress.module.number}` : 'kein Modul'}
+                {progress.module
+                  ? `${t('common.module')} ${progress.module.number}`
+                  : t('common.noModule')}
               </div>
             </div>
             <Link
@@ -115,69 +120,71 @@ export default function LehrerDashboardPage() {
               href="/lehrer/bewerten"
               style={{ textDecoration: 'none', color: 'inherit' }}
             >
-              <div className="k">Zu bewerten</div>
+              <div className="k">{t('dash.kpiToGrade')}</div>
               <div className="v" style={{ color: 'var(--st-submitted)' }}>
                 {progress.toGrade}
               </div>
-              <div className="d">offene Einreichungen →</div>
+              <div className="d">{t('dash.kpiToGradeHint')}</div>
             </Link>
             <div className="card">
-              <div className="k">Bewertet</div>
+              <div className="k">{t('dash.kpiGraded')}</div>
               <div className="v" style={{ color: 'var(--st-graded)' }}>
                 {progress.graded}
               </div>
-              <div className="d">Nachweise total</div>
+              <div className="d">{t('dash.kpiGradedHint')}</div>
             </div>
             <div className="card">
-              <div className="k">Ø Fortschritt</div>
+              <div className="k">{t('dash.kpiAvg')}</div>
               <div className="v">{progress.avgProgress}%</div>
-              <div className="d">bewertete Felder</div>
+              <div className="d">{t('dash.kpiAvgHint')}</div>
             </div>
           </div>
 
           {/* Fortschritts-Heatmap (FA-90) */}
           <div className="panel">
             <div className="panel-head">
-              <h2>Fortschritts-Heatmap</h2>
+              <h2>{t('dash.heatmap')}</h2>
             </div>
             <div className="legend">
               <span>
-                <span className="dotc" style={{ background: 'var(--st-open-bg)' }} /> Offen
+                <span className="dotc" style={{ background: 'var(--st-open-bg)' }} />{' '}
+                {t('status.OPEN')}
               </span>
               <span>
                 <span className="dotc" style={{ background: 'var(--st-submitted-bg)' }} />{' '}
-                Eingereicht
+                {t('status.SUBMITTED')}
               </span>
               <span>
-                <span className="dotc" style={{ background: 'var(--st-graded-bg)' }} /> Bewertet
+                <span className="dotc" style={{ background: 'var(--st-graded-bg)' }} />{' '}
+                {t('status.GRADED')}
               </span>
               <span>
                 <span className="dotc" style={{ background: 'var(--st-rejected-bg)' }} />{' '}
-                Zurückgewiesen
+                {t('status.REJECTED')}
               </span>
             </div>
 
             {progress.studentCount === 0 ? (
               <div className="empty">
-                <p>Noch keine Lernenden in diesem Modulanlass.</p>
+                <p>{t('dash.noLearners')}</p>
               </div>
             ) : fields.length === 0 ? (
               <div className="empty">
-                <p>Für das zugeordnete Modul gibt es noch keine Kompetenzfelder.</p>
+                <p>{t('dash.noFields')}</p>
               </div>
             ) : (
               <div className="tablewrap">
                 <table className="heatmap">
                   <thead>
                     <tr>
-                      <th className="hm-name">Lernende:r</th>
+                      <th className="hm-name">{t('dash.colLearner')}</th>
                       {fields.map((f) => (
                         <th key={f.id} title={`${f.band} · ${f.level}`}>
                           {f.band}
                           {LEVEL_SHORT[f.level]}
                         </th>
                       ))}
-                      <th>Fortschritt</th>
+                      <th>{t('dash.colProgress')}</th>
                     </tr>
                   </thead>
                   <tbody>

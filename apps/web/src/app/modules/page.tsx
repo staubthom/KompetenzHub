@@ -5,14 +5,13 @@ import Link from 'next/link';
 import AppShell from '../../components/AppShell';
 import TrashIcon from '../../components/TrashIcon';
 import { useToast } from '../../components/ToastProvider';
+import { useI18n } from '../../lib/i18n';
 import { modules, importMatrixZip, type ModuleSummary } from '../../lib/api';
-
-function statusLabel(s: string): string {
-  return s === 'DRAFT' ? 'Entwurf' : s === 'PUBLISHED' ? 'Veröffentlicht' : 'Archiviert';
-}
 
 export default function ModulesPage() {
   const toast = useToast();
+  const { t } = useI18n();
+  const statusLabel = (s: string) => t(`modstatus.${s}`);
   const [list, setList] = useState<ModuleSummary[] | null>(null);
   const [creating, setCreating] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -77,15 +76,17 @@ export default function ModulesPage() {
 
   return (
     <AppShell>
-      <div className="breadcrumb">Übersicht / Module &amp; Matrizen</div>
+      <div className="breadcrumb">
+        {t('common.overview')} / {t('mod.title')}
+      </div>
       <div className="page-head">
         <div>
-          <h1>Module &amp; Matrizen</h1>
-          <p>Kompetenzraster verwalten</p>
+          <h1>{t('mod.title')}</h1>
+          <p>{t('mod.subtitle')}</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <label className="btn" style={{ cursor: 'pointer' }}>
-            {importing ? 'Importiere…' : '⬆ Modul importieren (ZIP)'}
+            {importing ? t('mod.importing') : t('mod.import')}
             <input
               type="file"
               accept="application/zip,.zip"
@@ -99,7 +100,7 @@ export default function ModulesPage() {
             />
           </label>
           <button className="btn primary" onClick={() => setCreating(true)}>
-            + Neues Modul
+            {t('mod.new')}
           </button>
         </div>
       </div>
@@ -113,7 +114,7 @@ export default function ModulesPage() {
             }}
           >
             <label>
-              Modulnummer *
+              {t('mod.fNumber')}
               <input
                 required
                 placeholder="z. B. 293"
@@ -122,7 +123,7 @@ export default function ModulesPage() {
               />
             </label>
             <label>
-              Titel (DE) *
+              {t('mod.fTitle')}
               <input
                 required
                 placeholder="z. B. ICT-Geräte in Betrieb nehmen"
@@ -131,19 +132,19 @@ export default function ModulesPage() {
               />
             </label>
             <label>
-              Beschreibung (DE)
+              {t('mod.fDesc')}
               <input
-                placeholder="optional"
+                placeholder={t('common.optional')}
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
               />
             </label>
             <div className="form-actions">
               <button type="button" className="btn" onClick={() => setCreating(false)}>
-                Abbrechen
+                {t('common.cancel')}
               </button>
               <button type="submit" className="btn primary">
-                Erstellen
+                {t('common.create')}
               </button>
             </div>
           </form>
@@ -151,23 +152,23 @@ export default function ModulesPage() {
       )}
 
       {!list ? (
-        <div className="loading">Lade Module…</div>
+        <div className="loading">{t('mod.loading')}</div>
       ) : (
         <>
           <div className="panel">
             {list.length === 0 ? (
               <div className="empty">
                 <span className="ic">▤</span>
-                <p>Noch keine Module. Erstelle dein erstes Modul.</p>
+                <p>{t('mod.empty')}</p>
               </div>
             ) : (
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Modul</th>
-                    <th>Bänder</th>
-                    <th>Handlungsziele</th>
-                    <th>Status</th>
+                    <th>{t('common.module')}</th>
+                    <th>{t('mod.colBands')}</th>
+                    <th>{t('mod.colGoals')}</th>
+                    <th>{t('common.status')}</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -188,11 +189,11 @@ export default function ModulesPage() {
                       <td>
                         <div className="row-actions">
                           <Link href={`/modules/${m.id}`} className="btn sm">
-                            Bearbeiten
+                            {t('common.edit')}
                           </Link>
                           <button
                             className="btn-icon"
-                            title="Löschen"
+                            title={t('common.delete')}
                             onClick={() => {
                               void handleDelete(m.id, m.number);
                             }}
@@ -210,17 +211,17 @@ export default function ModulesPage() {
 
           <div className="cards">
             <div className="card">
-              <div className="k">Module</div>
+              <div className="k">{t('mod.cardModules')}</div>
               <div className="v">{list.length}</div>
             </div>
             <div className="card">
-              <div className="k">Bänder gesamt</div>
+              <div className="k">{t('mod.cardBands')}</div>
               <div className="v">
                 {list.reduce((s, m) => s + (m.matrix?._count?.bands ?? 0), 0)}
               </div>
             </div>
             <div className="card">
-              <div className="k">Entwürfe</div>
+              <div className="k">{t('mod.cardDrafts')}</div>
               <div className="v">{list.filter((m) => m.status === 'DRAFT').length}</div>
             </div>
           </div>

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import AppShell from '../../../components/AppShell';
 import EvidenceSubmitPanel from '../../../components/EvidenceSubmitPanel';
 import { useToast } from '../../../components/ToastProvider';
+import { useI18n, localized } from '../../../lib/i18n';
 import {
   classes,
   learningPaths,
@@ -14,11 +15,11 @@ import {
   type StudentEvidence,
 } from '../../../lib/api';
 
-const STATUS_META: Record<string, { label: string; badge: string; node: string }> = {
-  GRADED: { label: 'abgeschlossen', badge: 'b-published', node: '✓' },
-  SUBMITTED: { label: 'eingereicht', badge: 'b-draft', node: '⏳' },
-  REJECTED: { label: 'überarbeiten', badge: 'b-rejected', node: '↩' },
-  OPEN: { label: 'offen', badge: 'b-archived', node: '•' },
+const STATUS_BADGE: Record<string, string> = {
+  GRADED: 'b-published',
+  SUBMITTED: 'b-draft',
+  REJECTED: 'b-rejected',
+  OPEN: 'b-archived',
 };
 
 function chipIcon(status: string): string {
@@ -36,6 +37,7 @@ function chipIcon(status: string): string {
 
 export default function LernpfadPage() {
   const toast = useToast();
+  const { t, locale } = useI18n();
   const [enrollments, setEnrollments] = useState<MyEnrollment[] | null>(null);
   const [moduleId, setModuleId] = useState<string | null>(null);
   const [data, setData] = useState<ActiveLearningPath | null>(null);
@@ -98,18 +100,20 @@ export default function LernpfadPage() {
 
   return (
     <AppShell>
-      <div className="breadcrumb">Übersicht / Mein Lernpfad</div>
+      <div className="breadcrumb">
+        {t('common.overview')} / {t('path.title')}
+      </div>
       <div className="page-head">
         <div>
-          <h1>Mein Lernpfad</h1>
-          <p>Empfohlene Reihenfolge · auf deinen Fortschritt abgestimmt</p>
+          <h1>{t('path.title')}</h1>
+          <p>{t('path.subtitle')}</p>
         </div>
         <div className="seg" role="group" aria-label="Ansicht">
           <Link className="btn" href="/lernende">
-            Matrix
+            {t('path.viewMatrix')}
           </Link>
           <button aria-pressed="true" className="btn primary">
-            Lernpfad
+            {t('path.viewPath')}
           </button>
         </div>
       </div>
@@ -138,35 +142,33 @@ export default function LernpfadPage() {
 
       {!hasModules && enrollments !== null ? (
         <p className="kh-muted" style={{ textAlign: 'center' }}>
-          Du bist noch keinem Modulanlass mit Modul beigetreten.
+          {t('path.noModule')}
         </p>
       ) : !data ? (
-        <div className="loading">Lade…</div>
+        <div className="loading">{t('common.loading')}</div>
       ) : !path ? (
         <div className="panel">
           <div className="empty">
             <span className="ic">➔</span>
-            <p>
-              Für dieses Modul wurde noch kein Lernpfad festgelegt. Nutze deine Matrix wie gewohnt.
-            </p>
+            <p>{t('path.none')}</p>
           </div>
         </div>
       ) : (
         <>
           <div className="cards">
             <div className="card">
-              <div className="k">Nächster Schritt</div>
+              <div className="k">{t('path.next')}</div>
               <div className="v" style={{ fontSize: 18 }}>
-                {next ? next.code : 'alles erledigt 🎉'}
+                {next ? next.code : t('path.allDone')}
               </div>
-              <div className="d">{next ? STATUS_META[next.status].label : '—'}</div>
+              <div className="d">{next ? t(`pathstatus.${next.status}`) : '—'}</div>
             </div>
             <div className="card">
-              <div className="k">Abgeschlossen</div>
+              <div className="k">{t('path.done')}</div>
               <div className="v" style={{ color: 'var(--st-graded)' }}>
                 {path.doneCount} / {path.total}
               </div>
-              <div className="d">Kompetenzen</div>
+              <div className="d">{t('path.competences')}</div>
             </div>
           </div>
 
@@ -176,7 +178,6 @@ export default function LernpfadPage() {
             </div>
             <div className="path">
               {path.steps.map((s, i) => {
-                const meta = STATUS_META[s.status];
                 const cls = s.status === 'GRADED' ? 'done' : s.isNext ? 'current' : '';
                 const last = i === path.steps.length - 1;
                 return (
@@ -187,17 +188,19 @@ export default function LernpfadPage() {
                     </div>
                     <div className="body">
                       <div className="ti">
-                        {s.code} — {s.descriptor?.de ?? s.level}
+                        {s.code} — {localized(s.descriptor, locale) || t(`level.${s.level}`)}
                       </div>
                       <div className="meta">
-                        {s.isNext ? 'Dein nächster Schritt · ' : ''}
-                        {meta.label}
+                        {s.isNext ? t('path.yourNext') : ''}
+                        {t(`pathstatus.${s.status}`)}
                       </div>
                       <div className="card-mini" style={{ flexWrap: 'wrap' }}>
-                        <span className={`badge ${meta.badge}`}>{meta.label}</span>
+                        <span className={`badge ${STATUS_BADGE[s.status]}`}>
+                          {t(`pathstatus.${s.status}`)}
+                        </span>
                         {s.evidences.length === 0 ? (
                           <span className="kh-muted" style={{ fontSize: 13 }}>
-                            Noch kein Nachweis hinterlegt.
+                            {t('path.noEvidence')}
                           </span>
                         ) : (
                           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -205,10 +208,10 @@ export default function LernpfadPage() {
                               <button
                                 key={ev.id}
                                 className={`evidence-chip evidence-chip-btn chip-${ev.status.toLowerCase()}`}
-                                title={`${STATUS_META[ev.status].label}: ${ev.title?.de ?? ''}`}
+                                title={`${t(`pathstatus.${ev.status}`)}: ${localized(ev.title, locale)}`}
                                 onClick={() => void openEvidenceDetail(ev.id)}
                               >
-                                {chipIcon(ev.status)} {ev.title?.de}
+                                {chipIcon(ev.status)} {localized(ev.title, locale)}
                               </button>
                             ))}
                           </div>
@@ -228,8 +231,8 @@ export default function LernpfadPage() {
         <div className="modal-overlay">
           <div className="modal">
             <div className="modal-head">
-              <h2>{openEvidence.title?.de}</h2>
-              <button className="btn-icon" title="Schliessen" onClick={closeEvidence}>
+              <h2>{localized(openEvidence.title, locale)}</h2>
+              <button className="btn-icon" title={t('common.cancel')} onClick={closeEvidence}>
                 ✕
               </button>
             </div>

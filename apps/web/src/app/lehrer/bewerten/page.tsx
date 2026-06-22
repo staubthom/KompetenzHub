@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import AppShell from '../../../components/AppShell';
 import { useToast } from '../../../components/ToastProvider';
+import { useI18n, localized } from '../../../lib/i18n';
 import {
   submissions,
   classes,
@@ -12,27 +13,15 @@ import {
   type AiAssessment,
 } from '../../../lib/api';
 
-const STATUS_LABEL: Record<string, string> = {
-  OPEN: 'offen',
-  SUBMITTED: 'eingereicht',
-  IN_REVIEW: 'in Prüfung',
-  GRADED: 'bewertet',
-  REJECTED: 'zurückgewiesen',
-  EXPIRED: 'abgelaufen',
-};
 const STATUS_BADGE: Record<string, string> = {
   SUBMITTED: 'b-draft',
   GRADED: 'b-published',
   REJECTED: 'b-archived',
 };
-const LEVELS = [
-  { value: 'NOT_MET', label: 'nicht erfüllt' },
-  { value: 'BEGINNER', label: 'Beginner' },
-  { value: 'INTERMEDIATE', label: 'Intermediate' },
-  { value: 'ADVANCED', label: 'Advanced' },
-];
+const LEVELS = ['NOT_MET', 'BEGINNER', 'INTERMEDIATE', 'ADVANCED'];
 
 export default function BewertenPage() {
+  const { t, locale } = useI18n();
   const [list, setList] = useState<SubmissionListItem[] | null>(null);
   const [classList, setClassList] = useState<ClassSummary[]>([]);
   const [statusFilter, setStatusFilter] = useState('SUBMITTED');
@@ -82,11 +71,13 @@ export default function BewertenPage() {
 
   return (
     <AppShell>
-      <div className="breadcrumb">Übersicht / Bewerten</div>
+      <div className="breadcrumb">
+        {t('common.overview')} / {t('bw.title')}
+      </div>
       <div className="page-head">
         <div>
-          <h1>Bewerten</h1>
-          <p>Eingereichte Nachweise prüfen und bewerten</p>
+          <h1>{t('bw.title')}</h1>
+          <p>{t('bw.subtitle')}</p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           {classList.length > 0 && (
@@ -96,7 +87,7 @@ export default function BewertenPage() {
               value={classFilter}
               onChange={(e) => setClassFilter(e.target.value)}
             >
-              <option value="">Alle Modulanlässe</option>
+              <option value="">{t('bw.allClasses')}</option>
               {classList.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -107,7 +98,7 @@ export default function BewertenPage() {
           <div className="seg" role="group" aria-label="Status">
             {['SUBMITTED', 'GRADED', 'REJECTED'].map((s) => (
               <button key={s} aria-pressed={statusFilter === s} onClick={() => setStatusFilter(s)}>
-                {STATUS_LABEL[s]}
+                {t(`status.${s}`)}
               </button>
             ))}
           </div>
@@ -116,21 +107,23 @@ export default function BewertenPage() {
 
       <div className="panel">
         {!list ? (
-          <div className="loading">Lade Einreichungen…</div>
+          <div className="loading">{t('bw.loading')}</div>
         ) : list.length === 0 ? (
           <div className="empty">
             <span className="ic">✓</span>
-            <p>Keine Einreichungen mit Status „{STATUS_LABEL[statusFilter]}".</p>
+            <p>
+              {t('bw.emptyStatus')} „{t(`status.${statusFilter}`)}".
+            </p>
           </div>
         ) : (
           <table className="table">
             <thead>
               <tr>
-                <th>Lernende:r</th>
-                <th>Nachweis</th>
-                <th>Modulanlass</th>
-                <th>Eingereicht</th>
-                <th>Status</th>
+                <th>{t('bw.colLearner')}</th>
+                <th>{t('bw.colEvidence')}</th>
+                <th>{t('bw.colClass')}</th>
+                <th>{t('bw.colSubmitted')}</th>
+                <th>{t('common.status')}</th>
                 <th></th>
               </tr>
             </thead>
@@ -138,19 +131,19 @@ export default function BewertenPage() {
               {list.map((s) => (
                 <tr key={s.id}>
                   <td>{s.enrollment.displayName}</td>
-                  <td>{s.evidence.title?.de}</td>
+                  <td>{localized(s.evidence.title, locale)}</td>
                   <td className="kh-muted">{s.enrollment.class?.name ?? '—'}</td>
                   <td className="kh-muted">
-                    {s.submittedAt ? new Date(s.submittedAt).toLocaleString('de-CH') : '—'}
+                    {s.submittedAt ? new Date(s.submittedAt).toLocaleString() : '—'}
                   </td>
                   <td>
                     <span className={`badge ${STATUS_BADGE[s.status] ?? 'b-archived'}`}>
-                      {STATUS_LABEL[s.status] ?? s.status}
+                      {t(`status.${s.status}`)}
                     </span>
                   </td>
                   <td>
                     <button className="btn sm" onClick={() => setActiveId(s.id)}>
-                      Öffnen
+                      {t('common.open')}
                     </button>
                   </td>
                 </tr>
@@ -165,8 +158,8 @@ export default function BewertenPage() {
 
 function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
   const toast = useToast();
+  const { t, locale } = useI18n();
   const [sub, setSub] = useState<SubmissionDetail | null>(null);
-  const [loadFailed, setLoadFailed] = useState(false);
   const [points, setPoints] = useState('');
   const [level, setLevel] = useState('');
   const [feedback, setFeedback] = useState('');
@@ -188,7 +181,6 @@ function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
         /* KI optional */
       }
     } catch {
-      setLoadFailed(true);
       toast.error('Einreichung konnte nicht geladen werden.');
     }
   }
@@ -271,11 +263,7 @@ function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
   }
 
   if (!sub) {
-    return (
-      <div className="loading">
-        {loadFailed ? 'Einreichung konnte nicht geladen werden.' : 'Lade…'}
-      </div>
-    );
+    return <div className="loading">{t('common.loading')}</div>;
   }
 
   const max = sub.evidence.maxPoints ? Number(sub.evidence.maxPoints) : null;
@@ -286,23 +274,21 @@ function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
     <>
       <div className="breadcrumb">
         <button className="linklike" onClick={onBack}>
-          Bewerten
+          {t('bw.title')}
         </button>{' '}
         / {sub.enrollment.displayName}
       </div>
       <div className="page-head">
         <div>
-          <h1>{sub.evidence.title?.de}</h1>
+          <h1>{localized(sub.evidence.title, locale)}</h1>
           <p>
             {sub.enrollment.displayName}
             {sub.enrollment.class?.name ? ` · ${sub.enrollment.class.name}` : ''}
-            {sub.submittedAt
-              ? ` · eingereicht ${new Date(sub.submittedAt).toLocaleString('de-CH')}`
-              : ''}
+            {sub.submittedAt ? ` · ${new Date(sub.submittedAt).toLocaleString()}` : ''}
           </p>
         </div>
         <button className="btn" onClick={onBack}>
-          ← Zurück
+          ← {t('common.back')}
         </button>
       </div>
 
@@ -311,7 +297,7 @@ function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
         <div>
           <div className="panel">
             <div className="panel-head">
-              <h2>Eingereichter Nachweis</h2>
+              <h2>{t('bw.submittedEvidence')}</h2>
               {sub.fileUrl && (
                 <a className="btn sm" href={sub.fileUrl} target="_blank" rel="noopener">
                   ⬇ {sub.fileName ?? 'Datei'}
@@ -328,52 +314,47 @@ function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
                   </a>
                 </p>
               )}
-              {content.expertTalk && (
-                <p style={{ marginTop: 0 }}>
-                  🗣 <strong>Fachgespräch / Präsentation</strong> – mündliche Leistung, bitte direkt
-                  bewerten.
-                </p>
-              )}
+              {content.expertTalk && <p style={{ marginTop: 0 }}>🗣 {t('bw.expertTalk')}</p>}
               {!content.text && !content.link && !sub.fileUrl && !content.expertTalk && (
                 <p className="kh-muted" style={{ marginTop: 0 }}>
-                  Kein Textinhalt – siehe Datei/Link.
+                  {t('bw.noText')}
                 </p>
               )}
             </div>
           </div>
 
-          {sub.evidence.instructions?.de && (
+          {localized(sub.evidence.instructions, locale) && (
             <div className="panel">
               <div className="panel-head">
-                <h2>Aufgabenstellung</h2>
+                <h2>{t('bw.instructions')}</h2>
               </div>
               <div
                 className="panel-body rte-content"
-                dangerouslySetInnerHTML={{ __html: sub.evidence.instructions.de }}
+                dangerouslySetInnerHTML={{ __html: localized(sub.evidence.instructions, locale) }}
               />
             </div>
           )}
 
           <div className="panel">
             <div className="panel-head">
-              <h2>Verlauf</h2>
+              <h2>{t('bw.history')}</h2>
             </div>
             <div className="panel-body">
               {sub.history.length === 0 ? (
                 <p className="kh-muted" style={{ margin: 0 }}>
-                  Noch keine Bewertungsschritte.
+                  {t('bw.noHistory')}
                 </p>
               ) : (
                 <ul className="hz-list" style={{ margin: 0 }}>
                   {sub.history.map((h) => (
                     <li key={h.id} className="hz-item" style={{ padding: '8px 0' }}>
                       <span style={{ flex: 1 }}>
-                        <strong>{historyLabel(h.changeType)}</strong>
+                        <strong>{t(`hist.${h.changeType}`)}</strong>
                         {h.points != null && ` · ${h.points} P`}
                         {h.feedback ? ` · ${h.feedback}` : ''}
                       </span>
                       <span className="kh-muted" style={{ fontSize: 12 }}>
-                        {h.changedBy.displayName} · {new Date(h.createdAt).toLocaleString('de-CH')}
+                        {h.changedBy.displayName} · {new Date(h.createdAt).toLocaleString()}
                       </span>
                     </li>
                   ))}
@@ -388,7 +369,7 @@ function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
           {/* KI-Assistenz (FA-70/72) */}
           <div className="panel">
             <div className="panel-head">
-              <h2>KI-Assistenz</h2>
+              <h2>{t('bw.aiAssist')}</h2>
             </div>
             <div
               className="panel-body"
@@ -402,7 +383,7 @@ function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
                     void genAssessment();
                   }}
                 >
-                  {aiBusy ? '…' : '🤖 KI-Bewertungsvorschlag'}
+                  {aiBusy ? '…' : t('bw.aiSuggest')}
                 </button>
                 <button
                   className="btn sm"
@@ -411,25 +392,23 @@ function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
                     void genFeedback();
                   }}
                 >
-                  💬 KI-Feedback-Entwurf
+                  {t('bw.aiFeedback')}
                 </button>
               </div>
 
               {assessment && (
                 <div className="sub-status sub-submitted" style={{ margin: 0 }}>
-                  <strong>🤖 KI-Vorschlag (unverbindlich)</strong>
+                  <strong>{t('bw.aiSuggestion')}</strong>
                   <div className="sub-feedback">
                     {assessment.suggestedPoints != null && (
                       <div>
-                        Punkte: {assessment.suggestedPoints}
+                        {t('bw.aiPoints')}: {assessment.suggestedPoints}
                         {max != null ? ` / ${max}` : ''}
                       </div>
                     )}
                     {assessment.suggestedLevel && (
                       <div>
-                        Gütestufe:{' '}
-                        {LEVELS.find((l) => l.value === assessment.suggestedLevel)?.label ??
-                          assessment.suggestedLevel}
+                        {t('bw.aiLevel')}: {t(`level.${assessment.suggestedLevel}`)}
                       </div>
                     )}
                     {assessment.feedback && (
@@ -446,29 +425,29 @@ function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
                     )}
                     {assessment.model && (
                       <div className="kh-muted" style={{ fontSize: 11, marginTop: 6 }}>
-                        Modell: {assessment.model}
+                        {t('bw.aiModel')}: {assessment.model}
                       </div>
                     )}
                   </div>
                   <div style={{ marginTop: 8 }}>
                     <button className="btn sm primary" onClick={applyAssessment}>
-                      In Bewertung übernehmen
+                      {t('bw.aiApply')}
                     </button>
                   </div>
                 </div>
               )}
 
               <p className="kh-muted" style={{ fontSize: 12, margin: 0 }}>
-                KI-Vorschläge sind unverbindlich – die endgültige Bewertung triffst immer du.
+                {t('bw.aiDisclaimer')}
               </p>
             </div>
           </div>
 
           <div className="panel">
             <div className="panel-head">
-              <h2>Bewerten</h2>
+              <h2>{t('bw.grade')}</h2>
               <span className={`badge ${STATUS_BADGE[sub.status] ?? 'b-archived'}`}>
-                {STATUS_LABEL[sub.status] ?? sub.status}
+                {t(`status.${sub.status}`)}
               </span>
             </div>
             <div
@@ -477,7 +456,8 @@ function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
             >
               <label className="fld">
                 <span className="field-label">
-                  Erreichte Punkte{max != null ? ` (max. ${max})` : ''}
+                  {t('bw.pointsAchieved')}
+                  {max != null ? ` (max. ${max})` : ''}
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <input
@@ -490,13 +470,8 @@ function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
                     onChange={(e) => setPoints(e.target.value)}
                   />
                   {max != null && (
-                    <button
-                      type="button"
-                      className="btn sm"
-                      title={`Volle Punktzahl (${max}) vergeben`}
-                      onClick={() => setPoints(String(max))}
-                    >
-                      Max ({max})
+                    <button type="button" className="btn sm" onClick={() => setPoints(String(max))}>
+                      {t('bw.max')} ({max})
                     </button>
                   )}
                   {pct != null && <span className="badge b-published">{pct}%</span>}
@@ -504,29 +479,29 @@ function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
               </label>
 
               <label className="fld">
-                <span className="field-label">Gütestufe</span>
+                <span className="field-label">{t('bw.level')}</span>
                 <select
                   className="inline-select"
                   value={level}
                   onChange={(e) => setLevel(e.target.value)}
                 >
-                  <option value="">— keine —</option>
+                  <option value="">{t('bw.levelNone')}</option>
                   {LEVELS.map((l) => (
-                    <option key={l.value} value={l.value}>
-                      {l.label}
+                    <option key={l} value={l}>
+                      {t(`level.${l}`)}
                     </option>
                   ))}
                 </select>
               </label>
 
               <label className="fld">
-                <span className="field-label">Feedback</span>
+                <span className="field-label">{t('bw.feedback')}</span>
                 <textarea
                   className="text-input"
                   rows={4}
                   value={feedback}
                   onChange={(e) => setFeedback(e.target.value)}
-                  placeholder="Rückmeldung an die/den Lernende:n …"
+                  placeholder={t('bw.feedbackPlaceholder')}
                 />
               </label>
 
@@ -537,14 +512,14 @@ function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
                   void save();
                 }}
               >
-                ✓ Bewertung speichern &amp; freigeben
+                {t('bw.saveGrade')}
               </button>
             </div>
           </div>
 
           <div className="panel">
             <div className="panel-head">
-              <h2>Zurückweisen</h2>
+              <h2>{t('bw.reject')}</h2>
             </div>
             <div
               className="panel-body"
@@ -555,7 +530,7 @@ function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
                 rows={3}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="Begründung (Pflicht) – was soll überarbeitet werden?"
+                placeholder={t('bw.rejectReason')}
               />
               <button
                 className="btn danger"
@@ -564,7 +539,7 @@ function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
                   void doReject();
                 }}
               >
-                ↩ Zur Überarbeitung zurückweisen
+                {t('bw.rejectBtn')}
               </button>
             </div>
           </div>
@@ -572,19 +547,4 @@ function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
       </div>
     </>
   );
-}
-
-function historyLabel(t: string): string {
-  switch (t) {
-    case 'CREATED':
-      return 'Bewertet';
-    case 'UPDATED':
-      return 'Bewertung geändert';
-    case 'REJECTED':
-      return 'Zurückgewiesen';
-    case 'REOPENED':
-      return 'Wieder geöffnet';
-    default:
-      return t;
-  }
 }

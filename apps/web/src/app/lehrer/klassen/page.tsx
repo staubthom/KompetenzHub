@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import AppShell from '../../../components/AppShell';
 import TrashIcon from '../../../components/TrashIcon';
 import { useToast } from '../../../components/ToastProvider';
+import { useI18n, localized } from '../../../lib/i18n';
 import {
   classes,
   modules,
@@ -17,6 +18,7 @@ import {
 
 export default function KlassenPage() {
   const toast = useToast();
+  const { t, locale } = useI18n();
   const [list, setList] = useState<ClassSummary[] | null>(null);
   const [mods, setMods] = useState<ModuleSummary[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -194,11 +196,13 @@ export default function KlassenPage() {
 
   return (
     <AppShell>
-      <div className="breadcrumb">Übersicht / Modulanlässe</div>
+      <div className="breadcrumb">
+        {t('common.overview')} / {t('cl.title')}
+      </div>
       <div className="page-head">
         <div>
-          <h1>Modulanlässe</h1>
-          <p>Lernende verwalten · Modul zuweisen · Beitrittscode · Archiv</p>
+          <h1>{t('cl.title')}</h1>
+          <p>{t('cl.subtitle')}</p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <div className="seg" role="group" aria-label="Ansicht">
@@ -210,7 +214,7 @@ export default function KlassenPage() {
                 setShowArchived(false);
               }}
             >
-              Aktiv
+              {t('cl.viewActive')}
             </button>
             <button
               aria-pressed={showArchived}
@@ -220,11 +224,11 @@ export default function KlassenPage() {
                 setShowArchived(true);
               }}
             >
-              Archiv
+              {t('cl.viewArchive')}
             </button>
           </div>
           <label className="btn" style={{ cursor: 'pointer' }}>
-            {importing ? 'Importiere…' : '⬆ Archiv importieren'}
+            {importing ? t('mod.importing') : t('cl.importArchive')}
             <input
               type="file"
               accept="application/zip,.zip"
@@ -238,7 +242,7 @@ export default function KlassenPage() {
             />
           </label>
           <button className="btn primary" onClick={() => setCreating(true)}>
-            + Neuer Modulanlass
+            {t('cl.new')}
           </button>
         </div>
       </div>
@@ -246,7 +250,7 @@ export default function KlassenPage() {
       {creating && (
         <div className="panel">
           <div className="panel-head">
-            <h2>Neuer Modulanlass</h2>
+            <h2>{t('cl.newTitle')}</h2>
           </div>
           <form
             className="form"
@@ -255,7 +259,7 @@ export default function KlassenPage() {
             }}
           >
             <label>
-              Bezeichnung *
+              {t('cl.fName')}
               <input
                 required
                 placeholder="z. B. INF-1a · Modul 293 (HS25)"
@@ -264,25 +268,25 @@ export default function KlassenPage() {
               />
             </label>
             <label>
-              Modul / Matrix zuordnen
+              {t('cl.assignModule')}
               <select
                 value={form.moduleId}
                 onChange={(e) => setForm((f) => ({ ...f, moduleId: e.target.value }))}
               >
-                <option value="">— kein Modul —</option>
+                <option value="">— {t('common.noModule')} —</option>
                 {mods.map((m) => (
                   <option key={m.id} value={m.id}>
-                    {m.number} · {m.title?.de ?? ''}
+                    {m.number} · {localized(m.title, locale)}
                   </option>
                 ))}
               </select>
             </label>
             <div className="form-actions">
               <button type="button" className="btn" onClick={() => setCreating(false)}>
-                Abbrechen
+                {t('common.cancel')}
               </button>
               <button type="submit" className="btn primary">
-                Erstellen
+                {t('common.create')}
               </button>
             </div>
           </form>
@@ -290,12 +294,12 @@ export default function KlassenPage() {
       )}
 
       {!list ? (
-        <div className="loading">Lade Modulanlässe…</div>
+        <div className="loading">{t('cl.loading')}</div>
       ) : list.length === 0 ? (
         <div className="panel">
           <div className="empty">
             <span className="ic">◫</span>
-            <p>Noch keine Modulanlässe. Erstelle deinen ersten Modulanlass.</p>
+            <p>{t('cl.empty')}</p>
           </div>
         </div>
       ) : (
@@ -309,12 +313,14 @@ export default function KlassenPage() {
               <div className="classcard-head">
                 <strong>{c.name}</strong>
                 <span className={`badge b-${c.status === 'ACTIVE' ? 'published' : 'archived'}`}>
-                  {c.status === 'ACTIVE' ? 'aktiv' : 'archiviert'}
+                  {c.status === 'ACTIVE' ? t('cl.active') : t('cl.archived')}
                 </span>
               </div>
               <div className="kh-muted" style={{ fontSize: 13 }}>
-                {c._count?.enrollments ?? 0} Lernende
-                {c.module ? ` · Modul ${c.module.number}` : ' · kein Modul'}
+                {c._count?.enrollments ?? 0} {t('cl.learnersCount')}
+                {c.module
+                  ? ` · ${t('common.module')} ${c.module.number}`
+                  : ` · ${t('common.noModule')}`}
               </div>
             </button>
           ))}
@@ -328,21 +334,21 @@ export default function KlassenPage() {
               {detail.name}{' '}
               {detail.status !== 'ACTIVE' && (
                 <span className="badge b-archived" style={{ marginLeft: 6 }}>
-                  archiviert · read-only
+                  {t('cl.readonly')}
                 </span>
               )}
             </h2>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button className="btn sm" onClick={() => void handleExport(detail.id)}>
-                ⬇ Exportieren
+                {t('cl.export')}
               </button>
               {detail.status === 'ACTIVE' ? (
                 <button className="btn sm" onClick={() => void handleArchive(detail.id)}>
-                  Archivieren
+                  {t('cl.archive')}
                 </button>
               ) : (
                 <button className="btn sm" onClick={() => void handleRestore(detail.id)}>
-                  Wiederherstellen
+                  {t('cl.restore')}
                 </button>
               )}
               <button
@@ -351,7 +357,7 @@ export default function KlassenPage() {
                   void handleDeleteClass(detail.id, detail.name);
                 }}
               >
-                <TrashIcon /> Löschen
+                <TrashIcon /> {t('common.delete')}
               </button>
             </div>
           </div>
@@ -359,7 +365,7 @@ export default function KlassenPage() {
           <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
             {/* Modulzuordnung */}
             <div>
-              <div className="field-label">Modul / Matrix</div>
+              <div className="field-label">{t('cl.moduleMatrix')}</div>
               <select
                 className="inline-select"
                 value={detail.module?.id ?? ''}
@@ -368,10 +374,10 @@ export default function KlassenPage() {
                   void handleAssignModule(e.target.value);
                 }}
               >
-                <option value="">— kein Modul —</option>
+                <option value="">— {t('common.noModule')} —</option>
                 {mods.map((m) => (
                   <option key={m.id} value={m.id}>
-                    {m.number} · {m.title?.de ?? ''}
+                    {m.number} · {localized(m.title, locale)}
                   </option>
                 ))}
               </select>
@@ -379,7 +385,7 @@ export default function KlassenPage() {
 
             {/* Beitrittscode + Beitrittslink */}
             <div>
-              <div className="field-label">Beitrittscode</div>
+              <div className="field-label">{t('cl.joinCode')}</div>
               <div className="joincode-row">
                 {detail.activeJoinCode ? (
                   <>
@@ -387,14 +393,14 @@ export default function KlassenPage() {
                     <button
                       className="btn sm"
                       onClick={() => {
-                        void copy(detail.activeJoinCode!.code, 'Code');
+                        void copy(detail.activeJoinCode!.code, t('cl.joinCode'));
                       }}
                     >
-                      Code kopieren
+                      {t('cl.copyCode')}
                     </button>
                   </>
                 ) : (
-                  <span className="kh-muted">Noch kein Code generiert.</span>
+                  <span className="kh-muted">{t('cl.noCode')}</span>
                 )}
                 {detail.status === 'ACTIVE' && (
                   <button
@@ -403,14 +409,14 @@ export default function KlassenPage() {
                       void handleGenerateCode();
                     }}
                   >
-                    {detail.activeJoinCode ? 'Code erneuern' : 'Code generieren'}
+                    {detail.activeJoinCode ? t('cl.renewCode') : t('cl.genCode')}
                   </button>
                 )}
               </div>
 
               {detail.activeJoinCode && (
                 <div style={{ marginTop: 10 }}>
-                  <div className="field-label">Beitrittslink</div>
+                  <div className="field-label">{t('cl.joinLink')}</div>
                   <div className="joincode-row">
                     <input
                       className="link-input"
@@ -421,38 +427,39 @@ export default function KlassenPage() {
                     <button
                       className="btn sm"
                       onClick={() => {
-                        void copy(joinLink(detail.activeJoinCode!.code), 'Link');
+                        void copy(joinLink(detail.activeJoinCode!.code), t('cl.joinLink'));
                       }}
                     >
-                      Link kopieren
+                      {t('cl.copyLink')}
                     </button>
                   </div>
                 </div>
               )}
 
               <p className="kh-muted" style={{ fontSize: 12, marginTop: 6 }}>
-                Lernende treten mit dem Code unter „Modulanlass beitreten" bei – oder direkt über
-                den Link. Erneuern macht den alten Code/Link ungültig.
+                {t('cl.codeHint')}
               </p>
             </div>
           </div>
 
           {/* Mitglieder */}
           <div className="panel-head" style={{ borderTop: '1px solid var(--border)' }}>
-            <h2>Lernende ({members.length})</h2>
+            <h2>
+              {t('cl.members')} ({members.length})
+            </h2>
           </div>
           {members.length === 0 ? (
             <div className="empty">
-              <p>Noch keine Lernenden. Teile den Beitrittscode.</p>
+              <p>{t('cl.noMembers')}</p>
             </div>
           ) : (
             <table className="table">
               <thead>
                 <tr>
-                  <th>Lernende:r</th>
-                  <th>E-Mail</th>
-                  <th>Beigetreten</th>
-                  <th>Status</th>
+                  <th>{t('bw.colLearner')}</th>
+                  <th>{t('cl.colEmail')}</th>
+                  <th>{t('cl.colJoined')}</th>
+                  <th>{t('common.status')}</th>
                   <th></th>
                 </tr>
               </thead>
@@ -465,10 +472,10 @@ export default function KlassenPage() {
                       </div>
                     </td>
                     <td className="kh-muted">{m.user?.email ?? '—'}</td>
-                    <td className="kh-muted">{new Date(m.joinedAt).toLocaleDateString('de-CH')}</td>
+                    <td className="kh-muted">{new Date(m.joinedAt).toLocaleDateString()}</td>
                     <td>
                       <span className="badge b-published">
-                        {m.status === 'ACTIVE' ? 'aktiv' : m.status.toLowerCase()}
+                        {m.status === 'ACTIVE' ? t('cl.active') : m.status.toLowerCase()}
                       </span>
                     </td>
                     <td>
@@ -476,7 +483,7 @@ export default function KlassenPage() {
                         <div className="row-actions">
                           <button
                             className="btn-icon"
-                            title="Entfernen"
+                            title={t('common.delete')}
                             onClick={() => {
                               void handleRemoveMember(m.userId);
                             }}

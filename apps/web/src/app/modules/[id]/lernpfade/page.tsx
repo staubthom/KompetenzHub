@@ -5,6 +5,7 @@ import Link from 'next/link';
 import AppShell from '../../../../components/AppShell';
 import TrashIcon from '../../../../components/TrashIcon';
 import { useToast } from '../../../../components/ToastProvider';
+import { useI18n } from '../../../../lib/i18n';
 import {
   matrix as matrixApi,
   learningPaths,
@@ -23,6 +24,7 @@ interface FlatField {
 export default function LearningPathsPage({ params }: { params: { id: string } }) {
   const moduleId = params.id;
   const toast = useToast();
+  const { t } = useI18n();
   const [data, setData] = useState<MatrixResponse | null>(null);
   const [paths, setPaths] = useState<LearningPath[] | null>(null);
   const [editId, setEditId] = useState<string | null>(null); // null = kein Editor, 'new' via separate state
@@ -56,10 +58,10 @@ export default function LearningPathsPage({ params }: { params: { id: string } }
       try {
         setPaths(await learningPaths.list(mId));
       } catch {
-        toast.error('Lernpfade konnten nicht geladen werden.');
+        toast.error(t('pe.loadFailed'));
       }
     },
-    [toast],
+    [toast, t],
   );
 
   useEffect(() => {
@@ -114,27 +116,27 @@ export default function LearningPathsPage({ params }: { params: { id: string } }
   async function save() {
     if (!matrixId) return;
     if (!name.trim()) {
-      toast.error('Bitte einen Namen angeben.');
+      toast.error(t('pe.nameRequired'));
       return;
     }
     if (selected.length === 0) {
-      toast.error('Bitte mindestens ein Kompetenzfeld auswählen.');
+      toast.error(t('pe.selectFieldRequired'));
       return;
     }
     setSaving(true);
     try {
       if (editId) {
         await learningPaths.update(editId, { name: name.trim(), fieldIds: selected });
-        toast.success('Lernpfad gespeichert.');
+        toast.success(t('pe.saved'));
       } else {
         await learningPaths.create(matrixId, { name: name.trim(), fieldIds: selected });
-        toast.success('Lernpfad erstellt.');
+        toast.success(t('pe.created'));
       }
       resetForm();
       await loadPaths(matrixId);
     } catch (e: unknown) {
       const err = e as { body?: { title?: string } };
-      toast.error(err.body?.title ?? 'Speichern fehlgeschlagen.');
+      toast.error(err.body?.title ?? t('pe.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -145,22 +147,22 @@ export default function LearningPathsPage({ params }: { params: { id: string } }
     try {
       await learningPaths.update(p.id, { isActive: active });
       await loadPaths(matrixId);
-      toast.success(active ? `„${p.name}" ist jetzt der aktive Pfad.` : 'Pfad deaktiviert.');
+      toast.success(active ? t('pe.activated') : t('pe.deactivated'));
     } catch (e: unknown) {
       const err = e as { body?: { title?: string } };
-      toast.error(err.body?.title ?? 'Aktion fehlgeschlagen.');
+      toast.error(err.body?.title ?? t('pe.saveFailed'));
     }
   }
 
   async function remove(p: LearningPath) {
     if (!matrixId) return;
-    if (!confirm(`Lernpfad „${p.name}" löschen?`)) return;
+    if (!confirm(t('pe.confirmDelete'))) return;
     try {
       await learningPaths.remove(p.id);
       await loadPaths(matrixId);
-      toast.success('Lernpfad gelöscht.');
+      toast.success(t('pe.deleted'));
     } catch {
-      toast.error('Löschen fehlgeschlagen.');
+      toast.error(t('pe.deleteFailed'));
     }
   }
 
@@ -169,30 +171,31 @@ export default function LearningPathsPage({ params }: { params: { id: string } }
   return (
     <AppShell>
       <div className="breadcrumb">
-        <Link href="/modules">Module</Link> / <Link href={`/modules/${moduleId}`}>Modul</Link> /
-        Lernpfade
+        <Link href="/modules">{t('me.modules')}</Link> /{' '}
+        <Link href={`/modules/${moduleId}`}>{t('me.module')}</Link> / {t('pe.title')}
       </div>
       <div className="page-head">
         <div>
-          <h1>Lernpfade</h1>
-          <p>Empfohlene Reihenfolge der Kompetenzen für Lernende festlegen</p>
+          <h1>{t('pe.title')}</h1>
+          <p>{t('pe.subtitle')}</p>
         </div>
         {!showEditor && (
           <button className="btn primary" onClick={startCreate} disabled={!matrixId}>
-            + Neuer Lernpfad
+            {t('pe.new')}
           </button>
         )}
       </div>
 
       {!data ? (
-        <div className="loading">Lade…</div>
+        <div className="loading">{t('common.loading')}</div>
       ) : fields.length === 0 ? (
         <div className="panel">
           <div className="empty">
             <span className="ic">▦</span>
             <p>
-              Für dieses Modul gibt es noch keine Kompetenzfelder. Lege zuerst in der{' '}
-              <Link href={`/modules/${moduleId}`}>Matrix</Link> Bänder an.
+              {t('pe.noFieldsPre')}
+              <Link href={`/modules/${moduleId}`}>{t('pe.matrixLink')}</Link>
+              {t('pe.noFieldsPost')}
             </p>
           </div>
         </div>
@@ -202,22 +205,22 @@ export default function LearningPathsPage({ params }: { params: { id: string } }
           {showEditor && (
             <div className="panel">
               <div className="panel-head">
-                <h2>{editId ? 'Lernpfad bearbeiten' : 'Neuer Lernpfad'}</h2>
+                <h2>{editId ? t('pe.editPath') : t('pe.newPath')}</h2>
               </div>
               <div className="form">
                 <label>
-                  Name
+                  {t('pe.name')}
                   <input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="z. B. Empfohlener Pfad Modul 293"
+                    placeholder={t('pe.namePlaceholder')}
                   />
                 </label>
 
                 <div className="grid2">
                   {/* Verfügbare Felder */}
                   <div>
-                    <div className="field-label">Verfügbare Kompetenzfelder</div>
+                    <div className="field-label">{t('pe.available')}</div>
                     <ul
                       className="hz-list"
                       style={{ border: '1px solid var(--border)', borderRadius: 8 }}
@@ -237,7 +240,7 @@ export default function LearningPathsPage({ params }: { params: { id: string } }
                               disabled={used}
                               onClick={() => addField(f.id)}
                             >
-                              {used ? '✓ hinzugefügt' : '+ hinzufügen'}
+                              {used ? t('pe.added') : t('pe.add')}
                             </button>
                           </li>
                         );
@@ -247,10 +250,10 @@ export default function LearningPathsPage({ params }: { params: { id: string } }
 
                   {/* Gewählte Reihenfolge */}
                   <div>
-                    <div className="field-label">Reihenfolge des Pfads</div>
+                    <div className="field-label">{t('pe.order')}</div>
                     {selected.length === 0 ? (
                       <p className="kh-muted" style={{ fontSize: 13 }}>
-                        Noch keine Felder gewählt. Füge links Felder hinzu.
+                        {t('pe.noneSelected')}
                       </p>
                     ) : (
                       <ul
@@ -274,7 +277,7 @@ export default function LearningPathsPage({ params }: { params: { id: string } }
                               </span>
                               <button
                                 className="btn-icon"
-                                title="Nach oben"
+                                title={t('fe.moveUp')}
                                 disabled={i === 0}
                                 onClick={() => move(i, -1)}
                               >
@@ -282,7 +285,7 @@ export default function LearningPathsPage({ params }: { params: { id: string } }
                               </button>
                               <button
                                 className="btn-icon"
-                                title="Nach unten"
+                                title={t('fe.moveDown')}
                                 disabled={i === selected.length - 1}
                                 onClick={() => move(i, 1)}
                               >
@@ -290,7 +293,7 @@ export default function LearningPathsPage({ params }: { params: { id: string } }
                               </button>
                               <button
                                 className="btn-icon"
-                                title="Entfernen"
+                                title={t('pe.remove')}
                                 onClick={() => removeField(id)}
                               >
                                 <TrashIcon />
@@ -305,10 +308,10 @@ export default function LearningPathsPage({ params }: { params: { id: string } }
 
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                   <button className="btn" onClick={resetForm}>
-                    Abbrechen
+                    {t('common.cancel')}
                   </button>
                   <button className="btn primary" disabled={saving} onClick={() => void save()}>
-                    {saving ? 'Speichert…' : 'Speichern'}
+                    {saving ? t('common.saving') : t('common.save')}
                   </button>
                 </div>
               </div>
@@ -318,13 +321,13 @@ export default function LearningPathsPage({ params }: { params: { id: string } }
           {/* Liste der Pfade */}
           <div className="panel">
             <div className="panel-head">
-              <h2>Vorhandene Lernpfade</h2>
+              <h2>{t('pe.existing')}</h2>
             </div>
             {!paths ? (
-              <div className="loading">Lade…</div>
+              <div className="loading">{t('common.loading')}</div>
             ) : paths.length === 0 ? (
               <div className="empty">
-                <p>Noch keine Lernpfade. Lege oben einen an.</p>
+                <p>{t('pe.empty')}</p>
               </div>
             ) : (
               <ul className="hz-list">
@@ -333,20 +336,24 @@ export default function LearningPathsPage({ params }: { params: { id: string } }
                     <div style={{ flex: 1 }}>
                       <strong>{p.name}</strong>
                       <div className="kh-muted" style={{ fontSize: 12 }}>
-                        {p.steps.length} Schritt(e): {p.steps.map((s) => s.code).join(' → ')}
+                        {p.steps.length} {t('pe.steps')}: {p.steps.map((s) => s.code).join(' → ')}
                       </div>
                     </div>
                     {p.isActive ? (
-                      <span className="badge b-published">aktiv</span>
+                      <span className="badge b-published">{t('pe.active')}</span>
                     ) : (
                       <button className="btn sm" onClick={() => void setActive(p, true)}>
-                        Aktiv setzen
+                        {t('pe.setActive')}
                       </button>
                     )}
                     <button className="btn sm" onClick={() => startEdit(p)}>
-                      Bearbeiten
+                      {t('common.edit')}
                     </button>
-                    <button className="btn-icon" title="Löschen" onClick={() => void remove(p)}>
+                    <button
+                      className="btn-icon"
+                      title={t('common.delete')}
+                      onClick={() => void remove(p)}
+                    >
                       <TrashIcon />
                     </button>
                   </li>

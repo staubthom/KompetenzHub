@@ -6,6 +6,7 @@ import Celebration, { randomEffect } from './Celebration';
 import ExpertTalkChat from './ExpertTalkChat';
 import TrashIcon from './TrashIcon';
 import { useToast } from './ToastProvider';
+import { useI18n, localized } from '../lib/i18n';
 
 interface PendingFile {
   key: string;
@@ -26,6 +27,7 @@ export default function EvidenceSubmitPanel({
   onSubmitted?: () => void;
 }) {
   const toast = useToast();
+  const { t, locale } = useI18n();
   const [text, setText] = useState('');
   const [link, setLink] = useState('');
   const [files, setFiles] = useState<PendingFile[]>([]);
@@ -58,10 +60,10 @@ export default function EvidenceSubmitPanel({
   }, [cfg.allowExpertTalk]);
 
   const statusText: Record<string, string> = {
-    SUBMITTED: 'Eingereicht – wartet auf Bewertung',
-    GRADED: 'Bewertet',
-    REJECTED: 'Zurückgewiesen – bitte überarbeiten',
-    OPEN: 'Offen',
+    SUBMITTED: t('sub.statusSubmitted'),
+    GRADED: t('sub.statusGraded'),
+    REJECTED: t('sub.statusRejected'),
+    OPEN: t('sub.statusOpen'),
   };
 
   function showError(e: unknown) {
@@ -131,7 +133,7 @@ export default function EvidenceSubmitPanel({
   async function submitAll() {
     // Bei reinem Fachgespräch/Präsentation ist keine Datei/Link/Text nötig.
     if (!text.trim() && !link.trim() && files.length === 0 && !cfg.allowExpertTalk) {
-      toast.error('Bitte zuerst Text, Link, Datei oder Screenshot hinzufügen.');
+      toast.error(t('sub.needContent'));
       return;
     }
     setBusy(true);
@@ -147,7 +149,7 @@ export default function EvidenceSubmitPanel({
       setFiles([]);
       setJustSubmitted(true);
       setCelebration(randomEffect());
-      toast.success('Erfolgreich eingereicht!');
+      toast.success(t('sub.success'));
       onSubmitted?.();
     } catch (e: unknown) {
       showError(e);
@@ -166,8 +168,8 @@ export default function EvidenceSubmitPanel({
             <span>
               {' '}
               · {sub.points}
-              {ev.maxPoints ? ` / ${ev.maxPoints}` : ''} Punkte
-              {sub.achievedLevel ? ` · ${sub.achievedLevel}` : ''}
+              {ev.maxPoints ? ` / ${ev.maxPoints}` : ''} {t('common.points')}
+              {sub.achievedLevel ? ` · ${t(`level.${sub.achievedLevel}`)}` : ''}
             </span>
           )}
           {sub.status === 'GRADED' && sub.feedback && (
@@ -179,12 +181,12 @@ export default function EvidenceSubmitPanel({
         </div>
       )}
 
-      {ev.instructions?.de && (
+      {localized(ev.instructions, locale) && (
         <div
           className="rte-content no-copy"
           onCopy={(e) => e.preventDefault()}
           onContextMenu={(e) => e.preventDefault()}
-          dangerouslySetInnerHTML={{ __html: ev.instructions.de }}
+          dangerouslySetInnerHTML={{ __html: localized(ev.instructions, locale) }}
         />
       )}
 
@@ -192,7 +194,7 @@ export default function EvidenceSubmitPanel({
       {ev.attachmentUrl && (
         <p style={{ marginTop: 12 }}>
           <a className="btn sm" href={ev.attachmentUrl} target="_blank" rel="noopener">
-            ⬇ {cfg.attachmentName ?? 'Anhang herunterladen'}
+            ⬇ {cfg.attachmentName ?? t('sub.downloadAttachment')}
           </a>
         </p>
       )}
@@ -207,30 +209,29 @@ export default function EvidenceSubmitPanel({
             borderRadius: 8,
           }}
         >
-          <strong>🗣 Fachgespräch / Präsentation</strong>
+          <strong>🗣 {t('sub.expertTalkTitle')}</strong>
           {talkAvailable === false ? (
             <p className="kh-muted" style={{ fontSize: 13, margin: '6px 0 0' }}>
-              Die KI-Übung ist aktuell nicht verfügbar (keine KI freigeschaltet). Bereite dich
-              eigenständig auf das Fachgespräch vor.
+              {t('sub.aiUnavailable')}
             </p>
           ) : !showTalk ? (
             <div style={{ marginTop: 6 }}>
               <p className="kh-muted" style={{ fontSize: 13, margin: '0 0 8px' }}>
-                Übe das Fachgespräch zu diesem Nachweis mit dem KI-Tutor – unverbindlich, ohne Note.
+                {t('sub.practiceHint')}
               </p>
               <button
                 className="btn sm"
                 disabled={talkAvailable === null}
                 onClick={() => setShowTalk(true)}
               >
-                {talkAvailable === null ? '…' : '💬 Mit KI üben'}
+                {talkAvailable === null ? '…' : t('sub.practiceWithAi')}
               </button>
             </div>
           ) : (
             <div style={{ marginTop: 10 }}>
               <ExpertTalkChat
-                topic={ev.title?.de ?? 'Fachgespräch'}
-                context={ev.instructions?.de ?? ''}
+                topic={localized(ev.title, locale) || t('sub.expertTalkTitle')}
+                context={localized(ev.instructions, locale)}
               />
             </div>
           )}
@@ -240,9 +241,9 @@ export default function EvidenceSubmitPanel({
       {!canSubmit && (
         <p className="kh-muted" style={{ marginTop: 16 }}>
           {justSubmitted || sub?.status === 'SUBMITTED'
-            ? '⏳ Bereits eingereicht – eine erneute Einreichung ist erst nach einer Rückweisung durch die Lehrperson möglich.'
+            ? t('sub.alreadySubmitted')
             : sub?.status === 'GRADED'
-              ? '✓ Dieser Nachweis wurde bereits bewertet.'
+              ? t('sub.alreadyGraded')
               : ''}
         </p>
       )}
@@ -255,7 +256,12 @@ export default function EvidenceSubmitPanel({
               {files.map((f) => (
                 <li key={f.key} className="hz-item" style={{ alignItems: 'center' }}>
                   {f.previewUrl ? (
-                    <a href={f.previewUrl} target="_blank" rel="noopener" title="Vorschau öffnen">
+                    <a
+                      href={f.previewUrl}
+                      target="_blank"
+                      rel="noopener"
+                      title={t('sub.previewOpen')}
+                    >
                       <img
                         src={f.previewUrl}
                         alt={f.name}
@@ -278,10 +284,14 @@ export default function EvidenceSubmitPanel({
                   </span>
                   {f.previewUrl && (
                     <a className="btn sm" href={f.previewUrl} target="_blank" rel="noopener">
-                      Ansehen
+                      {t('sub.view')}
                     </a>
                   )}
-                  <button className="btn-icon" title="Entfernen" onClick={() => removeFile(f.key)}>
+                  <button
+                    className="btn-icon"
+                    title={t('common.delete')}
+                    onClick={() => removeFile(f.key)}
+                  >
                     <TrashIcon />
                   </button>
                 </li>
@@ -292,7 +302,7 @@ export default function EvidenceSubmitPanel({
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {cfg.allowFile !== false && (
               <label className="btn sm" style={{ cursor: 'pointer' }}>
-                {busy ? '…' : '📄 Datei hinzufügen'}
+                {busy ? '…' : t('sub.addFile')}
                 <input
                   type="file"
                   style={{ display: 'none' }}
@@ -313,20 +323,20 @@ export default function EvidenceSubmitPanel({
                   void captureScreenshot();
                 }}
               >
-                {shotBusy ? '…' : '🖼 Screenshot aufnehmen'}
+                {shotBusy ? '…' : t('sub.screenshot')}
               </button>
             )}
           </div>
           {cfg.allowFile !== false && (cfg.allowedFileTypes ?? []).length > 0 && (
             <span className="kh-muted" style={{ fontSize: 12, marginTop: -8 }}>
-              erlaubt: {(cfg.allowedFileTypes ?? []).join(', ')}
+              {t('sub.allowed')}: {(cfg.allowedFileTypes ?? []).join(', ')}
               {cfg.maxFileSizeMb ? ` · max. ${cfg.maxFileSizeMb} MB` : ''}
             </span>
           )}
 
           {cfg.allowLink !== false && (
             <label className="fld">
-              <span className="field-label">Link</span>
+              <span className="field-label">{t('sub.link')}</span>
               <input
                 className="link-input"
                 placeholder="https://…"
@@ -339,18 +349,18 @@ export default function EvidenceSubmitPanel({
           {cfg.allowText !== false && (
             <label className="fld">
               <span className="field-label">
-                Text{!cfg.allowPaste ? ' (Einfügen deaktiviert – bitte selbst schreiben)' : ''}
+                {!cfg.allowPaste ? t('sub.textNoPaste') : t('sub.text')}
               </span>
               <textarea
                 className="text-input"
                 rows={5}
-                placeholder="Deine Antwort …"
+                placeholder={t('sub.answerPlaceholder')}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 onPaste={(e) => {
                   if (!cfg.allowPaste) {
                     e.preventDefault();
-                    toast.info('Einfügen ist für diesen Nachweis deaktiviert.');
+                    toast.info(t('sub.textNoPaste'));
                   }
                 }}
                 onDrop={(e) => {
@@ -366,9 +376,7 @@ export default function EvidenceSubmitPanel({
             cfg.allowText === false &&
             !cfg.allowScreenshot && (
               <p className="kh-muted" style={{ fontSize: 13, margin: 0 }}>
-                Für dieses Fachgespräch / diese Präsentation ist keine Datei nötig. Du kannst die
-                Einreichung direkt abschicken – die mündliche Leistung wird von der Lehrperson
-                bewertet.
+                {t('sub.expertTalkNoFile')}
               </p>
             )}
 
@@ -380,7 +388,7 @@ export default function EvidenceSubmitPanel({
                 void submitAll();
               }}
             >
-              {busy ? 'Wird eingereicht…' : '✓ Einreichen'}
+              {busy ? t('sub.submitting') : t('sub.submit')}
             </button>
           </div>
         </div>
