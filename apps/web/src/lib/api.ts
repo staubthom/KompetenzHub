@@ -242,6 +242,11 @@ export const expertTalk = {
       method: 'POST',
       body: JSON.stringify({ topic, context }),
     }),
+  createModule: (moduleId: string) =>
+    apiFetch<ExpertTalkSession>('/expert-talk/module-sessions', {
+      method: 'POST',
+      body: JSON.stringify({ moduleId }),
+    }),
   get: (id: string) => apiFetch<ExpertTalkSession>(`/expert-talk/sessions/${id}`),
   send: (id: string, content: string) =>
     apiFetch<ExpertTalkMessage>(`/expert-talk/sessions/${id}/messages`, {
@@ -417,6 +422,7 @@ export interface ExpertTalkMessage {
 export interface ExpertTalkSession {
   id: string;
   topic: string;
+  mode?: string; // topic | module
   status: string; // ACTIVE | COMPLETED
   createdAt: string;
   messages: ExpertTalkMessage[];
@@ -425,6 +431,7 @@ export interface ExpertTalkSession {
 export interface ExpertTalkSummary {
   id: string;
   topic: string;
+  mode?: string;
   status: string;
   messageCount: number;
   createdAt: string;

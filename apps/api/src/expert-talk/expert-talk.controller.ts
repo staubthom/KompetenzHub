@@ -36,6 +36,13 @@ export class ExpertTalkController {
     );
   }
 
+  /** Modul-weites Lerngespräch starten (Kontext = alle Kompetenzen der Matrix). */
+  @Post('module-sessions')
+  @Roles(Role.LEARNER, Role.TEACHER, Role.ADMIN)
+  createModule(@Body() dto: { moduleId?: string }, @CurrentUser() user: RequestContext) {
+    return this.expertTalk.createModuleSession(user.tenantId, user.userId, dto?.moduleId ?? '');
+  }
+
   /** Gesprächsverlauf abrufen. */
   @Get('sessions/:id')
   @Roles(Role.LEARNER, Role.TEACHER, Role.ADMIN)

@@ -96,11 +96,46 @@ check('Liste enthält Gespräch', Array.isArray(list.body) && list.body.some((x)
 const foreign = await req('GET', `/expert-talk/sessions/${sessionId}`, null, studentB);
 check('Fremdzugriff → 403', foreign.status === 403, `status=${foreign.status}`);
 
+// ── Modul-weites Lerngespräch (Kontext = alle Kompetenzen) ───────
+const modNum = `ET${Date.now()}`;
+const mod = await req('POST', '/modules', { number: modNum, title: { de: 'KI-Modul-Üben' } }, teacher);
+const moduleId = mod.body?.id;
+const det = await req('GET', `/modules/${moduleId}`, null, teacher);
+const matrixId = det.body?.matrix?.id;
+const hz = await req('POST', `/modules/${moduleId}/action-goals`, { code: '1', text: { de: 'HZ' } }, teacher);
+const band = await req('POST', `/matrices/${matrixId}/bands`, { code: 'A1', actionGoalIds: [hz.body.id] }, teacher);
+const fieldId = band.body?.fields?.[0]?.id;
+await req('PUT', `/fields/${fieldId}/descriptor`, { text: { de: 'Ich kann ein Netzwerk dokumentieren.' } }, teacher);
+const cls = await req('POST', '/classes', { name: 'ET-Anlass', moduleId }, teacher);
+const code = await req('POST', `/classes/${cls.body.id}/join-code`, {}, teacher);
+await req('POST', '/classes/join', { code: code.body?.code }, studentA);
+
+const modSession = await req('POST', '/expert-talk/module-sessions', { moduleId }, studentA);
+check('Modul-Session starten → 201', modSession.status === 201, `status=${modSession.status}`);
+check('Modul-Session hat mode=module', modSession.body?.mode === 'module');
+check('Modul-Session KI stellt erste Frage', modSession.body?.messages?.[0]?.role === 'assistant' && modSession.body.messages[0].content.length > 0);
+const modList = await req('GET', '/expert-talk/sessions', null, studentA);
+check('Liste enthält Modul-Session mit mode', modList.body.some((x) => x.id === modSession.body.id && x.mode === 'module'));
+
+// Modul ohne Kompetenzen → 422
+const emptyMod = await req('POST', '/modules', { number: `ETX${Date.now()}`, title: { de: 'Leer' } }, teacher);
+const clsE = await req('POST', '/classes', { name: 'ET-Leer', moduleId: emptyMod.body.id }, teacher);
+const codeE = await req('POST', `/classes/${clsE.body.id}/join-code`, {}, teacher);
+await req('POST', '/classes/join', { code: codeE.body?.code }, studentA);
+const noComp = await req('POST', '/expert-talk/module-sessions', { moduleId: emptyMod.body.id }, studentA);
+check('Modul ohne Kompetenzen → 422', noComp.status === 422, `status=${noComp.status}`);
+
 // ── Abschliessen → COMPLETED, danach keine Nachrichten mehr ──────
 const done = await req('POST', `/expert-talk/sessions/${sessionId}/complete`, {}, studentA);
 check('Abschliessen → COMPLETED', done.status === 200 && done.body?.status === 'COMPLETED');
 const afterDone = await req('POST', `/expert-talk/sessions/${sessionId}/messages`, { content: 'Noch was?' }, studentA);
 check('Senden nach Abschluss → 422', afterDone.status === 422);
+
+// ── Aufräumen ─────────────────────────────────────────────────────
+await req('DELETE', `/classes/${cls.body.id}`, null, teacher);
+await req('DELETE', `/classes/${clsE.body.id}`, null, teacher);
+await req('DELETE', `/modules/${moduleId}`, null, teacher);
+await req('DELETE', `/modules/${emptyMod.body.id}`, null, teacher);
 
 console.log(`\nErgebnis: ${ok} OK, ${fail} FAIL`);
 if (fail > 0) process.exit(1);
