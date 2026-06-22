@@ -218,6 +218,21 @@ export const ai = {
   status: () => apiFetch<{ configured: boolean; enabled: boolean }>('/ai/status'),
 };
 
+// Lernpfade (FA-84)
+export const learningPaths = {
+  list: (matrixId: string) => apiFetch<LearningPath[]>(`/matrices/${matrixId}/paths`),
+  create: (matrixId: string, data: { name: string; fieldIds: string[]; isActive?: boolean }) =>
+    apiFetch<LearningPath>(`/matrices/${matrixId}/paths`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  update: (id: string, data: { name?: string; fieldIds?: string[]; isActive?: boolean }) =>
+    apiFetch<LearningPath>(`/paths/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  remove: (id: string) => apiFetch<void>(`/paths/${id}`, { method: 'DELETE' }),
+  activeForModule: (moduleId: string) =>
+    apiFetch<ActiveLearningPath>(`/modules/${moduleId}/learning-path`),
+};
+
 // KI-Fachgespräch / Übungsmodus (FA-80)
 export const expertTalk = {
   available: () => apiFetch<{ available: boolean }>('/expert-talk/available'),
@@ -347,6 +362,44 @@ export interface AiAssessment {
   reasoning: { criterion: string; comment: string }[];
   model: string | null;
   createdAt: string;
+}
+
+export interface LearningPathStepDef {
+  id: string;
+  fieldId: string;
+  code: string;
+  level: string;
+  sortOrder: number;
+}
+
+export interface LearningPath {
+  id: string;
+  name: string;
+  isActive: boolean;
+  steps: LearningPathStepDef[];
+}
+
+export interface ActivePathStep {
+  id: string;
+  fieldId: string;
+  code: string;
+  level: string;
+  bandCode: string;
+  descriptor: Record<string, string> | null;
+  status: 'OPEN' | 'SUBMITTED' | 'GRADED' | 'REJECTED';
+  isNext: boolean;
+}
+
+export interface ActiveLearningPath {
+  module: { number: string; title: Record<string, string> } | null;
+  path: {
+    id: string;
+    name: string;
+    steps: ActivePathStep[];
+    doneCount: number;
+    total: number;
+    hasEnrollment: boolean;
+  } | null;
 }
 
 export interface ExpertTalkMessage {
