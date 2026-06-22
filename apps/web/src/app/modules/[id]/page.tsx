@@ -11,7 +11,7 @@ import {
   modules,
   actionGoals,
   matrix as matrixApi,
-  matrixIo,
+  exportMatrixZip,
   descriptors,
   type ModuleDetail,
   type Band,
@@ -101,15 +101,14 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
   async function handleExport() {
     if (!mod?.matrix) return;
     try {
-      const data = await matrixIo.export(mod.matrix.id);
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const { blob, filename } = await exportMatrixZip(mod.matrix.id);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `matrix-modul-${mod.number}.json`;
+      a.download = filename;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success('Matrix exportiert.');
+      toast.success('Modul exportiert (ZIP).');
     } catch (e: unknown) {
       const err = e as { body?: { title?: string } };
       toast.error(err.body?.title ?? 'Export fehlgeschlagen.');

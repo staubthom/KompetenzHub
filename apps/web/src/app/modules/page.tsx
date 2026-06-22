@@ -5,7 +5,7 @@ import Link from 'next/link';
 import AppShell from '../../components/AppShell';
 import TrashIcon from '../../components/TrashIcon';
 import { useToast } from '../../components/ToastProvider';
-import { modules, matrixIo, type ModuleSummary, type MatrixExport } from '../../lib/api';
+import { modules, importMatrixZip, type ModuleSummary } from '../../lib/api';
 
 function statusLabel(s: string): string {
   return s === 'DRAFT' ? 'Entwurf' : s === 'PUBLISHED' ? 'Veröffentlicht' : 'Archiviert';
@@ -52,17 +52,9 @@ export default function ModulesPage() {
   async function handleImport(file: File) {
     setImporting(true);
     try {
-      const text = await file.text();
-      let parsed: MatrixExport;
-      try {
-        parsed = JSON.parse(text) as MatrixExport;
-      } catch {
-        toast.error('Datei ist kein gültiges JSON.');
-        return;
-      }
-      const res = await matrixIo.import(parsed);
+      const res = await importMatrixZip(file);
       await load();
-      toast.success(`Matrix importiert als Modul ${res.number}.`);
+      toast.success(`Modul importiert als „${res.number}".`);
     } catch (e: unknown) {
       const err = e as { body?: { title?: string } };
       toast.error(err.body?.title ?? 'Import fehlgeschlagen.');
@@ -93,10 +85,10 @@ export default function ModulesPage() {
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <label className="btn" style={{ cursor: 'pointer' }}>
-            {importing ? 'Importiere…' : '⬆ Matrix importieren'}
+            {importing ? 'Importiere…' : '⬆ Modul importieren (ZIP)'}
             <input
               type="file"
-              accept="application/json,.json"
+              accept="application/zip,.zip"
               style={{ display: 'none' }}
               disabled={importing}
               onChange={(e) => {
