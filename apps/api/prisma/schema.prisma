@@ -485,3 +485,35 @@ model AiAssessment {
 
   @@index([submissionId, createdAt])
 }
+
+// ============================================================
+// KI-Fachgespräch (FA-80) – Übungsdialog, keine Note
+// ============================================================
+
+/// Übungs-Fachgespräch der/des Lernenden mit dem KI-Tutor zu einem Thema.
+model ExpertTalkSession {
+  id        String   @id @default(uuid())
+  tenantId  String
+  userId    String
+  topic     String
+  status    String   @default("ACTIVE") // ACTIVE | COMPLETED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages ExpertTalkMessage[]
+
+  @@index([tenantId])
+  @@index([userId])
+}
+
+model ExpertTalkMessage {
+  id        String   @id @default(uuid())
+  sessionId String
+  role      String // "user" | "assistant"
+  content   String
+  createdAt DateTime @default(now())
+
+  session ExpertTalkSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
+}

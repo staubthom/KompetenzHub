@@ -13,6 +13,7 @@ import { EvidenceModule } from './evidence/evidence.module';
 import { SubmissionsModule } from './submissions/submissions.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { AiModule } from './ai/ai.module';
+import { ExpertTalkModule } from './expert-talk/expert-talk.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { AiModule } from './ai/ai.module';
     SubmissionsModule,
     DashboardModule,
     AiModule,
+    ExpertTalkModule,
   ],
   controllers: [HealthController],
   providers: [
