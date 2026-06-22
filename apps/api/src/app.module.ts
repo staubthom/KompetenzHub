@@ -12,6 +12,7 @@ import { ClassesModule } from './classes/classes.module';
 import { EvidenceModule } from './evidence/evidence.module';
 import { SubmissionsModule } from './submissions/submissions.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     EvidenceModule,
     SubmissionsModule,
     DashboardModule,
+    AiModule,
   ],
   controllers: [HealthController],
   providers: [

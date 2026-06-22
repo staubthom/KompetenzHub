@@ -208,6 +208,16 @@ export const dashboard = {
   progress: (classId: string) => apiFetch<ClassProgress>(`/classes/${classId}/progress`),
 };
 
+// KI-Konfiguration je Lehrperson (FA-34)
+export const ai = {
+  getConfig: () => apiFetch<AiConfig>('/ai/config'),
+  saveConfig: (data: AiConfigInput) =>
+    apiFetch<AiConfig>('/ai/config', { method: 'PUT', body: JSON.stringify(data) }),
+  test: (data: AiConfigInput) =>
+    apiFetch<AiTestResult>('/ai/config/test', { method: 'POST', body: JSON.stringify(data) }),
+  status: () => apiFetch<{ configured: boolean; enabled: boolean }>('/ai/status'),
+};
+
 // Rich-Text-Assets (Bild-Upload vom PC)
 export const assets = {
   imageUploadUrl: (fileName: string, contentType: string, sizeBytes: number) =>
@@ -278,6 +288,30 @@ export async function uploadRichTextImage(file: File): Promise<string> {
 }
 
 // ── Typen ──────────────────────────────────────────────────────────
+
+export interface AiConfig {
+  provider: string;
+  baseUrl: string;
+  model: string;
+  enabled: boolean;
+  hasApiKey: boolean;
+  apiKeyMask: string | null;
+  updatedAt: string | null;
+}
+
+export interface AiConfigInput {
+  provider?: string;
+  baseUrl?: string;
+  model?: string;
+  apiKey?: string | null; // weglassen = unverändert; '' = löschen
+  enabled?: boolean;
+}
+
+export interface AiTestResult {
+  ok: boolean;
+  message: string;
+  models?: string[];
+}
 
 export interface ModuleSummary {
   id: string;
