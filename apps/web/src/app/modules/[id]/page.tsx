@@ -7,6 +7,7 @@ import AppShell from '../../../components/AppShell';
 import TrashIcon from '../../../components/TrashIcon';
 import FieldEvidenceModal from '../../../components/FieldEvidenceModal';
 import { useToast } from '../../../components/ToastProvider';
+import { useI18n } from '../../../lib/i18n';
 import {
   modules,
   actionGoals,
@@ -19,17 +20,6 @@ import {
   type CompetenceField,
 } from '../../../lib/api';
 
-const LEVEL_SHORT: Record<string, string> = {
-  BEGINNER: 'Beginner',
-  INTERMEDIATE: 'Intermediate',
-  ADVANCED: 'Advanced',
-};
-
-const LEVEL_LABEL: Record<string, string> = {
-  BEGINNER: 'Beginner (B)',
-  INTERMEDIATE: 'Intermediate (I)',
-  ADVANCED: 'Advanced (A)',
-};
 const LEVELS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'] as const;
 
 // In Next.js 14 ist params ein einfaches Objekt (kein Promise).
@@ -37,6 +27,7 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
   const id = params.id;
   const router = useRouter();
   const toast = useToast();
+  const { t } = useI18n();
   const [mod, setMod] = useState<ModuleDetail | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
 
@@ -84,9 +75,9 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
       setMod(await modules.get(id));
     } catch (e: unknown) {
       setLoadFailed(true);
-      toast.error('Modul konnte nicht geladen werden.');
+      toast.error(t('me.loadFailed'));
     }
-  }, [id, toast]);
+  }, [id, toast, t]);
 
   useEffect(() => {
     void load();
@@ -108,10 +99,10 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
       a.download = filename;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success('Modul exportiert (ZIP).');
+      toast.success(t('me.exportSuccess'));
     } catch (e: unknown) {
       const err = e as { body?: { title?: string } };
-      toast.error(err.body?.title ?? 'Export fehlgeschlagen.');
+      toast.error(err.body?.title ?? t('me.exportFailed'));
     }
   }
 
@@ -144,7 +135,7 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
 
   async function handleDeleteModule() {
     if (!mod) return;
-    if (!confirm(`Modul ${mod.number} und die gesamte Matrix wirklich löschen?`)) return;
+    if (!confirm(t('me.confirmDeleteModule'))) return;
     try {
       await modules.remove(id);
       router.replace('/modules');
@@ -186,7 +177,7 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
   }
 
   async function handleDeleteGoal(goalId: string) {
-    if (!confirm('Handlungsziel löschen?')) return;
+    if (!confirm(t('me.confirmDeleteGoal'))) return;
     try {
       await actionGoals.remove(goalId);
       await load();
@@ -222,7 +213,7 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
     e.preventDefault();
     if (!bandForm.code || !mod?.matrix) return;
     if (bandForm.goalIds.length === 0) {
-      toast.error('Ein Kompetenzband muss mindestens ein Handlungsziel referenzieren.');
+      toast.error(t('me.bandMustRefGoal'));
       return;
     }
     try {
@@ -252,7 +243,7 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
     e.preventDefault();
     if (!editBand) return;
     if (editBand.goalIds.length === 0) {
-      toast.error('Ein Kompetenzband muss mindestens ein Handlungsziel referenzieren.');
+      toast.error(t('me.bandMustRefGoal'));
       return;
     }
     try {
@@ -269,7 +260,7 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
   }
 
   async function handleDeleteBand(bandId: string) {
-    if (!confirm('Kompetenzband und alle Felder löschen?')) return;
+    if (!confirm(t('me.confirmDeleteBand'))) return;
     try {
       await matrixApi.removeBand(bandId);
       await load();
@@ -316,9 +307,7 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
   if (!mod) {
     return (
       <AppShell>
-        <div className="loading">
-          {loadFailed ? 'Modul konnte nicht geladen werden.' : 'Lade Modul…'}
-        </div>
+        <div className="loading">{loadFailed ? t('me.loadFailed') : t('me.loading')}</div>
       </AppShell>
     );
   }
@@ -329,24 +318,22 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
   return (
     <AppShell>
       <div className="breadcrumb">
-        <Link href="/modules">Module</Link> / {mod.number}
+        <Link href="/modules">{t('me.modules')}</Link> / {mod.number}
       </div>
 
       <div className="page-head">
         <div>
-          <h1>Modul {mod.number}</h1>
+          <h1>
+            {t('me.module')} {mod.number}
+          </h1>
           <p>{mod.title?.de}</p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <span className={`badge b-${mod.status.toLowerCase()}`}>
-            {mod.status === 'DRAFT'
-              ? 'Entwurf'
-              : mod.status === 'PUBLISHED'
-                ? 'Veröffentlicht'
-                : 'Archiviert'}
+            {t(`modstatus.${mod.status}`)}
           </span>
           <Link className="btn sm" href={`/modules/${id}/lernpfade`}>
-            Lernpfade
+            {t('me.paths')}
           </Link>
           <button
             className="btn sm"
@@ -355,10 +342,10 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
               void handleExport();
             }}
           >
-            ⬇ Export
+            {t('me.export')}
           </button>
           <button className="btn sm" onClick={startEditMod}>
-            Modul bearbeiten
+            {t('me.editModule')}
           </button>
         </div>
       </div>
@@ -367,7 +354,7 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
       {editMod && (
         <div className="panel">
           <div className="panel-head">
-            <h2>Modul bearbeiten</h2>
+            <h2>{t('me.editModule')}</h2>
           </div>
           <form
             className="form"
@@ -376,7 +363,7 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
             }}
           >
             <label>
-              Modulnummer
+              {t('me.moduleNumber')}
               <input
                 required
                 value={modForm.number}
@@ -384,28 +371,28 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
               />
             </label>
             <label>
-              Titel (DE)
+              {t('me.titleDe')}
               <input
                 value={modForm.title}
                 onChange={(e) => setModForm((f) => ({ ...f, title: e.target.value }))}
               />
             </label>
             <label>
-              Beschreibung (DE)
+              {t('me.descDe')}
               <input
                 value={modForm.description}
                 onChange={(e) => setModForm((f) => ({ ...f, description: e.target.value }))}
               />
             </label>
             <label>
-              Status
+              {t('me.status')}
               <select
                 value={modForm.status}
                 onChange={(e) => setModForm((f) => ({ ...f, status: e.target.value }))}
               >
-                <option value="DRAFT">Entwurf</option>
-                <option value="PUBLISHED">Veröffentlicht</option>
-                <option value="ARCHIVED">Archiviert</option>
+                <option value="DRAFT">{t('modstatus.DRAFT')}</option>
+                <option value="PUBLISHED">{t('modstatus.PUBLISHED')}</option>
+                <option value="ARCHIVED">{t('modstatus.ARCHIVED')}</option>
               </select>
             </label>
             <div className="form-actions" style={{ justifyContent: 'space-between' }}>
@@ -416,14 +403,14 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
                   void handleDeleteModule();
                 }}
               >
-                <TrashIcon /> Modul löschen
+                <TrashIcon /> {t('me.deleteModule')}
               </button>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button type="button" className="btn" onClick={() => setEditMod(false)}>
-                  Abbrechen
+                  {t('common.cancel')}
                 </button>
                 <button type="submit" className="btn primary">
-                  Speichern
+                  {t('common.save')}
                 </button>
               </div>
             </div>
@@ -434,9 +421,9 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
       {/* Handlungsziele (FA-02) */}
       <div className="panel">
         <div className="panel-head">
-          <h2>Handlungsziele</h2>
+          <h2>{t('me.goals')}</h2>
           <button className="btn sm" onClick={() => setAddingGoal(true)}>
-            + HZ hinzufügen
+            {t('me.addGoal')}
           </button>
         </div>
 
@@ -449,19 +436,19 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
           >
             <input
               required
-              placeholder="Code (z. B. 1)"
+              placeholder={t('me.goalCodePlaceholder')}
               value={goalForm.code}
               onChange={(e) => setGoalForm((f) => ({ ...f, code: e.target.value }))}
               style={{ width: 90 }}
             />
             <input
-              placeholder="Beschreibung (DE)"
+              placeholder={t('me.goalTextPlaceholder')}
               value={goalForm.text}
               onChange={(e) => setGoalForm((f) => ({ ...f, text: e.target.value }))}
               style={{ flex: 1 }}
             />
             <button type="submit" className="btn primary sm">
-              Hinzufügen
+              {t('me.add')}
             </button>
             <button type="button" className="btn sm" onClick={() => setAddingGoal(false)}>
               ✕
@@ -471,7 +458,7 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
 
         {goals.length === 0 ? (
           <div className="empty">
-            <p>Noch keine Handlungsziele. Füge das erste HZ hinzu.</p>
+            <p>{t('me.noGoals')}</p>
           </div>
         ) : (
           <ul className="hz-list">
@@ -496,7 +483,7 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
                       style={{ flex: 1 }}
                     />
                     <button type="submit" className="btn primary sm">
-                      Speichern
+                      {t('common.save')}
                     </button>
                     <button type="button" className="btn sm" onClick={() => setEditGoal(null)}>
                       ✕
@@ -508,7 +495,7 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
                     <span style={{ flex: 1 }}>{g.text?.de ?? '—'}</span>
                     <button
                       className="btn-icon"
-                      title="Nach oben"
+                      title={t('fe.moveUp')}
                       disabled={i === 0}
                       onClick={() => {
                         void moveGoal(i, -1);
@@ -518,7 +505,7 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
                     </button>
                     <button
                       className="btn-icon"
-                      title="Nach unten"
+                      title={t('fe.moveDown')}
                       disabled={i === goals.length - 1}
                       onClick={() => {
                         void moveGoal(i, 1);
@@ -532,11 +519,11 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
                         setEditGoal({ id: g.id, code: g.code, text: g.text?.de ?? '' })
                       }
                     >
-                      Bearbeiten
+                      {t('common.edit')}
                     </button>
                     <button
                       className="btn-icon"
-                      title="Löschen"
+                      title={t('common.delete')}
                       onClick={() => {
                         void handleDeleteGoal(g.id);
                       }}
@@ -554,19 +541,19 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
       {/* Matrix-Editor (FA-03 + FA-04) */}
       <div className="panel">
         <div className="panel-head">
-          <h2>Kompetenzmatrix</h2>
+          <h2>{t('me.matrix')}</h2>
           <button
             className="btn sm"
             onClick={() => setAddingBand(true)}
             disabled={goals.length === 0}
           >
-            + Band hinzufügen
+            {t('me.addBand')}
           </button>
         </div>
 
         {goals.length === 0 && (
           <div className="empty">
-            <p>Lege zuerst Handlungsziele an – jedes Band muss mindestens eines referenzieren.</p>
+            <p>{t('me.needGoalsFirst')}</p>
           </div>
         )}
 
@@ -579,7 +566,7 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
           >
             <div style={{ display: 'flex', gap: 8 }}>
               <label style={{ width: 130 }}>
-                Code
+                {t('me.code')}
                 <input
                   required
                   placeholder="z. B. A1"
@@ -588,16 +575,16 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
                 />
               </label>
               <label style={{ flex: 1 }}>
-                Beschreibung (DE)
+                {t('me.descDe')}
                 <input
-                  placeholder="optional"
+                  placeholder={t('common.optional')}
                   value={bandForm.description}
                   onChange={(e) => setBandForm((f) => ({ ...f, description: e.target.value }))}
                 />
               </label>
             </div>
             <fieldset className="goal-picker">
-              <legend>Handlungsziele referenzieren (mind. 1)</legend>
+              <legend>{t('me.refGoals')}</legend>
               {goals.map((g) => (
                 <label key={g.id} className="goal-check">
                   <input
@@ -624,10 +611,10 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
                   setBandForm({ code: '', description: '', goalIds: [] });
                 }}
               >
-                Abbrechen
+                {t('common.cancel')}
               </button>
               <button type="submit" className="btn primary">
-                Band anlegen
+                {t('me.createBand')}
               </button>
             </div>
           </form>
@@ -636,14 +623,14 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
         {bands.length === 0 ? (
           <div className="empty">
             <span className="ic">▦</span>
-            <p>Noch keine Kompetenzbänder.</p>
+            <p>{t('me.noBands')}</p>
           </div>
         ) : (
           <div className="matrix">
             <div className="matrix-header">
-              <div>Band</div>
+              <div>{t('me.colBand')}</div>
               {LEVELS.map((lvl) => (
-                <div key={lvl}>{LEVEL_LABEL[lvl]}</div>
+                <div key={lvl}>{t(`level.${lvl}`)}</div>
               ))}
               <div></div>
             </div>
@@ -677,7 +664,7 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
                             onChange={(e) =>
                               setEditingDesc((d) => d && { ...d, text: e.target.value })
                             }
-                            placeholder="Ich kann …"
+                            placeholder={t('me.descPlaceholder')}
                           />
                           <div className="desc-editor-btns">
                             <button
@@ -687,7 +674,7 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
                                 void saveDescriptor();
                               }}
                             >
-                              {saving ? '…' : 'Speichern'}
+                              {saving ? '…' : t('common.save')}
                             </button>
                             <button className="btn sm" onClick={() => setEditingDesc(null)}>
                               ✕
@@ -698,14 +685,14 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
                         <>
                           <button
                             className="field-btn"
-                            title="Deskriptor bearbeiten"
+                            title={t('me.editDescriptor')}
                             onClick={() => startEditDesc(field)}
                           >
                             <span className="field-code">{field.code}</span>
                             {field.descriptor?.text?.de ? (
                               <span className="descriptor-text">{field.descriptor.text.de}</span>
                             ) : (
-                              <span className="descriptor-empty">Ich kann …</span>
+                              <span className="descriptor-empty">{t('me.descPlaceholder')}</span>
                             )}
                           </button>
                           <div className="field-evidence">
@@ -717,7 +704,7 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
                               >
                                 📎 {e.evidence.title?.de}
                                 {!e.evidence.isVisible && (
-                                  <span className="ev-hidden"> (verborgen)</span>
+                                  <span className="ev-hidden"> {t('me.hidden')}</span>
                                 )}
                               </span>
                             ))}
@@ -726,11 +713,11 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
                               onClick={() =>
                                 setEvidenceField({
                                   id: field.id,
-                                  label: `${band.code} · ${LEVEL_SHORT[field.level]}`,
+                                  label: `${band.code} · ${t(`level.${field.level}`)}`,
                                 })
                               }
                             >
-                              + Nachweis
+                              {t('me.addEvidence')}
                             </button>
                           </div>
                         </>
@@ -742,7 +729,7 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
                 <div className="act-col">
                   <button
                     className="btn-icon"
-                    title="Nach oben"
+                    title={t('fe.moveUp')}
                     disabled={i === 0}
                     onClick={() => {
                       void moveBand(i, -1);
@@ -752,7 +739,7 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
                   </button>
                   <button
                     className="btn-icon"
-                    title="Nach unten"
+                    title={t('fe.moveDown')}
                     disabled={i === bands.length - 1}
                     onClick={() => {
                       void moveBand(i, 1);
@@ -762,14 +749,14 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
                   </button>
                   <button
                     className="btn-icon"
-                    title="Band bearbeiten"
+                    title={t('me.editBand')}
                     onClick={() => startEditBand(band)}
                   >
                     ✎
                   </button>
                   <button
                     className="btn-icon"
-                    title="Band löschen"
+                    title={t('me.deleteBand')}
                     onClick={() => {
                       void handleDeleteBand(band.id);
                     }}
@@ -787,7 +774,9 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
       {editBand && (
         <div className="panel">
           <div className="panel-head">
-            <h2>Band {editBand.code} bearbeiten</h2>
+            <h2>
+              {t('me.editBand')} · {editBand.code}
+            </h2>
           </div>
           <form
             className="form"
@@ -797,14 +786,14 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
           >
             <div style={{ display: 'flex', gap: 8 }}>
               <label style={{ width: 130 }}>
-                Code
+                {t('me.code')}
                 <input
                   value={editBand.code}
                   onChange={(e) => setEditBand((d) => d && { ...d, code: e.target.value })}
                 />
               </label>
               <label style={{ flex: 1 }}>
-                Beschreibung (DE)
+                {t('me.descDe')}
                 <input
                   value={editBand.description}
                   onChange={(e) => setEditBand((d) => d && { ...d, description: e.target.value })}
@@ -812,7 +801,7 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
               </label>
             </div>
             <fieldset className="goal-picker">
-              <legend>Handlungsziele referenzieren (mind. 1)</legend>
+              <legend>{t('me.refGoals')}</legend>
               {goals.map((g) => (
                 <label key={g.id} className="goal-check">
                   <input
@@ -836,10 +825,10 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
             </fieldset>
             <div className="form-actions">
               <button type="button" className="btn" onClick={() => setEditBand(null)}>
-                Abbrechen
+                {t('common.cancel')}
               </button>
               <button type="submit" className="btn primary">
-                Speichern
+                {t('common.save')}
               </button>
             </div>
           </form>

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import RichTextEditor from './RichTextEditor';
 import TrashIcon from './TrashIcon';
 import { useToast } from './ToastProvider';
+import { useI18n } from '../lib/i18n';
 import { evidence, uploadRichTextImage, uploadAttachment, type Evidence } from '../lib/api';
 
 interface Draft {
@@ -58,6 +59,7 @@ export default function FieldEvidenceModal({
   onChanged: () => void;
 }) {
   const toast = useToast();
+  const { t } = useI18n();
   const [list, setList] = useState<Evidence[] | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
@@ -68,9 +70,9 @@ export default function FieldEvidenceModal({
       const all = await evidence.list(moduleId);
       setList(all.filter((e) => e.fields.some((f) => f.fieldId === fieldId)));
     } catch {
-      toast.error('Nachweise konnten nicht geladen werden.');
+      toast.error(t('fe.loadFailed'));
     }
-  }, [moduleId, fieldId, toast]);
+  }, [moduleId, fieldId, toast, t]);
 
   useEffect(() => {
     void load();
@@ -96,7 +98,7 @@ export default function FieldEvidenceModal({
     try {
       const { key, name } = await uploadAttachment(file);
       setDraft({ ...draft, attachmentKey: key, attachmentName: name });
-      toast.success(`Anhang „${name}" hochgeladen.`);
+      toast.success(t('fe.attachUploaded'));
     } catch (e: unknown) {
       showError(e);
     } finally {
@@ -133,7 +135,7 @@ export default function FieldEvidenceModal({
   async function save() {
     if (!draft) return;
     if (!draft.title.trim()) {
-      toast.error('Titel ist erforderlich.');
+      toast.error(t('fe.titleRequired'));
       return;
     }
     const payload = {
@@ -169,7 +171,7 @@ export default function FieldEvidenceModal({
       setEditId(null);
       await load();
       onChanged();
-      toast.success('Nachweis gespeichert.');
+      toast.success(t('fe.saved'));
     } catch (e: unknown) {
       showError(e);
     }
@@ -186,7 +188,7 @@ export default function FieldEvidenceModal({
   }
 
   async function remove(id: string) {
-    if (!confirm('Nachweis löschen?')) return;
+    if (!confirm(t('fe.confirmDelete'))) return;
     try {
       await evidence.remove(id);
       await load();
@@ -219,8 +221,10 @@ export default function FieldEvidenceModal({
     <div className="modal-overlay">
       <div className="modal">
         <div className="modal-head">
-          <h2>Kompetenznachweise · {fieldLabel}</h2>
-          <button className="btn-icon" title="Schliessen" onClick={onClose}>
+          <h2>
+            {t('fe.title')} · {fieldLabel}
+          </h2>
+          <button className="btn-icon" title={t('common.cancel')} onClick={onClose}>
             ✕
           </button>
         </div>
@@ -229,10 +233,10 @@ export default function FieldEvidenceModal({
           {!draft && (
             <>
               {!list ? (
-                <div className="loading">Lade …</div>
+                <div className="loading">{t('common.loading')}</div>
               ) : list.length === 0 ? (
                 <div className="empty">
-                  <p>Noch kein Nachweis für diese Kompetenz.</p>
+                  <p>{t('fe.empty')}</p>
                 </div>
               ) : (
                 <ul className="hz-list">
@@ -241,14 +245,14 @@ export default function FieldEvidenceModal({
                       <div style={{ flex: 1 }}>
                         <strong>{ev.title?.de}</strong>
                         <div className="kh-muted" style={{ fontSize: 12 }}>
-                          {ev._count?.submissions ?? 0} Einreichung(en)
+                          {ev._count?.submissions ?? 0} {t('fe.submissions')}
                           {ev.dueAt &&
-                            ` · fällig ${new Date(ev.dueAt).toLocaleDateString('de-CH')}`}
+                            ` · ${t('fe.due')} ${new Date(ev.dueAt).toLocaleDateString('de-CH')}`}
                         </div>
                       </div>
                       <button
                         className="btn-icon"
-                        title="Nach oben"
+                        title={t('fe.moveUp')}
                         disabled={i === 0}
                         onClick={() => {
                           void move(i, -1);
@@ -258,7 +262,7 @@ export default function FieldEvidenceModal({
                       </button>
                       <button
                         className="btn-icon"
-                        title="Nach unten"
+                        title={t('fe.moveDown')}
                         disabled={i === list.length - 1}
                         onClick={() => {
                           void move(i, 1);
@@ -273,14 +277,14 @@ export default function FieldEvidenceModal({
                           void toggleVisible(ev);
                         }}
                       >
-                        {ev.isVisible ? 'sichtbar' : 'verborgen'}
+                        {ev.isVisible ? t('fe.visible') : t('fe.hidden')}
                       </button>
                       <button className="btn sm" onClick={() => startEdit(ev)}>
-                        Bearbeiten
+                        {t('common.edit')}
                       </button>
                       <button
                         className="btn-icon"
-                        title="Löschen"
+                        title={t('common.delete')}
                         onClick={() => {
                           void remove(ev.id);
                         }}
@@ -293,7 +297,7 @@ export default function FieldEvidenceModal({
               )}
               <div style={{ marginTop: 14 }}>
                 <button className="btn primary" onClick={startCreate}>
-                  + Neuer Nachweis
+                  {t('fe.newEvidence')}
                 </button>
               </div>
             </>
@@ -302,26 +306,26 @@ export default function FieldEvidenceModal({
           {draft && (
             <div className="form" style={{ padding: 0 }}>
               <label>
-                Titel *
+                {t('fe.fTitle')}
                 <input
                   value={draft.title}
                   onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-                  placeholder="z. B. Dockerfile erstellen"
+                  placeholder={t('fe.titlePlaceholder')}
                 />
               </label>
 
               <div>
-                <div className="field-label">Beschreibung (Rich-Text)</div>
+                <div className="field-label">{t('fe.fDesc')}</div>
                 <RichTextEditor
                   value={draft.instructions}
                   onChange={(html) => setDraft({ ...draft, instructions: html })}
-                  placeholder="Aufgabenstellung … (Links, Bilder, Videos möglich)"
+                  placeholder={t('fe.descPlaceholder')}
                   uploadImage={uploadRichTextImage}
                 />
               </div>
 
               <div>
-                <div className="field-label">Einreichungsarten für Lernende</div>
+                <div className="field-label">{t('fe.submitTypes')}</div>
                 <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
                   <label className="goal-check">
                     <input
@@ -329,7 +333,7 @@ export default function FieldEvidenceModal({
                       checked={draft.allowFile}
                       onChange={(e) => setDraft({ ...draft, allowFile: e.target.checked })}
                     />
-                    Datei
+                    {t('fe.typeFile')}
                   </label>
                   <label className="goal-check">
                     <input
@@ -337,7 +341,7 @@ export default function FieldEvidenceModal({
                       checked={draft.allowLink}
                       onChange={(e) => setDraft({ ...draft, allowLink: e.target.checked })}
                     />
-                    Link
+                    {t('fe.typeLink')}
                   </label>
                   <label className="goal-check">
                     <input
@@ -345,7 +349,7 @@ export default function FieldEvidenceModal({
                       checked={draft.allowText}
                       onChange={(e) => setDraft({ ...draft, allowText: e.target.checked })}
                     />
-                    Text
+                    {t('fe.typeText')}
                   </label>
                   <label className="goal-check">
                     <input
@@ -353,7 +357,7 @@ export default function FieldEvidenceModal({
                       checked={draft.allowScreenshot}
                       onChange={(e) => setDraft({ ...draft, allowScreenshot: e.target.checked })}
                     />
-                    Screenshot
+                    {t('fe.typeScreenshot')}
                   </label>
                   <label className="goal-check">
                     <input
@@ -361,13 +365,12 @@ export default function FieldEvidenceModal({
                       checked={draft.allowExpertTalk}
                       onChange={(e) => setDraft({ ...draft, allowExpertTalk: e.target.checked })}
                     />
-                    Fachgespräch / Präsentation
+                    {t('fe.typeExpertTalk')}
                   </label>
                 </div>
                 {draft.allowExpertTalk && (
                   <p className="kh-muted" style={{ fontSize: 12, margin: '6px 0 0' }}>
-                    Bei aktivem KI-Modus können Lernende das Fachgespräch direkt im Abgabe-Dialog
-                    mit der KI üben.
+                    {t('fe.expertTalkHint')}
                   </p>
                 )}
               </div>
@@ -379,14 +382,14 @@ export default function FieldEvidenceModal({
                     checked={draft.allowPaste}
                     onChange={(e) => setDraft({ ...draft, allowPaste: e.target.checked })}
                   />
-                  Einfügen (Paste) im Textfeld erlauben (Standard: aus – Lernende schreiben selbst)
+                  {t('fe.allowPaste')}
                 </label>
               )}
 
               {draft.allowFile && (
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   <label style={{ flex: 1, minWidth: 180 }}>
-                    Erlaubte Dateitypen
+                    {t('fe.allowedTypes')}
                     <input
                       value={draft.allowedFileTypes}
                       onChange={(e) => setDraft({ ...draft, allowedFileTypes: e.target.value })}
@@ -394,7 +397,7 @@ export default function FieldEvidenceModal({
                     />
                   </label>
                   <label style={{ width: 140 }}>
-                    Max. Grösse (MB)
+                    {t('fe.maxSize')}
                     <input
                       type="number"
                       value={draft.maxFileSizeMb}
@@ -406,10 +409,10 @@ export default function FieldEvidenceModal({
 
               {/* Lehrer-Anhang zum Download */}
               <div>
-                <div className="field-label">Anhang für Lernende (optional)</div>
+                <div className="field-label">{t('fe.attachment')}</div>
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
                   <label className="btn sm" style={{ cursor: 'pointer' }}>
-                    {attBusy ? '…' : '⬆ Datei anhängen'}
+                    {attBusy ? '…' : t('fe.attachFile')}
                     <input
                       type="file"
                       style={{ display: 'none' }}
@@ -425,7 +428,7 @@ export default function FieldEvidenceModal({
                       📎 {draft.attachmentName}
                       <button
                         className="btn-icon"
-                        title="Anhang entfernen"
+                        title={t('fe.removeAttachment')}
                         onClick={() =>
                           setDraft({ ...draft, attachmentKey: '', attachmentName: '' })
                         }
@@ -439,7 +442,7 @@ export default function FieldEvidenceModal({
 
               <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
                 <label style={{ width: 120 }}>
-                  Max. Punkte
+                  {t('fe.maxPoints')}
                   <input
                     type="number"
                     value={draft.maxPoints}
@@ -447,7 +450,7 @@ export default function FieldEvidenceModal({
                   />
                 </label>
                 <label style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  Fällig bis
+                  {t('fe.dueUntil')}
                   <input
                     type="datetime-local"
                     value={draft.dueAt}
@@ -460,7 +463,7 @@ export default function FieldEvidenceModal({
                     checked={draft.isVisible}
                     onChange={(e) => setDraft({ ...draft, isVisible: e.target.checked })}
                   />
-                  Sichtbar für Lernende
+                  {t('fe.visibleForLearners')}
                 </label>
               </div>
 
@@ -472,7 +475,7 @@ export default function FieldEvidenceModal({
                     setEditId(null);
                   }}
                 >
-                  Abbrechen
+                  {t('common.cancel')}
                 </button>
                 <button
                   className="btn primary"
@@ -480,7 +483,7 @@ export default function FieldEvidenceModal({
                     void save();
                   }}
                 >
-                  {editId ? 'Speichern' : 'Nachweis anlegen'}
+                  {editId ? t('common.save') : t('fe.createEvidence')}
                 </button>
               </div>
             </div>
