@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { getUser, clearSession, isTeacher, initials, type SessionUser } from '../lib/session';
 import { logout as apiLogout, updatePreferences } from '../lib/api';
-import { useI18n, normalizeLocale } from '../lib/i18n';
+import { useI18n, normalizeLocale, LOCALES, LOCALE_LABEL, type Locale } from '../lib/i18n';
 
 type Theme = 'light' | 'dark' | 'gray';
 
@@ -40,7 +40,7 @@ const STUDENT_NAV: NavItem[] = [
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { t, setLocale } = useI18n();
+  const { t, locale, setLocale } = useI18n();
   const [user, setUser] = useState<SessionUser | null>(null);
   const [theme, setThemeState] = useState<Theme>('light');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -82,6 +82,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     void updatePreferences({ theme: tName }).catch(() => {});
   }
 
+  function changeLocale(l: Locale) {
+    setLocale(l);
+    // Pro Konto speichern (überlebt Logout); Fehler nicht fatal.
+    void updatePreferences({ locale: l }).catch(() => {});
+  }
+
   async function handleLogout() {
     await apiLogout();
     clearSession();
@@ -119,6 +125,20 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </span>
         </Link>
         <div className="appspacer" />
+
+        <select
+          className="lang-select"
+          aria-label={t('common.language')}
+          title={t('common.language')}
+          value={locale}
+          onChange={(e) => changeLocale(e.target.value as Locale)}
+        >
+          {LOCALES.map((l) => (
+            <option key={l} value={l}>
+              {l.toUpperCase()} · {LOCALE_LABEL[l]}
+            </option>
+          ))}
+        </select>
 
         <div className="seg" role="group" aria-label={t('common.theme')}>
           {(['light', 'dark', 'gray'] as Theme[]).map((tName) => (
