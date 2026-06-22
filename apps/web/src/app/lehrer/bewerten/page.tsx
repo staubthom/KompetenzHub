@@ -9,6 +9,7 @@ import {
   type SubmissionListItem,
   type SubmissionDetail,
   type ClassSummary,
+  type AiAssessment,
 } from '../../../lib/api';
 
 const STATUS_LABEL: Record<string, string> = {
@@ -171,6 +172,8 @@ function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
   const [feedback, setFeedback] = useState('');
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [assessment, setAssessment] = useState<AiAssessment | null>(null);
 
   async function load() {
     try {
@@ -179,6 +182,11 @@ function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
       setPoints(d.evaluation?.points ?? '');
       setLevel(d.evaluation?.achievedLevel ?? '');
       setFeedback(d.evaluation?.feedback ?? '');
+      try {
+        setAssessment(await submissions.getAiAssessment(id));
+      } catch {
+        /* KI optional */
+      }
     } catch {
       setLoadFailed(true);
       toast.error('Einreichung konnte nicht geladen werden.');
@@ -208,6 +216,40 @@ function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
     } finally {
       setBusy(false);
     }
+  }
+
+  async function genAssessment() {
+    setAiBusy(true);
+    try {
+      const a = await submissions.aiAssessment(id);
+      setAssessment(a);
+      toast.success('KI-Bewertungsvorschlag erstellt.');
+    } catch (e: unknown) {
+      showError(e);
+    } finally {
+      setAiBusy(false);
+    }
+  }
+
+  async function genFeedback() {
+    setAiBusy(true);
+    try {
+      const r = await submissions.aiFeedback(id);
+      setFeedback(r.feedback);
+      toast.success('KI-Feedback-Entwurf eingefügt – bitte prüfen/anpassen.');
+    } catch (e: unknown) {
+      showError(e);
+    } finally {
+      setAiBusy(false);
+    }
+  }
+
+  function applyAssessment() {
+    if (!assessment) return;
+    if (assessment.suggestedPoints != null) setPoints(String(assessment.suggestedPoints));
+    if (assessment.suggestedLevel) setLevel(assessment.suggestedLevel);
+    if (assessment.feedback) setFeedback(assessment.feedback);
+    toast.info('KI-Vorschlag übernommen – bitte prüfen und speichern.');
   }
 
   async function doReject() {
@@ -337,6 +379,85 @@ function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
 
         {/* Rechts: Bewerten */}
         <div>
+          {/* KI-Assistenz (FA-70/72) */}
+          <div className="panel">
+            <div className="panel-head">
+              <h2>KI-Assistenz</h2>
+            </div>
+            <div
+              className="panel-body"
+              style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+            >
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button
+                  className="btn sm"
+                  disabled={aiBusy}
+                  onClick={() => {
+                    void genAssessment();
+                  }}
+                >
+                  {aiBusy ? '…' : '🤖 KI-Bewertungsvorschlag'}
+                </button>
+                <button
+                  className="btn sm"
+                  disabled={aiBusy}
+                  onClick={() => {
+                    void genFeedback();
+                  }}
+                >
+                  💬 KI-Feedback-Entwurf
+                </button>
+              </div>
+
+              {assessment && (
+                <div className="sub-status sub-submitted" style={{ margin: 0 }}>
+                  <strong>🤖 KI-Vorschlag (unverbindlich)</strong>
+                  <div className="sub-feedback">
+                    {assessment.suggestedPoints != null && (
+                      <div>
+                        Punkte: {assessment.suggestedPoints}
+                        {max != null ? ` / ${max}` : ''}
+                      </div>
+                    )}
+                    {assessment.suggestedLevel && (
+                      <div>
+                        Gütestufe:{' '}
+                        {LEVELS.find((l) => l.value === assessment.suggestedLevel)?.label ??
+                          assessment.suggestedLevel}
+                      </div>
+                    )}
+                    {assessment.feedback && (
+                      <div style={{ marginTop: 6 }}>{assessment.feedback}</div>
+                    )}
+                    {assessment.reasoning.length > 0 && (
+                      <ul style={{ margin: '6px 0 0', paddingLeft: 18 }}>
+                        {assessment.reasoning.map((r, i) => (
+                          <li key={i}>
+                            <strong>{r.criterion}:</strong> {r.comment}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {assessment.model && (
+                      <div className="kh-muted" style={{ fontSize: 11, marginTop: 6 }}>
+                        Modell: {assessment.model}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ marginTop: 8 }}>
+                    <button className="btn sm primary" onClick={applyAssessment}>
+                      In Bewertung übernehmen
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <p className="kh-muted" style={{ fontSize: 12, margin: 0 }}>
+                KI-Vorschläge sind unverbindlich – die endgültige Bewertung triffst immer du.
+              </p>
+            </div>
+          </div>
+
           <div className="panel">
             <div className="panel-head">
               <h2>Bewerten</h2>

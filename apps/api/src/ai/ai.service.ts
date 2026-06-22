@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { decryptSecret, encryptSecret, maskSecret } from './crypto.util';
 
@@ -167,5 +167,80 @@ export class AiService {
     } finally {
       clearTimeout(timeout);
     }
+  }
+
+  /**
+   * Sendet eine Chat-Completion an den konfigurierten (OpenAI-kompatiblen) Endpoint
+   * und liefert den Text der Antwort. Wirft 409, wenn KI nicht aktiv konfiguriert ist
+   * (Feature-Gate FA-34). Im Stub-Modus (AI_STUB_MODE=1) wird ohne Netzwerkaufruf eine
+   * deterministische Antwort (`stub`) zurückgegeben – für Tests/Smokes.
+   */
+  async chat(
+    tenantId: string,
+    userId: string,
+    opts: { system: string; user: string; stub: unknown },
+  ): Promise<string> {
+    const cfg = await this.prisma.aiConfig.findUnique({
+      where: { tenantId_userId: { tenantId, userId } },
+    });
+    const configured = !!cfg?.apiKeyEnc && !!cfg?.baseUrl && !!cfg?.model;
+    if (!cfg || !configured || !cfg.enabled) {
+      throw new ConflictException(
+        'KI ist nicht konfiguriert oder deaktiviert. Bitte unter „KI-Einstellungen" einrichten.',
+      );
+    }
+
+    if (process.env.AI_STUB_MODE === '1') {
+      return typeof opts.stub === 'string' ? opts.stub : JSON.stringify(opts.stub);
+    }
+
+    const apiKey = decryptSecret(cfg.apiKeyEnc!);
+    const baseUrl = cfg.baseUrl.replace(/\/+$/, '');
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30_000);
+    try {
+      const res = await fetch(`${baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          model: cfg.model,
+          temperature: 0.2,
+          response_format: { type: 'json_object' },
+          messages: [
+            { role: 'system', content: opts.system },
+            { role: 'user', content: opts.user },
+          ],
+        }),
+      });
+      if (!res.ok) {
+        throw new ConflictException(`KI-Anfrage fehlgeschlagen (HTTP ${res.status}).`);
+      }
+      const json = (await res.json()) as {
+        choices?: { message?: { content?: string } }[];
+      };
+      const content = json.choices?.[0]?.message?.content;
+      if (!content) throw new ConflictException('Leere KI-Antwort erhalten.');
+      return content;
+    } catch (e: unknown) {
+      if (e instanceof ConflictException) throw e;
+      const aborted = (e as { name?: string })?.name === 'AbortError';
+      throw new ConflictException(
+        aborted ? 'Zeitüberschreitung bei der KI-Anfrage.' : 'KI-Endpoint nicht erreichbar.',
+      );
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  /** Das aktuell konfigurierte Modell (für Protokollierung des Vorschlags). */
+  async modelName(tenantId: string, userId: string): Promise<string | null> {
+    const cfg = await this.prisma.aiConfig.findUnique({
+      where: { tenantId_userId: { tenantId, userId } },
+    });
+    return cfg?.model ?? null;
   }
 }

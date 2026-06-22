@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Post, Query } from '@nestjs/common';
 import { Role, SubmissionStatus, AchievedLevel } from '@prisma/client';
 import { CurrentUser, Roles } from '../auth/decorators';
 import type { RequestContext } from '../common/request-context';
@@ -52,5 +52,28 @@ export class SubmissionsController {
     @CurrentUser() user: RequestContext,
   ) {
     return this.submissions.reject(id, dto?.reason ?? '', user.tenantId, user.userId);
+  }
+
+  /** KI-Bewertungsvorschlag erzeugen (FA-70). Reiner Vorschlag, kein Auto-Grading. */
+  @Post(':id/ai-assessment')
+  @HttpCode(200)
+  @Roles(Role.TEACHER, Role.ADMIN)
+  aiAssessment(@Param('id') id: string, @CurrentUser() user: RequestContext) {
+    return this.submissions.generateAssessment(id, user.tenantId, user.userId);
+  }
+
+  /** Letzten KI-Vorschlag abrufen (FA-70). */
+  @Get(':id/ai-assessment')
+  @Roles(Role.TEACHER, Role.ADMIN)
+  getAiAssessment(@Param('id') id: string, @CurrentUser() user: RequestContext) {
+    return this.submissions.getAssessment(id, user.tenantId, user.userId, user.roles);
+  }
+
+  /** KI-Feedback-Entwurf erzeugen (FA-72). Editierbar, keine Bewertung. */
+  @Post(':id/ai-feedback')
+  @HttpCode(200)
+  @Roles(Role.TEACHER, Role.ADMIN)
+  aiFeedback(@Param('id') id: string, @CurrentUser() user: RequestContext) {
+    return this.submissions.generateFeedback(id, user.tenantId, user.userId);
   }
 }

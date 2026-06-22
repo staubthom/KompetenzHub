@@ -33,8 +33,11 @@ function check(label, cond, info = '') {
   }
 }
 
-// ── Setup ─────────────────────────────────────────────────────────
-const t = await req('POST', '/auth/dev-login', { email: 'ai-teacher@demo.ch', role: 'TEACHER' });
+// ── Setup (frische Lehrperson → idempotent über mehrere Läufe) ────
+const t = await req('POST', '/auth/dev-login', {
+  email: `ai-teacher-${Date.now()}@demo.ch`,
+  role: 'TEACHER',
+});
 const teacher = t.body?.token;
 const s = await req('POST', '/auth/dev-login', { email: 'ai-student@demo.ch', role: 'LEARNER' });
 const student = s.body?.token;
