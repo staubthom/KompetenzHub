@@ -375,7 +375,12 @@ export class EvidenceService {
 
   private async resolveEnrollment(moduleId: string, tenantId: string, userId: string) {
     const enrollment = await this.prisma.enrollment.findFirst({
-      where: { userId, status: EnrollmentStatus.ACTIVE, class: { moduleId, tenantId } },
+      // Archivierte Modulanlässe sind read-only → keine neuen Einreichungen.
+      where: {
+        userId,
+        status: EnrollmentStatus.ACTIVE,
+        class: { moduleId, tenantId, status: 'ACTIVE' },
+      },
     });
     if (!enrollment) {
       throw new ForbiddenException('Keine aktive Klassenmitgliedschaft für diesen Nachweis.');

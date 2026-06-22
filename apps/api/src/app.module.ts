@@ -16,6 +16,7 @@ import { AiModule } from './ai/ai.module';
 import { ExpertTalkModule } from './expert-talk/expert-talk.module';
 import { LearningPathsModule } from './learning-paths/learning-paths.module';
 import { MatrixIoModule } from './matrix-io/matrix-io.module';
+import { ClassArchiveModule } from './class-archive/class-archive.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { MatrixIoModule } from './matrix-io/matrix-io.module';
     ExpertTalkModule,
     LearningPathsModule,
     MatrixIoModule,
+    ClassArchiveModule,
   ],
   controllers: [HealthController],
   providers: [

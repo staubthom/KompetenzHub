@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -350,7 +351,7 @@ export class SubmissionsService {
       where: { id, evidence: { tenantId } },
       include: {
         evidence: { select: { maxPoints: true } },
-        enrollment: { select: { class: { select: { ownerId: true } } } },
+        enrollment: { select: { class: { select: { ownerId: true, status: true } } } },
       },
     });
     if (!sub) throw new NotFoundException('Einreichung nicht gefunden.');
@@ -358,6 +359,11 @@ export class SubmissionsService {
     const isOwningTeacher = roles.includes(Role.TEACHER) && sub.enrollment.class.ownerId === userId;
     if (!isAdmin && !isOwningTeacher) {
       throw new ForbiddenException('Kein Zugriff auf diese Einreichung.');
+    }
+    if (sub.enrollment.class.status === 'ARCHIVED') {
+      throw new ConflictException(
+        'Archivierter Modulanlass ist read-only – keine Bewertung möglich.',
+      );
     }
     return sub;
   }

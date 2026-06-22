@@ -118,11 +118,16 @@ export const descriptors = {
     }),
 };
 
-// Classes (FA-20, 23, 25)
+// Classes (FA-20, 23, 25, 103)
 export const classes = {
-  list: () => apiFetch<ClassSummary[]>('/classes'),
+  list: (archived = false) =>
+    apiFetch<ClassSummary[]>(`/classes${archived ? '?archived=true' : ''}`),
   mine: () => apiFetch<MyEnrollment[]>('/classes/mine'),
   get: (id: string) => apiFetch<ClassDetail>(`/classes/${id}`),
+  archive: (id: string) =>
+    apiFetch<{ id: string; status: string }>(`/classes/${id}/archive`, { method: 'POST' }),
+  restore: (id: string) =>
+    apiFetch<{ id: string; status: string }>(`/classes/${id}/restore`, { method: 'POST' }),
   create: (data: { name: string; moduleId?: string; year?: number; schoolYear?: string }) =>
     apiFetch<ClassSummary>('/classes', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: Partial<{ name: string; moduleId: string | null; status: string }>) =>
@@ -353,6 +358,51 @@ export async function exportMatrixZip(matrixId: string): Promise<{ blob: Blob; f
   const cd = res.headers.get('Content-Disposition') ?? '';
   const m = cd.match(/filename="?([^"]+)"?/);
   return { blob, filename: m?.[1] ?? `modul-${matrixId}.zip` };
+}
+
+/** Lädt ein Modulanlass-Archiv als ZIP herunter (inkl. Abgaben/Bewertungen/Dateien). */
+export async function exportClassArchiveZip(
+  classId: string,
+): Promise<{ blob: Blob; filename: string }> {
+  const token = getToken();
+  const res = await fetch(`${API_BASE}/api/v1/classes/${classId}/archive-export`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ title: res.statusText }));
+    throw Object.assign(new Error(err.title ?? 'Export fehlgeschlagen'), {
+      status: res.status,
+      body: err,
+    });
+  }
+  const blob = await res.blob();
+  const cd = res.headers.get('Content-Disposition') ?? '';
+  const m = cd.match(/filename="?([^"]+)"?/);
+  return { blob, filename: m?.[1] ?? `modulanlass-${classId}.zip` };
+}
+
+/** Importiert ein Modulanlass-Archiv (ZIP) → read-only archivierter Modulanlass. */
+export async function importClassArchiveZip(
+  file: File,
+): Promise<{ classId: string; name: string }> {
+  const token = getToken();
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`${API_BASE}/api/v1/classes/archive-import`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: form,
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ title: res.statusText }));
+    throw Object.assign(new Error(err.title ?? 'Import fehlgeschlagen'), {
+      status: res.status,
+      body: err,
+    });
+  }
+  return res.json() as Promise<{ classId: string; name: string }>;
 }
 
 /** Importiert ein ZIP-Paket → neues Modul. */

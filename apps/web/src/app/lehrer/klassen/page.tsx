@@ -7,6 +7,8 @@ import { useToast } from '../../../components/ToastProvider';
 import {
   classes,
   modules,
+  exportClassArchiveZip,
+  importClassArchiveZip,
   type ClassSummary,
   type ClassDetail,
   type Member,
@@ -22,17 +24,19 @@ export default function KlassenPage() {
   const [members, setMembers] = useState<Member[]>([]);
 
   const [creating, setCreating] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
   const [form, setForm] = useState({ name: '', moduleId: '' });
 
   const loadList = useCallback(async () => {
     try {
-      const [cs, ms] = await Promise.all([classes.list(), modules.list()]);
+      const [cs, ms] = await Promise.all([classes.list(showArchived), modules.list()]);
       setList(cs);
       setMods(ms);
     } catch {
       toast.error('Modulanlässe konnten nicht geladen werden.');
     }
-  }, [toast]);
+  }, [toast, showArchived]);
 
   const loadDetail = useCallback(
     async (id: string) => {
@@ -135,17 +139,108 @@ export default function KlassenPage() {
     }
   }
 
+  async function handleArchive(id: string) {
+    try {
+      await classes.archive(id);
+      setSelectedId(null);
+      setDetail(null);
+      await loadList();
+      toast.success('Modulanlass archiviert.');
+    } catch (e: unknown) {
+      showError(e);
+    }
+  }
+
+  async function handleRestore(id: string) {
+    try {
+      await classes.restore(id);
+      setSelectedId(null);
+      setDetail(null);
+      await loadList();
+      toast.success('Modulanlass wiederhergestellt.');
+    } catch (e: unknown) {
+      showError(e);
+    }
+  }
+
+  async function handleExport(id: string) {
+    try {
+      const { blob, filename } = await exportClassArchiveZip(id);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Modulanlass exportiert (ZIP).');
+    } catch (e: unknown) {
+      showError(e);
+    }
+  }
+
+  async function handleImport(file: File) {
+    setImporting(true);
+    try {
+      const res = await importClassArchiveZip(file);
+      setShowArchived(true);
+      await loadList();
+      toast.success(`Archiv importiert als „${res.name}" (archiviert, read-only).`);
+    } catch (e: unknown) {
+      showError(e);
+    } finally {
+      setImporting(false);
+    }
+  }
+
   return (
     <AppShell>
       <div className="breadcrumb">Übersicht / Modulanlässe</div>
       <div className="page-head">
         <div>
           <h1>Modulanlässe</h1>
-          <p>Lernende verwalten · Modul zuweisen · Beitrittscode</p>
+          <p>Lernende verwalten · Modul zuweisen · Beitrittscode · Archiv</p>
         </div>
-        <button className="btn primary" onClick={() => setCreating(true)}>
-          + Neuer Modulanlass
-        </button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="seg" role="group" aria-label="Ansicht">
+            <button
+              aria-pressed={!showArchived}
+              onClick={() => {
+                setSelectedId(null);
+                setDetail(null);
+                setShowArchived(false);
+              }}
+            >
+              Aktiv
+            </button>
+            <button
+              aria-pressed={showArchived}
+              onClick={() => {
+                setSelectedId(null);
+                setDetail(null);
+                setShowArchived(true);
+              }}
+            >
+              Archiv
+            </button>
+          </div>
+          <label className="btn" style={{ cursor: 'pointer' }}>
+            {importing ? 'Importiere…' : '⬆ Archiv importieren'}
+            <input
+              type="file"
+              accept="application/zip,.zip"
+              style={{ display: 'none' }}
+              disabled={importing}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void handleImport(f);
+                e.target.value = '';
+              }}
+            />
+          </label>
+          <button className="btn primary" onClick={() => setCreating(true)}>
+            + Neuer Modulanlass
+          </button>
+        </div>
       </div>
 
       {creating && (
@@ -229,15 +324,36 @@ export default function KlassenPage() {
       {detail && (
         <div className="panel">
           <div className="panel-head">
-            <h2>{detail.name}</h2>
-            <button
-              className="btn danger sm"
-              onClick={() => {
-                void handleDeleteClass(detail.id, detail.name);
-              }}
-            >
-              <TrashIcon /> Modulanlass löschen
-            </button>
+            <h2>
+              {detail.name}{' '}
+              {detail.status !== 'ACTIVE' && (
+                <span className="badge b-archived" style={{ marginLeft: 6 }}>
+                  archiviert · read-only
+                </span>
+              )}
+            </h2>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button className="btn sm" onClick={() => void handleExport(detail.id)}>
+                ⬇ Exportieren
+              </button>
+              {detail.status === 'ACTIVE' ? (
+                <button className="btn sm" onClick={() => void handleArchive(detail.id)}>
+                  Archivieren
+                </button>
+              ) : (
+                <button className="btn sm" onClick={() => void handleRestore(detail.id)}>
+                  Wiederherstellen
+                </button>
+              )}
+              <button
+                className="btn danger sm"
+                onClick={() => {
+                  void handleDeleteClass(detail.id, detail.name);
+                }}
+              >
+                <TrashIcon /> Löschen
+              </button>
+            </div>
           </div>
 
           <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -247,6 +363,7 @@ export default function KlassenPage() {
               <select
                 className="inline-select"
                 value={detail.module?.id ?? ''}
+                disabled={detail.status !== 'ACTIVE'}
                 onChange={(e) => {
                   void handleAssignModule(e.target.value);
                 }}
@@ -279,14 +396,16 @@ export default function KlassenPage() {
                 ) : (
                   <span className="kh-muted">Noch kein Code generiert.</span>
                 )}
-                <button
-                  className="btn sm"
-                  onClick={() => {
-                    void handleGenerateCode();
-                  }}
-                >
-                  {detail.activeJoinCode ? 'Code erneuern' : 'Code generieren'}
-                </button>
+                {detail.status === 'ACTIVE' && (
+                  <button
+                    className="btn sm"
+                    onClick={() => {
+                      void handleGenerateCode();
+                    }}
+                  >
+                    {detail.activeJoinCode ? 'Code erneuern' : 'Code generieren'}
+                  </button>
+                )}
               </div>
 
               {detail.activeJoinCode && (
@@ -353,17 +472,19 @@ export default function KlassenPage() {
                       </span>
                     </td>
                     <td>
-                      <div className="row-actions">
-                        <button
-                          className="btn-icon"
-                          title="Entfernen"
-                          onClick={() => {
-                            void handleRemoveMember(m.userId);
-                          }}
-                        >
-                          <TrashIcon />
-                        </button>
-                      </div>
+                      {detail.status === 'ACTIVE' && (
+                        <div className="row-actions">
+                          <button
+                            className="btn-icon"
+                            title="Entfernen"
+                            onClick={() => {
+                              void handleRemoveMember(m.userId);
+                            }}
+                          >
+                            <TrashIcon />
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}

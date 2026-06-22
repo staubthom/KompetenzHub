@@ -41,7 +41,12 @@ export class ModulesService {
 
   async list(tenantId: string, userId: string, roles: Role[]) {
     return this.prisma.module.findMany({
-      where: { tenantId, ...this.ownerScope(userId, roles) },
+      // Archivierte (z. B. aus Modulanlass-Archiv-Import) bleiben ausgeblendet.
+      where: {
+        tenantId,
+        status: { not: ModuleStatus.ARCHIVED },
+        ...this.ownerScope(userId, roles),
+      },
       select: {
         id: true,
         number: true,
