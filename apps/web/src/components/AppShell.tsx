@@ -4,42 +4,49 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { getUser, clearSession, isTeacher, initials, type SessionUser } from '../lib/session';
-import { logout as apiLogout } from '../lib/api';
+import { logout as apiLogout, updatePreferences } from '../lib/api';
+import { useI18n, normalizeLocale, LOCALES, LOCALE_LABEL, type Locale } from '../lib/i18n';
 
 type Theme = 'light' | 'dark' | 'gray';
 
 interface NavItem {
   id: string;
   icon: string;
-  label: string;
+  labelKey: string;
   href: string;
 }
 
 const TEACHER_NAV: NavItem[] = [
-  { id: 'dashboard', icon: '▦', label: 'Dashboard', href: '/lehrer' },
-  { id: 'module', icon: '▤', label: 'Module & Matrizen', href: '/modules' },
-  { id: 'klassen', icon: '◫', label: 'Modulanlässe', href: '/lehrer/klassen' },
-  { id: 'bewerten', icon: '✓', label: 'Bewerten', href: '/lehrer/bewerten' },
-  { id: 'ki', icon: '⚙', label: 'KI-Einstellungen', href: '/lehrer/ki' },
+  { id: 'dashboard', icon: '▦', labelKey: 'nav.dashboard', href: '/lehrer' },
+  { id: 'module', icon: '▤', labelKey: 'nav.module', href: '/modules' },
+  { id: 'klassen', icon: '◫', labelKey: 'nav.klassen', href: '/lehrer/klassen' },
+  { id: 'bewerten', icon: '✓', labelKey: 'nav.bewerten', href: '/lehrer/bewerten' },
+  { id: 'ki', icon: '⚙', labelKey: 'nav.ki', href: '/lehrer/ki' },
 ];
 
 const STUDENT_NAV: NavItem[] = [
-  { id: 'matrix', icon: '▦', label: 'Meine Matrix', href: '/lernende' },
-  { id: 'lernpfad', icon: '➔', label: 'Lernpfad', href: '/lernende/lernpfad' },
-  { id: 'nachweise', icon: '📄', label: 'Meine Nachweise', href: '/lernende/nachweise' },
-  { id: 'fachgespraech', icon: '💬', label: 'Modul mit KI üben', href: '/lernende/fachgespraech' },
-  { id: 'einstellungen', icon: '⚙', label: 'Einstellungen', href: '/lernende/einstellungen' },
+  { id: 'matrix', icon: '▦', labelKey: 'nav.matrix', href: '/lernende' },
+  { id: 'lernpfad', icon: '➔', labelKey: 'nav.lernpfad', href: '/lernende/lernpfad' },
+  { id: 'nachweise', icon: '📄', labelKey: 'nav.nachweise', href: '/lernende/nachweise' },
+  { id: 'fachgespraech', icon: '💬', labelKey: 'nav.modulUeben', href: '/lernende/fachgespraech' },
+  {
+    id: 'einstellungen',
+    icon: '⚙',
+    labelKey: 'nav.einstellungen',
+    href: '/lernende/einstellungen',
+  },
 ];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { t, locale, setLocale } = useI18n();
   const [user, setUser] = useState<SessionUser | null>(null);
   const [theme, setThemeState] = useState<Theme>('light');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [ready, setReady] = useState(false);
 
-  // Session prüfen – ohne Login zur Login-Seite
+  // Session prüfen – ohne Login zur Login-Seite; Sprache & Theme aus dem Konto anwenden.
   useEffect(() => {
     const u = getUser();
     if (!u) {
@@ -48,14 +55,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     }
     setUser(u);
     setReady(true);
-  }, [router]);
 
-  // Theme aus localStorage wiederherstellen
-  useEffect(() => {
-    const saved = (localStorage.getItem('km-theme') as Theme) ?? 'light';
-    setThemeState(saved);
-    document.documentElement.setAttribute('data-theme', saved);
-  }, []);
+    setLocale(normalizeLocale(u.locale));
+
+    const savedTheme = (u.theme ??
+      (localStorage.getItem('km-theme') as Theme | null) ??
+      'light') as Theme;
+    setThemeState(savedTheme);
+    localStorage.setItem('km-theme', savedTheme);
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  }, [router, setLocale]);
 
   // Klick ausserhalb schliesst das Nutzer-Menü
   useEffect(() => {
@@ -65,10 +74,18 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener('click', close);
   }, [userMenuOpen]);
 
-  function setTheme(t: Theme) {
-    setThemeState(t);
-    localStorage.setItem('km-theme', t);
-    document.documentElement.setAttribute('data-theme', t);
+  function setTheme(tName: Theme) {
+    setThemeState(tName);
+    localStorage.setItem('km-theme', tName);
+    document.documentElement.setAttribute('data-theme', tName);
+    // Pro Konto speichern (überlebt Logout); Fehler nicht fatal.
+    void updatePreferences({ theme: tName }).catch(() => {});
+  }
+
+  function changeLocale(l: Locale) {
+    setLocale(l);
+    // Pro Konto speichern (überlebt Logout); Fehler nicht fatal.
+    void updatePreferences({ locale: l }).catch(() => {});
   }
 
   async function handleLogout() {
@@ -78,19 +95,24 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   if (!ready || !user) {
-    return <div className="loading">Lade…</div>;
+    return <div className="loading">{t('common.loading')}</div>;
   }
 
   const teacher = isTeacher(user);
   const nav = teacher ? TEACHER_NAV : STUDENT_NAV;
-  const roleLabel = teacher ? 'Lehrperson' : 'Lernende:r';
+  const roleLabel = teacher ? t('header.roleTeacher') : t('header.roleStudent');
+  const themeLabel: Record<Theme, string> = {
+    light: t('theme.light'),
+    dark: t('theme.dark'),
+    gray: t('theme.gray'),
+  };
 
   return (
     <>
       <header className="appbar">
         <button
           className="hamburger"
-          aria-label="Menü öffnen"
+          aria-label="Menü"
           onClick={() => {
             document.body.classList.toggle('menu-open');
           }}
@@ -104,10 +126,24 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </Link>
         <div className="appspacer" />
 
-        <div className="seg" role="group" aria-label="Anzeige-Modus">
-          {(['light', 'dark', 'gray'] as Theme[]).map((t) => (
-            <button key={t} aria-pressed={theme === t} onClick={() => setTheme(t)}>
-              {t === 'light' ? 'Light' : t === 'dark' ? 'Dark' : 'Gray'}
+        <select
+          className="lang-select"
+          aria-label={t('common.language')}
+          title={t('common.language')}
+          value={locale}
+          onChange={(e) => changeLocale(e.target.value as Locale)}
+        >
+          {LOCALES.map((l) => (
+            <option key={l} value={l}>
+              {l.toUpperCase()} · {LOCALE_LABEL[l]}
+            </option>
+          ))}
+        </select>
+
+        <div className="seg" role="group" aria-label={t('common.theme')}>
+          {(['light', 'dark', 'gray'] as Theme[]).map((tName) => (
+            <button key={tName} aria-pressed={theme === tName} onClick={() => setTheme(tName)}>
+              {themeLabel[tName]}
             </button>
           ))}
         </div>
@@ -128,8 +164,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <span aria-hidden="true">▾</span>
           </button>
           <div className="menu" role="menu" aria-label="Konto">
-            <button role="menuitem">👤 Profil</button>
-            <button role="menuitem">⚙️ Einstellungen</button>
+            <Link
+              role="menuitem"
+              href={teacher ? '/lehrer/ki' : '/lernende/einstellungen'}
+              onClick={() => setUserMenuOpen(false)}
+            >
+              ⚙️ {t('nav.einstellungen')}
+            </Link>
             <div className="sep" />
             <button
               role="menuitem"
@@ -137,7 +178,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 void handleLogout();
               }}
             >
-              ⎋ Abmelden
+              ⎋ {t('header.logout')}
             </button>
           </div>
         </div>
@@ -161,7 +202,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     document.body.classList.remove('menu-open');
                   }}
                 >
-                  <span className="ic">{item.icon}</span> {item.label}
+                  <span className="ic">{item.icon}</span> {t(item.labelKey)}
                 </Link>
               );
             })}

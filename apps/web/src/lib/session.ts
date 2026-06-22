@@ -14,6 +14,7 @@ export interface SessionUser {
   displayName: string;
   avatarUrl: string | null;
   locale: string;
+  theme?: string;
   tenantId: string;
   roles: Role[];
 }
@@ -24,6 +25,12 @@ const USER_KEY = 'kh_user';
 export function saveSession(token: string, user: SessionUser): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem(TOKEN_KEY, token);
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+}
+
+/** Aktualisiert nur das gespeicherte Nutzerprofil (Token bleibt erhalten). */
+export function saveUser(user: SessionUser): void {
+  if (typeof window === 'undefined') return;
   localStorage.setItem(USER_KEY, JSON.stringify(user));
 }
 

@@ -3,7 +3,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import AppShell from '../../../components/AppShell';
 import { useToast } from '../../../components/ToastProvider';
-import { ai, type AiConfig, type AiTestResult } from '../../../lib/api';
+import { ai, updatePreferences, type AiConfig, type AiTestResult } from '../../../lib/api';
+import { useI18n, LOCALES, LOCALE_LABEL, type Locale } from '../../../lib/i18n';
+
+type Theme = 'light' | 'dark' | 'gray';
 
 const PROVIDERS: { value: string; label: string; baseUrl?: string }[] = [
   { value: 'openai', label: 'OpenAI', baseUrl: 'https://api.openai.com/v1' },
@@ -14,6 +17,8 @@ const PROVIDERS: { value: string; label: string; baseUrl?: string }[] = [
 
 export default function LernendeEinstellungenPage() {
   const toast = useToast();
+  const { t, locale, setLocale } = useI18n();
+  const [theme, setTheme] = useState<Theme>('light');
   const [cfg, setCfg] = useState<AiConfig | null>(null);
   const [provider, setProvider] = useState('openai');
   const [baseUrl, setBaseUrl] = useState('');
@@ -40,6 +45,31 @@ export default function LernendeEinstellungenPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    setTheme((localStorage.getItem('km-theme') as Theme | null) ?? 'light');
+  }, []);
+
+  async function changeLanguage(l: Locale) {
+    setLocale(l);
+    try {
+      await updatePreferences({ locale: l });
+      toast.success(t('settings.saved'));
+    } catch {
+      toast.error('Aktion fehlgeschlagen.');
+    }
+  }
+
+  async function changeTheme(tName: Theme) {
+    setTheme(tName);
+    localStorage.setItem('km-theme', tName);
+    document.documentElement.setAttribute('data-theme', tName);
+    try {
+      await updatePreferences({ theme: tName });
+    } catch {
+      /* nicht fatal */
+    }
+  }
 
   function onProviderChange(p: string) {
     setProvider(p);
@@ -113,11 +143,11 @@ export default function LernendeEinstellungenPage() {
 
   return (
     <AppShell>
-      <div className="breadcrumb">Übersicht / Einstellungen</div>
+      <div className="breadcrumb">{t('settings.title')}</div>
       <div className="page-head">
         <div>
-          <h1>Einstellungen</h1>
-          <p>Eigene KI für „Modul mit KI üben" und das Fachgespräch konfigurieren</p>
+          <h1>{t('settings.title')}</h1>
+          <p>{t('settings.subtitle')}</p>
         </div>
         {cfg && (
           <span className={`badge ${cfg.enabled && cfg.hasApiKey ? 'b-published' : 'b-archived'}`}>
@@ -132,9 +162,46 @@ export default function LernendeEinstellungenPage() {
         )}
       </div>
 
+      {/* Sprache & Anzeigemodus (FA-10) */}
       <div className="panel" style={{ maxWidth: 640 }}>
         <div className="panel-head">
-          <h2>Meine KI-Anbindung</h2>
+          <h2>{t('settings.prefs')}</h2>
+        </div>
+        <div className="form">
+          <label>
+            {t('common.language')}
+            <select value={locale} onChange={(e) => void changeLanguage(e.target.value as Locale)}>
+              {LOCALES.map((l) => (
+                <option key={l} value={l}>
+                  {LOCALE_LABEL[l]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="kh-muted" style={{ fontSize: 12, marginTop: -8 }}>
+            {t('settings.languageHint')}
+          </p>
+
+          <div>
+            <div className="field-label">{t('common.theme')}</div>
+            <div className="seg" role="group" aria-label={t('common.theme')}>
+              {(['light', 'dark', 'gray'] as Theme[]).map((tName) => (
+                <button
+                  key={tName}
+                  aria-pressed={theme === tName}
+                  onClick={() => void changeTheme(tName)}
+                >
+                  {t(`theme.${tName}`)}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="panel" style={{ maxWidth: 640 }}>
+        <div className="panel-head">
+          <h2>{t('settings.aiSection')}</h2>
         </div>
         <div className="form">
           <p className="kh-muted" style={{ marginTop: 0 }}>

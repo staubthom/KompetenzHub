@@ -93,6 +93,34 @@ async function main() {
     check('GET /auth/me mit kaputtem Token -> 401', res.status === 401, `HTTP ${res.status}`);
   }
 
+  // 8) FA-10: Sprache & Anzeigemodus pro User persistieren (überlebt Re-Login)
+  {
+    const email = `pref-${Date.now()}@demo.ch`;
+    const first = await devLogin('LEARNER', email);
+    check('Default-Locale de', first.body.user?.locale === 'de', first.body.user?.locale);
+    const token = first.body.token;
+    const patch = await fetch(`${BASE}/auth/me`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ locale: 'fr', theme: 'dark' }),
+    });
+    const patched = await patch.json();
+    check('PATCH /auth/me -> 200', patch.status === 200, `HTTP ${patch.status}`);
+    check('Locale auf fr gesetzt', patched.locale === 'fr');
+    check('Theme auf dark gesetzt', patched.theme === 'dark');
+    const invalid = await fetch(`${BASE}/auth/me`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ locale: 'xx', theme: 'neon' }),
+    });
+    const inv = await invalid.json();
+    check('Ungültige Werte ignoriert (bleibt fr/dark)', inv.locale === 'fr' && inv.theme === 'dark');
+    // Re-Login mit gleicher E-Mail → Präferenzen bleiben erhalten
+    const again = await devLogin('LEARNER', email);
+    check('Nach Re-Login: Locale fr erhalten', again.body.user?.locale === 'fr');
+    check('Nach Re-Login: Theme dark erhalten', again.body.user?.theme === 'dark');
+  }
+
   console.log(`\nErgebnis: ${pass} OK, ${fail} FAIL`);
   process.exit(fail === 0 ? 0 : 1);
 }
