@@ -129,7 +129,8 @@ export default function EvidenceSubmitPanel({
   }
 
   async function submitAll() {
-    if (!text.trim() && !link.trim() && files.length === 0) {
+    // Bei reinem Fachgespräch/Präsentation ist keine Datei/Link/Text nötig.
+    if (!text.trim() && !link.trim() && files.length === 0 && !cfg.allowExpertTalk) {
       toast.error('Bitte zuerst Text, Link, Datei oder Screenshot hinzufügen.');
       return;
     }
@@ -355,6 +356,18 @@ export default function EvidenceSubmitPanel({
               />
             </label>
           )}
+
+          {cfg.allowExpertTalk &&
+            cfg.allowFile === false &&
+            cfg.allowLink === false &&
+            cfg.allowText === false &&
+            !cfg.allowScreenshot && (
+              <p className="kh-muted" style={{ fontSize: 13, margin: 0 }}>
+                Für dieses Fachgespräch / diese Präsentation ist keine Datei nötig. Du kannst die
+                Einreichung direkt abschicken – die mündliche Leistung wird von der Lehrperson
+                bewertet.
+              </p>
+            )}
 
           <div>
             <button

@@ -164,6 +164,24 @@ check('Zentrale Einreichung (Text+Link) → submitted', multi.body?.status === '
 const blocked3 = await req('POST', `/evidence/${evId3}/submit`, { text: 'Nochmal' }, student);
 check('Zentrale Einreichung erneut gesperrt → 409', blocked3.status === 409);
 
+// ── Reines Fachgespräch: Einreichung ohne Text/Link/Datei erlaubt ─
+const evTalk = await req('POST', '/evidence', {
+  moduleId, title: { de: 'Fachgespräch OS' }, isVisible: true, fieldIds: [fieldId],
+  config: { allowFile: false, allowLink: false, allowText: false, allowExpertTalk: true },
+}, teacher);
+const evTalkId = evTalk.body?.id;
+const talkSubmit = await req('POST', `/evidence/${evTalkId}/submit`, {}, student);
+check('Reines Fachgespräch ohne Inhalt → submitted', talkSubmit.body?.status === 'SUBMITTED', `status=${talkSubmit.status}`);
+
+// Gegenprobe: ohne Fachgespräch ist leere Einreichung weiterhin 400
+const evPlain = await req('POST', '/evidence', {
+  moduleId, title: { de: 'Plain' }, isVisible: true, fieldIds: [fieldId],
+}, teacher);
+const plainEmpty = await req('POST', `/evidence/${evPlain.body?.id}/submit`, {}, student);
+check('Leere Einreichung ohne Fachgespräch → 400', plainEmpty.status === 400);
+await req('DELETE', `/evidence/${evTalkId}`, null, teacher);
+await req('DELETE', `/evidence/${evPlain.body?.id}`, null, teacher);
+
 // ── Lehrer-Anhang am Nachweis ─────────────────────────────────────
 const att = await req('POST', '/assets/attachment-upload-url', { fileName: 'vorlage.pdf', contentType: 'application/pdf' }, teacher);
 check('Anhang-Upload-URL → presigned', att.status === 201 && !!att.body?.key);

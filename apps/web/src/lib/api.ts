@@ -627,6 +627,7 @@ export interface SubmissionDetail {
     text?: string;
     link?: string;
     files?: { key: string; name: string; kind: string }[];
+    expertTalk?: boolean;
   };
   fileKey: string | null;
   fileName: string | null;
