@@ -10,16 +10,16 @@ export class AiController {
 
   // ── FA-34: KI-Konfiguration je Lehrperson ─────────────────────
 
-  /** Aktuelle Konfiguration (ohne Klartext-Key). */
+  /** Aktuelle Konfiguration der/des Nutzenden (ohne Klartext-Key). */
   @Get('config')
-  @Roles(Role.TEACHER, Role.ADMIN)
+  @Roles(Role.TEACHER, Role.ADMIN, Role.LEARNER)
   getConfig(@CurrentUser() user: RequestContext) {
     return this.ai.getConfig(user.tenantId, user.userId);
   }
 
-  /** Konfiguration speichern/aktualisieren. */
+  /** Eigene Konfiguration speichern/aktualisieren (Lehrperson oder Lernende). */
   @Put('config')
-  @Roles(Role.TEACHER, Role.ADMIN)
+  @Roles(Role.TEACHER, Role.ADMIN, Role.LEARNER)
   saveConfig(@Body() dto: AiConfigInput, @CurrentUser() user: RequestContext) {
     return this.ai.saveConfig(user.tenantId, user.userId, dto ?? {});
   }
@@ -27,7 +27,7 @@ export class AiController {
   /** Verbindungstest gegen den konfigurierten Endpoint. */
   @Post('config/test')
   @HttpCode(200)
-  @Roles(Role.TEACHER, Role.ADMIN)
+  @Roles(Role.TEACHER, Role.ADMIN, Role.LEARNER)
   test(@Body() dto: AiConfigInput, @CurrentUser() user: RequestContext) {
     return this.ai.testConnection(user.tenantId, user.userId, dto ?? {});
   }

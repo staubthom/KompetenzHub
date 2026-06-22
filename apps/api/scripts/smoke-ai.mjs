@@ -66,11 +66,18 @@ check('PUT /ai/config speichert', saved.status === 200);
 check('baseUrl normalisiert (kein Trailing-Slash)', saved.body?.baseUrl === 'https://example.invalid/v1');
 check('hasApiKey true nach Speichern', saved.body?.hasApiKey === true);
 check('Key wird maskiert zurückgegeben', saved.body?.apiKeyMask?.endsWith('3456') === true);
+check('Default: nicht für Lernende freigegeben', saved.body?.shareWithLearners === false);
 check(
   'Klartext-Key NIE im Response',
   JSON.stringify(saved.body).includes('supersecret') === false,
   JSON.stringify(saved.body),
 );
+
+// shareWithLearners umschaltbar
+const shared = await req('PUT', '/ai/config', { shareWithLearners: true }, teacher);
+check('shareWithLearners aktivierbar', shared.body?.shareWithLearners === true);
+const unshared = await req('PUT', '/ai/config', { shareWithLearners: false }, teacher);
+check('shareWithLearners deaktivierbar (Key bleibt)', unshared.body?.shareWithLearners === false && unshared.body?.hasApiKey === true);
 
 // ── Erneut lesen: Key bleibt maskiert ─────────────────────────────
 const re = await req('GET', '/ai/config', null, teacher);
@@ -97,8 +104,10 @@ const badUrl = await req('PUT', '/ai/config', { baseUrl: 'ftp://nope' }, teacher
 check('Ungültige baseUrl → 400', badUrl.status === 400);
 
 // ── RBAC: Lernende:r hat keinen Zugriff ───────────────────────────
-const forbidden = await req('GET', '/ai/config', null, student);
-check('Lernende:r → 403 auf /ai/config', forbidden.status === 403);
+// Lernende dürfen ihre EIGENE KI verwalten (eigener Datensatz, getrennt von der Lehrperson)
+const studentCfg = await req('GET', '/ai/config', null, student);
+check('Lernende:r darf eigene Konfig lesen', studentCfg.status === 200);
+check('Lernenden-Konfig ist getrennt (kein geteilter Key)', studentCfg.body?.hasApiKey === false);
 
 // ── Key entfernen ─────────────────────────────────────────────────
 const cleared = await req('PUT', '/ai/config', { apiKey: '' }, teacher);

@@ -14,7 +14,7 @@ export class ExpertTalkController {
   @Get('available')
   @Roles(Role.LEARNER, Role.TEACHER, Role.ADMIN)
   available(@CurrentUser() user: RequestContext) {
-    return this.expertTalk.available(user.tenantId);
+    return this.expertTalk.available(user.tenantId, user.userId);
   }
 
   /** Eigene Übungs-Gespräche auflisten. */

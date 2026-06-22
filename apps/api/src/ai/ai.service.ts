@@ -8,6 +8,7 @@ export interface AiConfigInput {
   model?: string;
   apiKey?: string | null; // undefined = unverändert, '' / null = löschen
   enabled?: boolean;
+  shareWithLearners?: boolean;
 }
 
 export interface AiConfigView {
@@ -15,6 +16,7 @@ export interface AiConfigView {
   baseUrl: string;
   model: string;
   enabled: boolean;
+  shareWithLearners: boolean;
   hasApiKey: boolean;
   apiKeyMask: string | null;
   updatedAt: string | null;
@@ -37,6 +39,7 @@ export class AiService {
         baseUrl: 'https://api.openai.com/v1',
         model: 'gpt-4o-mini',
         enabled: false,
+        shareWithLearners: false,
         hasApiKey: false,
         apiKeyMask: null,
         updatedAt: null,
@@ -55,6 +58,7 @@ export class AiService {
       baseUrl: cfg.baseUrl,
       model: cfg.model,
       enabled: cfg.enabled,
+      shareWithLearners: cfg.shareWithLearners,
       hasApiKey: !!cfg.apiKeyEnc,
       apiKeyMask,
       updatedAt: cfg.updatedAt.toISOString(),
@@ -91,12 +95,14 @@ export class AiService {
       baseUrl?: string;
       model?: string;
       enabled?: boolean;
+      shareWithLearners?: boolean;
       apiKeyEnc?: string | null;
     } = {};
     if (input.provider !== undefined) data.provider = input.provider;
     if (input.baseUrl !== undefined) data.baseUrl = input.baseUrl.replace(/\/+$/, '');
     if (input.model !== undefined) data.model = input.model;
     if (input.enabled !== undefined) data.enabled = input.enabled;
+    if (input.shareWithLearners !== undefined) data.shareWithLearners = input.shareWithLearners;
     // apiKey: undefined = unverändert; leer/null = löschen; sonst verschlüsseln
     if (input.apiKey !== undefined) {
       data.apiKeyEnc = input.apiKey ? encryptSecret(input.apiKey) : null;
@@ -191,23 +197,28 @@ export class AiService {
   }
 
   /**
-   * Multi-Turn-Chat mit einer im Mandanten aktiven KI-Konfiguration (FA-80).
-   * Genutzt von Lernenden-Funktionen (Lernende haben keine eigene KI-Konfig) –
-   * verwendet die erste aktive Konfiguration einer Lehrperson im Mandanten.
+   * Multi-Turn-Chat für Lernenden-Funktionen (FA-80). Verwendet die EIGENE KI der
+   * nutzenden Person, falls vorhanden/aktiv; sonst eine Lehrperson-KI im Mandanten,
+   * die für Lernende freigegeben wurde (shareWithLearners).
    */
   async tenantChat(
     tenantId: string,
+    userId: string,
     messages: { role: 'system' | 'user' | 'assistant'; content: string }[],
     stub: unknown,
   ): Promise<string> {
-    const cfg = await this.requireEnabledTenantConfig(tenantId);
+    const cfg = await this.resolveLearnerConfig(tenantId, userId);
+    if (!cfg) {
+      throw new ConflictException(
+        'Keine KI verfügbar. Konfiguriere eine eigene KI in den Einstellungen oder bitte deine Lehrperson, ihre KI für Lernende freizugeben.',
+      );
+    }
     return this.callCompletion(cfg, messages, { json: false, stub });
   }
 
-  /** Ob im Mandanten irgendeine aktive KI-Konfiguration vorhanden ist (Feature-Gate FA-80). */
-  async tenantHasEnabled(tenantId: string): Promise<boolean> {
-    const cfg = await this.findEnabledTenantConfig(tenantId);
-    return !!cfg;
+  /** Ob für diese:n Lernende:n eine KI nutzbar ist (eigene ODER freigegebene Lehrer-KI). */
+  async hasAiForUser(tenantId: string, userId: string): Promise<boolean> {
+    return !!(await this.resolveLearnerConfig(tenantId, userId));
   }
 
   /** Das aktuell konfigurierte Modell (für Protokollierung des Vorschlags). */
@@ -232,21 +243,25 @@ export class AiService {
     return cfg;
   }
 
-  private async findEnabledTenantConfig(tenantId: string) {
+  /**
+   * Löst die für eine:n Nutzer:in nutzbare KI auf: zuerst die EIGENE aktive Konfig,
+   * sonst eine im Mandanten für Lernende freigegebene Lehrperson-KI.
+   */
+  private async resolveLearnerConfig(tenantId: string, userId: string) {
+    const own = await this.prisma.aiConfig.findUnique({
+      where: { tenantId_userId: { tenantId, userId } },
+    });
+    if (own?.apiKeyEnc && own.baseUrl && own.model && own.enabled) return own;
+
     return this.prisma.aiConfig.findFirst({
-      where: { tenantId, enabled: true, apiKeyEnc: { not: null } },
+      where: {
+        tenantId,
+        enabled: true,
+        shareWithLearners: true,
+        apiKeyEnc: { not: null },
+      },
       orderBy: { updatedAt: 'desc' },
     });
-  }
-
-  private async requireEnabledTenantConfig(tenantId: string) {
-    const cfg = await this.findEnabledTenantConfig(tenantId);
-    if (!cfg) {
-      throw new ConflictException(
-        'Für diesen Mandanten ist keine KI aktiv. Eine Lehrperson muss die KI-Einstellungen einrichten.',
-      );
-    }
-    return cfg;
   }
 
   /** Führt den eigentlichen Completion-Call aus (oder liefert im Stub-Modus `stub`). */

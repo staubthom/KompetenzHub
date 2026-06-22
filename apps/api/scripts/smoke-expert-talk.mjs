@@ -49,13 +49,13 @@ check('Logins', !!teacher && !!studentA && !!studentB);
 const gate = await req('POST', '/expert-talk/sessions', { topic: 'Gate-Test' }, studentA);
 check('Start ohne/mit KI liefert 409 oder 201', gate.status === 409 || gate.status === 201, `status=${gate.status}`);
 
-// ── KI im Mandanten aktivieren (durch die Lehrperson) ────────────
+// ── KI im Mandanten aktivieren + für Lernende freigeben ──────────
 await req('PUT', '/ai/config', {
   provider: 'openai-compatible', baseUrl: 'https://stub.invalid/v1', model: 'stub-tutor-1',
-  apiKey: 'sk-stub-tutor-123456', enabled: true,
+  apiKey: 'sk-stub-tutor-123456', enabled: true, shareWithLearners: true,
 }, teacher);
 
-// /available meldet aktive KI (steuert die KI-Übung im Abgabe-Dialog)
+// /available meldet nutzbare KI (freigegebene Lehrer-KI)
 const avail = await req('GET', '/expert-talk/available', null, studentA);
 check('GET /expert-talk/available → available true', avail.status === 200 && avail.body?.available === true);
 
@@ -124,6 +124,28 @@ const codeE = await req('POST', `/classes/${clsE.body.id}/join-code`, {}, teache
 await req('POST', '/classes/join', { code: codeE.body?.code }, studentA);
 const noComp = await req('POST', '/expert-talk/module-sessions', { moduleId: emptyMod.body.id }, studentA);
 check('Modul ohne Kompetenzen → 422', noComp.status === 422, `status=${noComp.status}`);
+
+// ── KI-Quelle: eigene KI vs. freigegebene Lehrer-KI ───────────────
+const sc = await req('POST', '/auth/dev-login', { email: `et-stud-c-${Date.now()}@demo.ch`, role: 'LEARNER' });
+const studentC = sc.body?.token;
+const availC1 = await req('GET', '/expert-talk/available', null, studentC);
+check('Freigegebene Lehrer-KI → verfügbar', availC1.body?.available === true);
+// Freigabe entziehen → ohne eigene KI nicht mehr verfügbar
+await req('PUT', '/ai/config', { shareWithLearners: false }, teacher);
+const availC2 = await req('GET', '/expert-talk/available', null, studentC);
+check('Ohne Freigabe & ohne eigene KI → nicht verfügbar', availC2.body?.available === false);
+const blockedC = await req('POST', '/expert-talk/sessions', { topic: 'Kein Zugang' }, studentC);
+check('Ohne KI → Start 409', blockedC.status === 409, `status=${blockedC.status}`);
+// studentC konfiguriert eigene KI → Vorrang, verfügbar
+await req('PUT', '/ai/config', {
+  provider: 'openai-compatible', baseUrl: 'https://stub.invalid/v1', model: 'stub-own', apiKey: 'sk-own-123456', enabled: true,
+}, studentC);
+const availC3 = await req('GET', '/expert-talk/available', null, studentC);
+check('Eigene KI → verfügbar (ohne Lehrer-Freigabe)', availC3.body?.available === true);
+const ownSession = await req('POST', '/expert-talk/sessions', { topic: 'Eigene KI' }, studentC);
+check('Start mit eigener KI → 201', ownSession.status === 201, `status=${ownSession.status}`);
+// Lehrer-Freigabe wiederherstellen
+await req('PUT', '/ai/config', { shareWithLearners: true }, teacher);
 
 // ── Abschliessen → COMPLETED, danach keine Nachrichten mehr ──────
 const done = await req('POST', `/expert-talk/sessions/${sessionId}/complete`, {}, studentA);

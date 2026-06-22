@@ -69,6 +69,7 @@ export class ExpertTalkService {
 
     const reply = await this.ai.tenantChat(
       tenantId,
+      userId,
       [
         { role: 'system', content: this.systemPrompt(topic, context) },
         {
@@ -138,6 +139,7 @@ export class ExpertTalkService {
 
     const reply = await this.ai.tenantChat(
       tenantId,
+      userId,
       [
         { role: 'system', content: this.systemPrompt(topic, context, 'module') },
         {
@@ -185,7 +187,7 @@ export class ExpertTalkService {
       'Danke für deine Antwort – das ist ein guter Ansatz. ' +
       'Kannst du das noch etwas vertiefen und begründen, warum das in der Praxis wichtig ist?';
 
-    const reply = await this.ai.tenantChat(tenantId, messages, stub);
+    const reply = await this.ai.tenantChat(tenantId, userId, messages, stub);
 
     const assistantMsg = await this.prisma.expertTalkMessage.create({
       data: { sessionId, role: 'assistant', content: reply },
@@ -212,9 +214,9 @@ export class ExpertTalkService {
     return this.getSession(tenantId, userId, sessionId);
   }
 
-  /** Ob im Mandanten eine aktive KI vorhanden ist (für die KI-Übung im Abgabe-Dialog). */
-  async available(tenantId: string) {
-    return { available: await this.ai.tenantHasEnabled(tenantId) };
+  /** Ob für diese:n Lernende:n eine KI nutzbar ist (eigene oder freigegebene Lehrer-KI). */
+  async available(tenantId: string, userId: string) {
+    return { available: await this.ai.hasAiForUser(tenantId, userId) };
   }
 
   async listSessions(tenantId: string, userId: string) {

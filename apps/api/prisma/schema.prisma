@@ -464,6 +464,7 @@ model AiConfig {
   model     String   @default("gpt-4o-mini")
   apiKeyEnc String? // verschlüsselter API-Key (null = keiner hinterlegt)
   enabled   Boolean  @default(false) // Feature-Gate: KI-Funktionen aktiv
+  shareWithLearners Boolean @default(false) // Lehrer-KI auch für Lernende nutzbar
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

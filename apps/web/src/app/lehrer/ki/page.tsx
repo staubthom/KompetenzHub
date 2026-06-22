@@ -20,6 +20,7 @@ export default function KiSettingsPage() {
   const [model, setModel] = useState('');
   const [apiKey, setApiKey] = useState(''); // leer = unverändert
   const [enabled, setEnabled] = useState(false);
+  const [shareWithLearners, setShareWithLearners] = useState(false);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<AiTestResult | null>(null);
@@ -32,6 +33,7 @@ export default function KiSettingsPage() {
       setBaseUrl(c.baseUrl);
       setModel(c.model);
       setEnabled(c.enabled);
+      setShareWithLearners(c.shareWithLearners);
     } catch {
       toast.error('KI-Konfiguration konnte nicht geladen werden.');
     }
@@ -54,6 +56,7 @@ export default function KiSettingsPage() {
       baseUrl: baseUrl.trim(),
       model: model.trim(),
       enabled,
+      shareWithLearners,
       ...(apiKey ? { apiKey } : {}),
     };
   }
@@ -72,6 +75,7 @@ export default function KiSettingsPage() {
       const c = await ai.saveConfig(currentInput());
       setCfg(c);
       setEnabled(c.enabled);
+      setShareWithLearners(c.shareWithLearners);
       setApiKey('');
       toast.success('KI-Konfiguration gespeichert.');
     } catch (e: unknown) {
@@ -204,9 +208,20 @@ export default function KiSettingsPage() {
             />
             KI-Funktionen aktivieren
           </label>
+
+          <label style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <input
+              type="checkbox"
+              checked={shareWithLearners}
+              style={{ width: 'auto' }}
+              onChange={(e) => setShareWithLearners(e.target.checked)}
+            />
+            Diese KI auch für Lernende freigeben
+          </label>
           <p className="kh-muted" style={{ fontSize: 12, marginTop: -8 }}>
             Ohne gültige Konfiguration (Endpoint, Modell, API-Key) bleiben KI-Funktionen
             deaktiviert. Der API-Key wird verschlüsselt gespeichert und nie im Klartext angezeigt.
+            Lernende mit eigener KI nutzen immer ihre eigene.
           </p>
 
           {testResult && (

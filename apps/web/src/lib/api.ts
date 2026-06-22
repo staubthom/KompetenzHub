@@ -340,6 +340,7 @@ export interface AiConfig {
   baseUrl: string;
   model: string;
   enabled: boolean;
+  shareWithLearners: boolean;
   hasApiKey: boolean;
   apiKeyMask: string | null;
   updatedAt: string | null;
@@ -351,6 +352,7 @@ export interface AiConfigInput {
   model?: string;
   apiKey?: string | null; // weglassen = unverändert; '' = löschen
   enabled?: boolean;
+  shareWithLearners?: boolean;
 }
 
 export interface AiTestResult {
