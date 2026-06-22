@@ -113,6 +113,9 @@ export default function LoginPage() {
             >
               🎓 {t('header.roleStudent')}
             </button>
+            <button type="button" aria-pressed={role === 'ADMIN'} onClick={() => setRole('ADMIN')}>
+              🛠 {t('header.roleAdmin')}
+            </button>
           </div>
 
           <div className="login-section-label">E-Mail (optional)</div>
