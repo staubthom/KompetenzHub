@@ -19,6 +19,8 @@ interface UploadConfig {
   allowScreenshot?: boolean;
   /** Einfügen (Paste) im Text-Feld erlauben (Default: nein). */
   allowPaste?: boolean;
+  /** Einreichungsart Fachgespräch/Präsentation (FA-80): KI-Übung im Abgabe-Dialog. */
+  allowExpertTalk?: boolean;
   /** Vom Lehrer angehängte Datei zum Download. */
   attachmentKey?: string;
   attachmentName?: string;
@@ -325,7 +327,10 @@ export class EvidenceService {
     const link = payload.link?.trim();
     const files = Array.isArray(payload.files) ? payload.files : [];
 
-    if (!text && !link && files.length === 0) {
+    // Fachgespräch/Präsentation darf auch ohne Text/Link/Datei eingereicht werden
+    // (die mündliche Leistung selbst ist der Nachweis).
+    const isExpertTalk = cfg.allowExpertTalk === true;
+    if (!text && !link && files.length === 0 && !isExpertTalk) {
       throw new BadRequestException('Mindestens Text, Link oder Datei erforderlich.');
     }
     if (text && cfg.allowText === false) throw new BadRequestException('Text ist nicht erlaubt.');
@@ -343,7 +348,13 @@ export class EvidenceService {
         evidenceId: id,
         enrollmentId: enrollment.id,
         status: SubmissionStatus.SUBMITTED,
-        content: { kind: 'multi', text, link, files } as unknown as Prisma.InputJsonValue,
+        content: {
+          kind: 'multi',
+          text,
+          link,
+          files,
+          expertTalk: isExpertTalk,
+        } as unknown as Prisma.InputJsonValue,
         fileKey: primary?.key ?? null,
         fileName: primary?.name ?? null,
         submittedAt: new Date(),
@@ -402,6 +413,8 @@ export class EvidenceService {
       allowScreenshot: cfg.allowScreenshot ?? false,
       // Einfügen standardmässig gesperrt (Lernende sollen selbst schreiben)
       allowPaste: cfg.allowPaste ?? false,
+      // Fachgespräch/Präsentation optional (KI-Übung im Abgabe-Dialog)
+      allowExpertTalk: cfg.allowExpertTalk ?? false,
       ...(cfg.attachmentKey ? { attachmentKey: cfg.attachmentKey } : {}),
       ...(cfg.attachmentName ? { attachmentName: cfg.attachmentName } : {}),
     };

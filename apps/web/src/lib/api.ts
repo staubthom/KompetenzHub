@@ -218,6 +218,25 @@ export const ai = {
   status: () => apiFetch<{ configured: boolean; enabled: boolean }>('/ai/status'),
 };
 
+// KI-Fachgespräch / Übungsmodus (FA-80)
+export const expertTalk = {
+  available: () => apiFetch<{ available: boolean }>('/expert-talk/available'),
+  list: () => apiFetch<ExpertTalkSummary[]>('/expert-talk/sessions'),
+  create: (topic: string, context?: string) =>
+    apiFetch<ExpertTalkSession>('/expert-talk/sessions', {
+      method: 'POST',
+      body: JSON.stringify({ topic, context }),
+    }),
+  get: (id: string) => apiFetch<ExpertTalkSession>(`/expert-talk/sessions/${id}`),
+  send: (id: string, content: string) =>
+    apiFetch<ExpertTalkMessage>(`/expert-talk/sessions/${id}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    }),
+  complete: (id: string) =>
+    apiFetch<ExpertTalkSession>(`/expert-talk/sessions/${id}/complete`, { method: 'POST' }),
+};
+
 // Rich-Text-Assets (Bild-Upload vom PC)
 export const assets = {
   imageUploadUrl: (fileName: string, contentType: string, sizeBytes: number) =>
@@ -328,6 +347,30 @@ export interface AiAssessment {
   reasoning: { criterion: string; comment: string }[];
   model: string | null;
   createdAt: string;
+}
+
+export interface ExpertTalkMessage {
+  id: string;
+  role: string; // "user" | "assistant"
+  content: string;
+  createdAt: string;
+}
+
+export interface ExpertTalkSession {
+  id: string;
+  topic: string;
+  status: string; // ACTIVE | COMPLETED
+  createdAt: string;
+  messages: ExpertTalkMessage[];
+}
+
+export interface ExpertTalkSummary {
+  id: string;
+  topic: string;
+  status: string;
+  messageCount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ModuleSummary {
@@ -461,6 +504,7 @@ export interface EvidenceConfig {
   allowText?: boolean;
   allowScreenshot?: boolean;
   allowPaste?: boolean;
+  allowExpertTalk?: boolean;
   attachmentKey?: string;
   attachmentName?: string;
 }
@@ -583,6 +627,7 @@ export interface SubmissionDetail {
     text?: string;
     link?: string;
     files?: { key: string; name: string; kind: string }[];
+    expertTalk?: boolean;
   };
   fileKey: string | null;
   fileName: string | null;

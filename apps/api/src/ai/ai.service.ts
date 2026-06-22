@@ -170,30 +170,94 @@ export class AiService {
   }
 
   /**
-   * Sendet eine Chat-Completion an den konfigurierten (OpenAI-kompatiblen) Endpoint
-   * und liefert den Text der Antwort. Wirft 409, wenn KI nicht aktiv konfiguriert ist
-   * (Feature-Gate FA-34). Im Stub-Modus (AI_STUB_MODE=1) wird ohne Netzwerkaufruf eine
-   * deterministische Antwort (`stub`) zurückgegeben – für Tests/Smokes.
+   * Chat-Completion mit der EIGENEN Konfiguration der Lehrperson (FA-70/72).
+   * Erwartet ein JSON-Ergebnis. Wirft 409, wenn die eigene KI nicht aktiv ist.
+   * Im Stub-Modus (AI_STUB_MODE=1) wird ohne Netzwerkaufruf `stub` zurückgegeben.
    */
   async chat(
     tenantId: string,
     userId: string,
     opts: { system: string; user: string; stub: unknown },
   ): Promise<string> {
+    const cfg = await this.requireEnabledConfig(tenantId, userId);
+    return this.callCompletion(
+      cfg,
+      [
+        { role: 'system', content: opts.system },
+        { role: 'user', content: opts.user },
+      ],
+      { json: true, stub: opts.stub },
+    );
+  }
+
+  /**
+   * Multi-Turn-Chat mit einer im Mandanten aktiven KI-Konfiguration (FA-80).
+   * Genutzt von Lernenden-Funktionen (Lernende haben keine eigene KI-Konfig) –
+   * verwendet die erste aktive Konfiguration einer Lehrperson im Mandanten.
+   */
+  async tenantChat(
+    tenantId: string,
+    messages: { role: 'system' | 'user' | 'assistant'; content: string }[],
+    stub: unknown,
+  ): Promise<string> {
+    const cfg = await this.requireEnabledTenantConfig(tenantId);
+    return this.callCompletion(cfg, messages, { json: false, stub });
+  }
+
+  /** Ob im Mandanten irgendeine aktive KI-Konfiguration vorhanden ist (Feature-Gate FA-80). */
+  async tenantHasEnabled(tenantId: string): Promise<boolean> {
+    const cfg = await this.findEnabledTenantConfig(tenantId);
+    return !!cfg;
+  }
+
+  /** Das aktuell konfigurierte Modell (für Protokollierung des Vorschlags). */
+  async modelName(tenantId: string, userId: string): Promise<string | null> {
     const cfg = await this.prisma.aiConfig.findUnique({
       where: { tenantId_userId: { tenantId, userId } },
     });
-    const configured = !!cfg?.apiKeyEnc && !!cfg?.baseUrl && !!cfg?.model;
-    if (!cfg || !configured || !cfg.enabled) {
+    return cfg?.model ?? null;
+  }
+
+  // ── interne Helfer ───────────────────────────────────────────
+
+  private async requireEnabledConfig(tenantId: string, userId: string) {
+    const cfg = await this.prisma.aiConfig.findUnique({
+      where: { tenantId_userId: { tenantId, userId } },
+    });
+    if (!cfg?.apiKeyEnc || !cfg.baseUrl || !cfg.model || !cfg.enabled) {
       throw new ConflictException(
         'KI ist nicht konfiguriert oder deaktiviert. Bitte unter „KI-Einstellungen" einrichten.',
       );
     }
+    return cfg;
+  }
 
+  private async findEnabledTenantConfig(tenantId: string) {
+    return this.prisma.aiConfig.findFirst({
+      where: { tenantId, enabled: true, apiKeyEnc: { not: null } },
+      orderBy: { updatedAt: 'desc' },
+    });
+  }
+
+  private async requireEnabledTenantConfig(tenantId: string) {
+    const cfg = await this.findEnabledTenantConfig(tenantId);
+    if (!cfg) {
+      throw new ConflictException(
+        'Für diesen Mandanten ist keine KI aktiv. Eine Lehrperson muss die KI-Einstellungen einrichten.',
+      );
+    }
+    return cfg;
+  }
+
+  /** Führt den eigentlichen Completion-Call aus (oder liefert im Stub-Modus `stub`). */
+  private async callCompletion(
+    cfg: { apiKeyEnc: string | null; baseUrl: string; model: string },
+    messages: { role: string; content: string }[],
+    opts: { json: boolean; stub: unknown },
+  ): Promise<string> {
     if (process.env.AI_STUB_MODE === '1') {
       return typeof opts.stub === 'string' ? opts.stub : JSON.stringify(opts.stub);
     }
-
     const apiKey = decryptSecret(cfg.apiKeyEnc!);
     const baseUrl = cfg.baseUrl.replace(/\/+$/, '');
     const controller = new AbortController();
@@ -208,12 +272,9 @@ export class AiService {
         signal: controller.signal,
         body: JSON.stringify({
           model: cfg.model,
-          temperature: 0.2,
-          response_format: { type: 'json_object' },
-          messages: [
-            { role: 'system', content: opts.system },
-            { role: 'user', content: opts.user },
-          ],
+          temperature: opts.json ? 0.2 : 0.6,
+          ...(opts.json ? { response_format: { type: 'json_object' } } : {}),
+          messages,
         }),
       });
       if (!res.ok) {
@@ -234,13 +295,5 @@ export class AiService {
     } finally {
       clearTimeout(timeout);
     }
-  }
-
-  /** Das aktuell konfigurierte Modell (für Protokollierung des Vorschlags). */
-  async modelName(tenantId: string, userId: string): Promise<string | null> {
-    const cfg = await this.prisma.aiConfig.findUnique({
-      where: { tenantId_userId: { tenantId, userId } },
-    });
-    return cfg?.model ?? null;
   }
 }

@@ -328,7 +328,13 @@ function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
                   </a>
                 </p>
               )}
-              {!content.text && !content.link && !sub.fileUrl && (
+              {content.expertTalk && (
+                <p style={{ marginTop: 0 }}>
+                  🗣 <strong>Fachgespräch / Präsentation</strong> – mündliche Leistung, bitte direkt
+                  bewerten.
+                </p>
+              )}
+              {!content.text && !content.link && !sub.fileUrl && !content.expertTalk && (
                 <p className="kh-muted" style={{ marginTop: 0 }}>
                   Kein Textinhalt – siehe Datei/Link.
                 </p>

@@ -67,6 +67,7 @@ check('Einreichungsarten default (file/link/text)',
   ev.body?.config?.allowFile && ev.body?.config?.allowLink && ev.body?.config?.allowText);
 check('Default: Einfügen gesperrt, Screenshot aus',
   ev.body?.config?.allowPaste === false && ev.body?.config?.allowScreenshot === false);
+check('Default: Fachgespräch aus', ev.body?.config?.allowExpertTalk === false);
 
 // ── Matrix liefert den Nachweis am Feld ───────────────────────────
 const matrix = await req('GET', `/modules/${moduleId}/matrix`, null, teacher);
@@ -152,15 +153,34 @@ check('Student Bild-Upload → 403', studentImgPost.status === 403);
 // ── Zentrale Einreichung (Text+Link zusammen) + Screenshot-Erlaubnis ─
 const ev3 = await req('POST', '/evidence', {
   moduleId, title: { de: 'Zentral-Einreichung' }, isVisible: true, fieldIds: [fieldId],
-  config: { allowScreenshot: true, allowPaste: true },
+  config: { allowScreenshot: true, allowPaste: true, allowExpertTalk: true },
 }, teacher);
 const evId3 = ev3.body?.id;
 check('Nachweis mit allowScreenshot/allowPaste', ev3.body?.config?.allowScreenshot === true && ev3.body?.config?.allowPaste === true);
+check('Nachweis mit allowExpertTalk', ev3.body?.config?.allowExpertTalk === true);
 const multi = await req('POST', `/evidence/${evId3}/submit`,
   { text: 'Meine Begründung', link: 'https://example.com/x' }, student);
 check('Zentrale Einreichung (Text+Link) → submitted', multi.body?.status === 'SUBMITTED');
 const blocked3 = await req('POST', `/evidence/${evId3}/submit`, { text: 'Nochmal' }, student);
 check('Zentrale Einreichung erneut gesperrt → 409', blocked3.status === 409);
+
+// ── Reines Fachgespräch: Einreichung ohne Text/Link/Datei erlaubt ─
+const evTalk = await req('POST', '/evidence', {
+  moduleId, title: { de: 'Fachgespräch OS' }, isVisible: true, fieldIds: [fieldId],
+  config: { allowFile: false, allowLink: false, allowText: false, allowExpertTalk: true },
+}, teacher);
+const evTalkId = evTalk.body?.id;
+const talkSubmit = await req('POST', `/evidence/${evTalkId}/submit`, {}, student);
+check('Reines Fachgespräch ohne Inhalt → submitted', talkSubmit.body?.status === 'SUBMITTED', `status=${talkSubmit.status}`);
+
+// Gegenprobe: ohne Fachgespräch ist leere Einreichung weiterhin 400
+const evPlain = await req('POST', '/evidence', {
+  moduleId, title: { de: 'Plain' }, isVisible: true, fieldIds: [fieldId],
+}, teacher);
+const plainEmpty = await req('POST', `/evidence/${evPlain.body?.id}/submit`, {}, student);
+check('Leere Einreichung ohne Fachgespräch → 400', plainEmpty.status === 400);
+await req('DELETE', `/evidence/${evTalkId}`, null, teacher);
+await req('DELETE', `/evidence/${evPlain.body?.id}`, null, teacher);
 
 // ── Lehrer-Anhang am Nachweis ─────────────────────────────────────
 const att = await req('POST', '/assets/attachment-upload-url', { fileName: 'vorlage.pdf', contentType: 'application/pdf' }, teacher);
