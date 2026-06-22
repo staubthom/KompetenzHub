@@ -446,3 +446,26 @@ model EvaluationHistory {
 
   @@index([submissionId, createdAt])
 }
+
+// ============================================================
+// KI-Konfiguration (FA-34) – Endpoint/Provider je Lehrperson
+// ============================================================
+
+/// KI-Anbindung je Lehrperson (pro Tenant). Der API-Key wird verschlüsselt
+/// (AES-256-GCM) at rest gespeichert und nie im Klartext zurückgegeben.
+model AiConfig {
+  id        String   @id @default(uuid())
+  tenantId  String
+  userId    String
+  provider  String   @default("openai") // openai | openai-compatible | azure | local
+  baseUrl   String   @default("https://api.openai.com/v1")
+  model     String   @default("gpt-4o-mini")
+  apiKeyEnc String? // verschlüsselter API-Key (null = keiner hinterlegt)
+  enabled   Boolean  @default(false) // Feature-Gate: KI-Funktionen aktiv
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, userId])
+  @@index([tenantId])
+  @@index([userId])
+}
