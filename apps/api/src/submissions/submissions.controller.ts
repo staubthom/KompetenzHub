@@ -17,7 +17,11 @@ export class SubmissionsController {
     @Query('evidenceId') evidenceId: string | undefined,
     @CurrentUser() user: RequestContext,
   ) {
-    return this.submissions.list(user.tenantId, { status, classId, evidenceId });
+    return this.submissions.list(user.tenantId, user.userId, user.roles, {
+      status,
+      classId,
+      evidenceId,
+    });
   }
 
   @Get(':id')
@@ -40,7 +44,7 @@ export class SubmissionsController {
     @Body() dto: { points?: number; level?: AchievedLevel; feedback?: string },
     @CurrentUser() user: RequestContext,
   ) {
-    return this.submissions.evaluate(id, dto, user.tenantId, user.userId);
+    return this.submissions.evaluate(id, dto, user.tenantId, user.userId, user.roles);
   }
 
   /** Zurückweisen (FA-62). */
@@ -51,7 +55,7 @@ export class SubmissionsController {
     @Body() dto: { reason?: string },
     @CurrentUser() user: RequestContext,
   ) {
-    return this.submissions.reject(id, dto?.reason ?? '', user.tenantId, user.userId);
+    return this.submissions.reject(id, dto?.reason ?? '', user.tenantId, user.userId, user.roles);
   }
 
   /** KI-Bewertungsvorschlag erzeugen (FA-70). Reiner Vorschlag, kein Auto-Grading. */
@@ -59,7 +63,7 @@ export class SubmissionsController {
   @HttpCode(200)
   @Roles(Role.TEACHER, Role.ADMIN)
   aiAssessment(@Param('id') id: string, @CurrentUser() user: RequestContext) {
-    return this.submissions.generateAssessment(id, user.tenantId, user.userId);
+    return this.submissions.generateAssessment(id, user.tenantId, user.userId, user.roles);
   }
 
   /** Letzten KI-Vorschlag abrufen (FA-70). */
@@ -74,6 +78,6 @@ export class SubmissionsController {
   @HttpCode(200)
   @Roles(Role.TEACHER, Role.ADMIN)
   aiFeedback(@Param('id') id: string, @CurrentUser() user: RequestContext) {
-    return this.submissions.generateFeedback(id, user.tenantId, user.userId);
+    return this.submissions.generateFeedback(id, user.tenantId, user.userId, user.roles);
   }
 }

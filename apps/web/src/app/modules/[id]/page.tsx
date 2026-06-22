@@ -11,6 +11,7 @@ import {
   modules,
   actionGoals,
   matrix as matrixApi,
+  exportMatrixZip,
   descriptors,
   type ModuleDetail,
   type Band,
@@ -97,6 +98,23 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
   }
 
   // ── Modul bearbeiten (FA-01) ──────────────────────────────────
+  async function handleExport() {
+    if (!mod?.matrix) return;
+    try {
+      const { blob, filename } = await exportMatrixZip(mod.matrix.id);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Modul exportiert (ZIP).');
+    } catch (e: unknown) {
+      const err = e as { body?: { title?: string } };
+      toast.error(err.body?.title ?? 'Export fehlgeschlagen.');
+    }
+  }
+
   function startEditMod() {
     if (!mod) return;
     setModForm({
@@ -330,6 +348,15 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
           <Link className="btn sm" href={`/modules/${id}/lernpfade`}>
             Lernpfade
           </Link>
+          <button
+            className="btn sm"
+            disabled={!mod.matrix}
+            onClick={() => {
+              void handleExport();
+            }}
+          >
+            ⬇ Export
+          </button>
           <button className="btn sm" onClick={startEditMod}>
             Modul bearbeiten
           </button>

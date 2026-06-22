@@ -5,7 +5,7 @@ import Link from 'next/link';
 import AppShell from '../../components/AppShell';
 import TrashIcon from '../../components/TrashIcon';
 import { useToast } from '../../components/ToastProvider';
-import { modules, type ModuleSummary } from '../../lib/api';
+import { modules, importMatrixZip, type ModuleSummary } from '../../lib/api';
 
 function statusLabel(s: string): string {
   return s === 'DRAFT' ? 'Entwurf' : s === 'PUBLISHED' ? 'Veröffentlicht' : 'Archiviert';
@@ -15,6 +15,7 @@ export default function ModulesPage() {
   const toast = useToast();
   const [list, setList] = useState<ModuleSummary[] | null>(null);
   const [creating, setCreating] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [form, setForm] = useState({ number: '', title: '', description: '' });
 
   async function load() {
@@ -48,6 +49,20 @@ export default function ModulesPage() {
     }
   }
 
+  async function handleImport(file: File) {
+    setImporting(true);
+    try {
+      const res = await importMatrixZip(file);
+      await load();
+      toast.success(`Modul importiert als „${res.number}".`);
+    } catch (e: unknown) {
+      const err = e as { body?: { title?: string } };
+      toast.error(err.body?.title ?? 'Import fehlgeschlagen.');
+    } finally {
+      setImporting(false);
+    }
+  }
+
   async function handleDelete(id: string, number: string) {
     if (!confirm(`Modul ${number} wirklich löschen?`)) return;
     try {
@@ -68,9 +83,25 @@ export default function ModulesPage() {
           <h1>Module &amp; Matrizen</h1>
           <p>Kompetenzraster verwalten</p>
         </div>
-        <button className="btn primary" onClick={() => setCreating(true)}>
-          + Neues Modul
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <label className="btn" style={{ cursor: 'pointer' }}>
+            {importing ? 'Importiere…' : '⬆ Modul importieren (ZIP)'}
+            <input
+              type="file"
+              accept="application/zip,.zip"
+              style={{ display: 'none' }}
+              disabled={importing}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void handleImport(f);
+                e.target.value = '';
+              }}
+            />
+          </label>
+          <button className="btn primary" onClick={() => setCreating(true)}>
+            + Neues Modul
+          </button>
+        </div>
       </div>
 
       {creating && (

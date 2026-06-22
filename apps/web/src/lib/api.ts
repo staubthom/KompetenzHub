@@ -333,6 +333,51 @@ export async function uploadRichTextImage(file: File): Promise<string> {
   return publicUrl;
 }
 
+// ── Matrix-Export/-Import als ZIP (FA-100) ──────────────────────────
+
+/** Lädt eine Matrix als ZIP herunter (matrix.json + assets/). */
+export async function exportMatrixZip(matrixId: string): Promise<{ blob: Blob; filename: string }> {
+  const token = getToken();
+  const res = await fetch(`${API_BASE}/api/v1/matrices/${matrixId}/export`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ title: res.statusText }));
+    throw Object.assign(new Error(err.title ?? 'Export fehlgeschlagen'), {
+      status: res.status,
+      body: err,
+    });
+  }
+  const blob = await res.blob();
+  const cd = res.headers.get('Content-Disposition') ?? '';
+  const m = cd.match(/filename="?([^"]+)"?/);
+  return { blob, filename: m?.[1] ?? `modul-${matrixId}.zip` };
+}
+
+/** Importiert ein ZIP-Paket → neues Modul. */
+export async function importMatrixZip(
+  file: File,
+): Promise<{ moduleId: string; matrixId: string; number: string }> {
+  const token = getToken();
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`${API_BASE}/api/v1/matrices/import`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: form,
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ title: res.statusText }));
+    throw Object.assign(new Error(err.title ?? 'Import fehlgeschlagen'), {
+      status: res.status,
+      body: err,
+    });
+  }
+  return res.json() as Promise<{ moduleId: string; matrixId: string; number: string }>;
+}
+
 // ── Typen ──────────────────────────────────────────────────────────
 
 export interface AiConfig {

@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ModuleStatus, Prisma } from '@prisma/client';
+import { ModuleStatus, Prisma, Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface I18nField {
@@ -33,9 +33,15 @@ export interface UpdateModuleDto {
 export class ModulesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async list(tenantId: string) {
+  /** Sichtbarkeits-Filter: Lehrperson sieht eigene + besitzerlose Module; Admin alle. */
+  private ownerScope(userId: string, roles: Role[]) {
+    if (roles.includes(Role.ADMIN)) return {};
+    return { OR: [{ ownerId: userId }, { ownerId: null }] };
+  }
+
+  async list(tenantId: string, userId: string, roles: Role[]) {
     return this.prisma.module.findMany({
-      where: { tenantId },
+      where: { tenantId, ...this.ownerScope(userId, roles) },
       select: {
         id: true,
         number: true,
@@ -51,9 +57,9 @@ export class ModulesService {
     });
   }
 
-  async findOne(id: string, tenantId: string) {
+  async findOne(id: string, tenantId: string, userId: string, roles: Role[]) {
     const module = await this.prisma.module.findFirst({
-      where: { id, tenantId },
+      where: { id, tenantId, ...this.ownerScope(userId, roles) },
       include: {
         actionGoals: { orderBy: { sortOrder: 'asc' } },
         matrix: {
@@ -124,8 +130,8 @@ export class ModulesService {
     return module;
   }
 
-  async update(id: string, dto: UpdateModuleDto, tenantId: string) {
-    await this.assertExists(id, tenantId);
+  async update(id: string, dto: UpdateModuleDto, tenantId: string, userId: string, roles: Role[]) {
+    await this.assertExists(id, tenantId, userId, roles);
 
     let number: string | undefined;
     if (dto.number !== undefined) {
@@ -152,13 +158,15 @@ export class ModulesService {
     });
   }
 
-  async remove(id: string, tenantId: string) {
-    await this.assertExists(id, tenantId);
+  async remove(id: string, tenantId: string, userId: string, roles: Role[]) {
+    await this.assertExists(id, tenantId, userId, roles);
     await this.prisma.module.delete({ where: { id } });
   }
 
-  private async assertExists(id: string, tenantId: string) {
-    const found = await this.prisma.module.findFirst({ where: { id, tenantId } });
+  private async assertExists(id: string, tenantId: string, userId: string, roles: Role[]) {
+    const found = await this.prisma.module.findFirst({
+      where: { id, tenantId, ...this.ownerScope(userId, roles) },
+    });
     if (!found) throw new NotFoundException(`Modul ${id} nicht gefunden.`);
     return found;
   }
