@@ -3,7 +3,6 @@
 > Stand: Juni 2026 · Sprache: Deutsch
 > Diese Anleitung richtet sich an **Lehrpersonen**, **Schulleitungen** und **technisch interessierte Personen**, die prüfen möchten, ob sich KompetenzHub für ihre Schule eignet – sowie an alle, die die Software selbst betreiben wollen.
 
-
 ---
 
 ## Inhaltsverzeichnis
@@ -99,7 +98,7 @@ KompetenzHub wird im Webbrowser geöffnet (Standard-Adresse im Betrieb: die URL 
 
 Nach der Anmeldung werden Sie automatisch auf die zu Ihrer Rolle passende Startseite geleitet.
 
-> 📷 _Screenshot: Anmeldeseite mit Microsoft/Google und Dev-Login.
+> 📷 \_Screenshot: Anmeldeseite mit Microsoft/Google und Dev-Login.
 >
 > ![Screenshot: Anmeldeseite mit Microsoft/Google und Dev-Login](Images/Pasted%20image%2020260623114415.png)
 
@@ -111,7 +110,7 @@ Oben rechts in der Kopfzeile befindet sich ein **Sprachauswahl-Menü** (DE · FR
 
 Neben der Sprachauswahl lässt sich der Anzeigemodus umschalten: **Hell**, **Dunkel** oder **Grau**. Auch diese Einstellung wird pro Konto gespeichert.
 
-> 📷 _Screenshot: Kopfzeile mit Sprach- und Theme-Auswahl sowie Nutzer-Menü.
+> 📷 \_Screenshot: Kopfzeile mit Sprach- und Theme-Auswahl sowie Nutzer-Menü.
 >
 > ![Screenshot: Kopfzeile mit Sprach- und Theme-Auswahl sowie Nutzer-Menü](Images/Pasted%20image%2020260623114640.png)
 
@@ -125,7 +124,7 @@ Nach der Anmeldung als Lehrperson sehen Sie links die Navigation: **Dashboard**,
 
 Das Dashboard zeigt pro Modulanlass den **Lernfortschritt der Klasse** als Heatmap (Lernende × Kompetenzfelder) sowie Kennzahlen (Anzahl Lernende, „zu bewerten", „bewertet", Durchschnittsfortschritt). Ein Klick auf eine Zelle führt direkt zur Bewertung.
 
-> 📷 _Screenshot: Lehrer-Dashboard mit Fortschritts-Heatmap.
+> 📷 \_Screenshot: Lehrer-Dashboard mit Fortschritts-Heatmap.
 >
 > ![Screenshot: Lehrer-Dashboard mit Fortschritts-Heatmap](Images/Pasted%20image%2020260623115232.png)
 
@@ -135,7 +134,7 @@ Das Dashboard zeigt pro Modulanlass den **Lernfortschritt der Klasse** als Heatm
 2. **Modulnummer** und **Titel** erfassen (optional Beschreibung). Das Modul wird als **Entwurf** angelegt.
 3. Modul öffnen, um die Matrix zu bearbeiten.
 
-> 📷 _Screenshot: Modul-Liste mit Kennzahlen.
+> 📷 \_Screenshot: Modul-Liste mit Kennzahlen.
 >
 > ![Screenshot: Modul-Liste mit Kennzahlen](Images/Pasted%20image%2020260623120316.png)
 
@@ -149,7 +148,7 @@ Im Modul-Editor zunächst **Handlungsziele** anlegen (Code + Beschreibung). Sie 
 2. In jeder Zelle auf den Deskriptor klicken und im „Ich kann …"-Format formulieren.
 3. Bänder lassen sich umsortieren und bearbeiten.
 
-> 📷 _Screenshot: Matrix-Editor mit Bändern, Feldern und Deskriptoren.
+> 📷 \_Screenshot: Matrix-Editor mit Bändern, Feldern und Deskriptoren.
 >
 > ![Screenshot: Matrix-Editor mit Bändern, Feldern und Deskriptoren](Images/Pasted%20image%2020260623115324.png)
 
@@ -170,11 +169,11 @@ Im Modul-Editor zunächst **Handlungsziele** anlegen (Code + Beschreibung). Sie 
 
 Im Modul können Sie unter **„Lernpfade"** eine **empfohlene Reihenfolge** der Kompetenzfelder definieren (Felder links hinzufügen, rechts in Reihenfolge bringen). Ein Pfad lässt sich **aktiv** schalten; Lernende sehen dann eine Zeitachse statt der reinen Matrix.
 
-> 📷 _Screenshot: Lernpfad-Editor (verfügbare Felder ↔ Reihenfolge).
+> 📷 \_Screenshot: Lernpfad-Editor (verfügbare Felder ↔ Reihenfolge).
 >
 > ![Screenshot: Lernpfad-Editor (verfügbare Felder ↔ Reihenfolge)](Images/Pasted%20image%2020260623120533.png)
 >
-> 📷 _Screenshot: Lernpfad-Editor (verfügbare Felder ↔ Reihenfolge)._ 
+> 📷 _Screenshot: Lernpfad-Editor (verfügbare Felder ↔ Reihenfolge)._
 >
 > ![Screenshot: Lernpfad-Editor (verfügbare Felder ↔ Reihenfolge)](Images/Pasted%20image%2020260623120702.png)
 
@@ -202,7 +201,7 @@ Ein Modulanlass kann von mehreren Lehrpersonen gemeinsam geführt werden. Im Det
 
 **Rechteabgrenzung:** Nur die **besitzende** Lehrperson (die den Modulanlass erstellt hat) kann die Co-Leitung verwalten (hinzufügen/entfernen) und den Modulanlass **löschen**. Co-Leitungen können den Anlass weder löschen noch weitere Co-Leitungen ernennen.
 
-> 📷 _Screenshot: Abschnitt „Co-Leitung" im Modulanlass.
+> 📷 \_Screenshot: Abschnitt „Co-Leitung" im Modulanlass.
 >
 > ![Screenshot: Abschnitt Co-Leitung im Modulanlass](Images/Pasted%20image%2020260623121158.png)
 
@@ -235,7 +234,6 @@ Unter **KI-Einstellungen** hinterlegen Sie Ihre eigene KI-Anbindung (Provider/En
 > 📷 _Screenshot: KI-Einstellungen der Lehrperson._
 >
 > ![Screenshot: KI-Einstellungen der Lehrperson](Images/Pasted%20image%2020260623121719.png)
-> 
 
 ---
 
@@ -375,7 +373,7 @@ Bereits vorhandene Personen werden nicht eingeladen, sondern direkt in der Perso
 
 Chronologische Liste sicherheitsrelevanter Ereignisse (Anmeldungen, abgewiesene Anmeldungen, Abmeldungen) mit Zeitpunkt, Aktion und Person.
 
-### 9.7 Backup (Beta) 
+### 9.7 Backup (Beta)
 
 Per Knopfdruck erzeugt die Schuladmin ein **Voll-Backup als ZIP**: die Schuldaten als `backup.json` (Personen, Module, Matrizen, Modulanlässe, Einreichungen, Bewertungen, Audit-Log, Einstellungen) **plus alle Dateien** aus dem Objektspeicher (Logos, Bilder, Anhänge, Belege). Details siehe [Kapitel 13](#13-backup--wiederherstellung).
 
@@ -703,12 +701,14 @@ Mindestens einer der Dienste DB/Redis/S3 ist nicht erreichbar – Container-Stat
 > erlaubt aber lernortspezifische Anpassung.
 
 ---
+
 ## 18 Lizenz
 
-Dieses Projekt steht unter der **GNU Affero General Public License v3.0 (AGPLv3)**. 
+Dieses Projekt steht unter der **GNU Affero General Public License v3.0 (AGPLv3)**.
 Details findest du in der Datei [LICENSE](LICENSE).
 
 Wenn du Funktionen erweiterst oder Fehler behebst, freuen wir uns über einen Pull Request hier im Haupt-Repository!
 
 ---
+
 _KompetenzHub · Benutzerhandbuch · weitere technische Dokumentation siehe Ordner `docs/`._
