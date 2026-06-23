@@ -50,6 +50,73 @@ services:
       timeout: 5s
       retries: 5
 
+  # ── Anwendung (nur mit Profil "app", z. B. `docker compose --profile app up -d --build`) ──
+  api:
+    profiles: ['app']
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: kompetenzhub-api
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      minio: { condition: service_healthy }
+    environment:
+      NODE_ENV: production
+      API_PORT: 3001
+      DATABASE_URL: postgresql://${POSTGRES_USER:-kompetenzhub}:${POSTGRES_PASSWORD:-kompetenzhub}@postgres:5432/${POSTGRES_DB:-kompetenzhub}?schema=public
+      REDIS_URL: redis://redis:6379
+      # S3_ENDPOINT: interne Adresse (Container→MinIO); S3_PUBLIC_URL: Browser-erreichbar
+      S3_ENDPOINT: http://minio:9000
+      S3_PUBLIC_URL: ${S3_PUBLIC_URL:-http://localhost:9000}
+      S3_BUCKET: ${S3_BUCKET:-kompetenzhub}
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      # In Produktion zwingend starke Werte in .env setzen (sonst bricht der Start ab).
+      JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:?Bitte starken Wert in .env setzen}
+      JWT_TTL_SECONDS: ${JWT_TTL_SECONDS:-900}
+      AI_CONFIG_ENC_KEY: ${AI_CONFIG_ENC_KEY:?Bitte starken Wert in .env setzen}
+      DEV_LOGIN_ENABLED: 'false'
+      AUTH_EXCHANGE_SECRET: ${AUTH_EXCHANGE_SECRET:-}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+      DEFAULT_TENANT_ID: ${DEFAULT_TENANT_ID:-00000000-0000-0000-0000-000000000001}
+      NEXT_PUBLIC_WEB_URL: ${WEB_PUBLIC_URL:-http://localhost:3000}
+      THROTTLE_TTL: ${THROTTLE_TTL:-60000}
+      THROTTLE_LIMIT: ${THROTTLE_LIMIT:-300}
+      THROTTLE_AUTH_LIMIT: ${THROTTLE_AUTH_LIMIT:-60}
+    ports:
+      - '${API_PORT:-3001}:3001'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:3001/api/v1/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  web:
+    profiles: ['app']
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        # NEXT_PUBLIC_API_URL wird zur Build-Zeit ins Bundle gebacken (Browser-seitig).
+        NEXT_PUBLIC_API_URL: ${API_PUBLIC_URL:-http://localhost:3001}
+    container_name: kompetenzhub-web
+    restart: unless-stopped
+    depends_on:
+      api: { condition: service_healthy }
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - '${WEB_PORT:-3000}:3000'
+
 volumes:
   postgres-data:
   redis-data:

@@ -23,6 +23,14 @@ export class S3Service implements OnModuleInit {
   private readonly logger = new Logger(S3Service.name);
   private readonly bucket = process.env.S3_BUCKET ?? 'kompetenzhub';
   private readonly endpoint = process.env.S3_ENDPOINT ?? 'http://localhost:9000';
+  // Browser-erreichbare Basis-URL für öffentliche Objekte (Logo, RTE-Bilder).
+  // Im Container ist S3_ENDPOINT intern (z. B. http://minio:9000); für den Browser
+  // wird S3_PUBLIC_URL verwendet (z. B. http://localhost:9000 oder die Domain).
+  private readonly publicBase = (
+    process.env.S3_PUBLIC_URL ??
+    process.env.S3_ENDPOINT ??
+    'http://localhost:9000'
+  ).replace(/\/$/, '');
   private readonly client = new S3Client({
     region: 'us-east-1',
     endpoint: this.endpoint,
@@ -96,12 +104,12 @@ export class S3Service implements OnModuleInit {
 
   /** Stabile, öffentlich lesbare URL (nur für rte/*-Objekte gültig). */
   publicUrl(key: string): string {
-    return `${this.endpoint}/${this.bucket}/${key}`;
+    return `${this.publicBase}/${this.bucket}/${key}`;
   }
 
-  /** Basis-URL des Buckets (für das Erkennen eigener Objekt-URLs). */
+  /** Basis-URL des Buckets (für das Erkennen eigener Objekt-URLs; passt zu publicUrl). */
   get bucketBaseUrl(): string {
-    return `${this.endpoint}/${this.bucket}/`;
+    return `${this.publicBase}/${this.bucket}/`;
   }
 
   /** Lädt ein Objekt vollständig als Buffer (für Export/Archivierung). */

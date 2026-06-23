@@ -412,7 +412,40 @@ npm run start --workspace apps/web      # bedient Port 3000 (WEB_PORT)
 
 Betreiben Sie beide Prozesse dauerhaft (z. B. via systemd, PM2 oder Container) und stellen Sie sie hinter einen **Reverse Proxy mit HTTPS** (z. B. Nginx/Caddy/Traefik).
 
-### 10.5 Health-Check
+### 10.5 Deployment per Docker Compose (Voll-Stack)
+
+Am einfachsten lässt sich KompetenzHub komplett mit Docker betreiben. Das `docker-compose.yml` enthält neben der Infrastruktur (PostgreSQL, Redis, MinIO) auch **API** und **Web** – diese liegen im Profil `app` und starten nur bei Bedarf:
+
+```bash
+cp .env.example .env          # danach BEARBEITEN (siehe unten)
+docker compose --profile app up -d --build
+```
+
+Das startet alle fünf Container; die API wendet beim Start automatisch die **Datenbank-Migrationen** an. Erreichbar (Standard): Web `http://localhost:3000`, API `http://localhost:3001`, MinIO-Konsole `http://localhost:9001`.
+
+> Ohne Profil – `docker compose up -d` – startet wie bisher **nur die Infrastruktur** (für die lokale Entwicklung mit `npm run dev`).
+
+**Zwingend in der `.env` setzen** (sonst startet die API bewusst nicht):
+
+| Variable            | Bedeutung                                                        |
+| ------------------- | ---------------------------------------------------------------- |
+| `JWT_SIGNING_KEY`   | starker, geheimer Schlüssel für die API-Tokens                   |
+| `AI_CONFIG_ENC_KEY` | starker, geheimer Schlüssel für die KI-Schlüssel-Verschlüsselung |
+| `ADMIN_EMAILS`      | E-Mail(s) der ersten Schuladmin(s)                               |
+
+**Öffentliche URLs** (browser-erreichbar – nicht die internen Container-Namen):
+
+| Variable         | Lokal                   | Produktiv                                  |
+| ---------------- | ----------------------- | ------------------------------------------ |
+| `API_PUBLIC_URL` | `http://localhost:3001` | z. B. `https://kompetenzhub.schule.ch/api` |
+| `WEB_PUBLIC_URL` | `http://localhost:3000` | z. B. `https://kompetenzhub.schule.ch`     |
+| `S3_PUBLIC_URL`  | `http://localhost:9000` | öffentlich erreichbare MinIO-/Storage-URL  |
+
+> `API_PUBLIC_URL` wird beim **Web-Build** ins Bundle gebacken – nach Änderung das Web-Image neu bauen (`--build`).
+
+**Produktiv** empfiehlt sich ein vorgelagerter **Reverse Proxy mit HTTPS**, der eine Domain auf Web, API (`/api`) und – für Datei-Downloads – den Objektspeicher routet. So sind alle URLs same-origin und konsistent. Logos/Bilder funktionieren bereits über `S3_PUBLIC_URL`; private Datei-Downloads (Einreichungen, Anhänge) benötigen, dass der Objektspeicher unter derselben Adresse für API **und** Browser erreichbar ist.
+
+### 10.6 Health-Check
 
 Der Endpunkt `GET /api/v1/health` liefert den Zustand der abhängigen Dienste:
 
@@ -422,7 +455,7 @@ Der Endpunkt `GET /api/v1/health` liefert den Zustand der abhängigen Dienste:
 
 Eignet sich für Monitoring/Uptime-Checks. `status: "degraded"` signalisiert, dass mindestens ein Dienst nicht erreichbar ist.
 
-### 10.6 Erste Schuladmin einrichten
+### 10.7 Erste Schuladmin einrichten
 
 Damit überhaupt jemand das Admin-Dashboard öffnen kann, wird die **erste** Schuladmin über eine Umgebungsvariable festgelegt:
 
