@@ -1,0 +1,139 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: kompetenzhub-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-kompetenzhub}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kompetenzhub}
+      POSTGRES_DB: ${POSTGRES_DB:-kompetenzhub}
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-kompetenzhub}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: kompetenzhub-redis
+    restart: unless-stopped
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: kompetenzhub-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - '${MINIO_PORT:-9000}:9000'
+      - '${MINIO_CONSOLE_PORT:-9001}:9001'
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Anwendung (nur mit Profil "app", z. B. `docker compose -f docker-compose_dev.yaml --profile  app up -d --build`) ──
+  api:
+    profiles: ['app']
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: kompetenzhub-api
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      minio: { condition: service_healthy }
+    environment:
+      NODE_ENV: development
+      API_PORT: 3001
+      DATABASE_URL: postgresql://${POSTGRES_USER:-kompetenzhub}:${POSTGRES_PASSWORD:-kompetenzhub}@postgres:5432/${POSTGRES_DB:-kompetenzhub}?schema=public
+      REDIS_URL: redis://redis:6379
+      # S3_ENDPOINT: interne Adresse (Container→MinIO); S3_PUBLIC_URL: Browser-erreichbar
+      S3_ENDPOINT: http://minio:9000
+      S3_PUBLIC_URL: ${S3_PUBLIC_URL:-http://localhost:9000}
+      S3_BUCKET: ${S3_BUCKET:-kompetenzhub}
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      # In Produktion zwingend starke Werte in .env setzen (sonst bricht der Start ab).
+      JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:?Bitte starken Wert in .env setzen}
+      JWT_TTL_SECONDS: ${JWT_TTL_SECONDS:-900}
+      AI_CONFIG_ENC_KEY: ${AI_CONFIG_ENC_KEY:?Bitte starken Wert in .env setzen}
+      DEV_LOGIN_ENABLED: 'true'
+      AUTH_EXCHANGE_SECRET: ${AUTH_EXCHANGE_SECRET:-}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+      DEFAULT_TENANT_ID: ${DEFAULT_TENANT_ID:-00000000-0000-0000-0000-000000000001}
+      NEXT_PUBLIC_WEB_URL: ${WEB_PUBLIC_URL:-http://localhost:3000}
+      THROTTLE_TTL: ${THROTTLE_TTL:-60000}
+      THROTTLE_LIMIT: ${THROTTLE_LIMIT:-300}
+      THROTTLE_AUTH_LIMIT: ${THROTTLE_AUTH_LIMIT:-60}
+    ports:
+      - '${API_PORT:-3001}:3001'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:3001/api/v1/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  web:
+    profiles: ['app']
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        # NEXT_PUBLIC_API_URL wird zur Build-Zeit ins Bundle gebacken (Browser-seitig).
+        NEXT_PUBLIC_API_URL: ${API_PUBLIC_URL:-http://localhost:3001}
+    container_name: kompetenzhub-web
+    restart: unless-stopped
+    depends_on:
+      api: { condition: service_healthy }
+    environment:
+      NODE_ENV: development     
+      PORT: 3000
+    ports:
+      - '${WEB_PORT:-3000}:3000'
+
+# Ersetze den alten Volumes-Block am Ende deiner Datei hiermit:
+volumes:
+  postgres-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/postgres
+  redis-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/redis
+  minio-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/minio

@@ -42,16 +42,20 @@ Zusätzlich bietet KompetenzHub **Lernpfade** (empfohlene Reihenfolge), **KI-Unt
 
 Die Oberfläche ist vollständig **mehrsprachig** (Deutsch, Französisch, Italienisch, Englisch).
 
+### Demoseite 🌐
+Hier gibt es eine Demo welche immer zur vollen Stunde zurückgesetzt wird. 
+[Demo! Keine Persönlichen Daten hochladen](http://static.160.78.233.167.clients.your-server.de:3000/lehrer/bewerten)
+
 ---
 
 ## 2. Für wen ist die Software?
 
 | Zielgruppe                    | Nutzen                                                                                                                                      |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Lehrpersonen**              | Eigene Kompetenzraster erstellen, Nachweise definieren, Einreichungen bewerten, Lernfortschritt im Blick behalten, KI als Assistenz nutzen. |
-| **Lernende**                  | Übersicht über alle zu erbringenden Nachweise, einfache Einreichung, transparentes Feedback, Üben mit KI.                                   |
-| **Schulleitung / Schuladmin** | Zentrale Steuerung: wer darf sich als Lehrperson anmelden, Branding (Logo/Farbe), Sprache, Betrieb/Auslastung, Backups.                     |
-| **IT / Betrieb**              | Selbst-Hosting auf eigener Infrastruktur (Docker), volle Datenhoheit, Standard-Technologien.                                                |
+| **Lehrpersonen 👩‍🏫**              | Eigene Kompetenzraster erstellen, Nachweise definieren, Einreichungen bewerten, Lernfortschritt im Blick behalten, KI als Assistenz nutzen. |
+| **Lernende 👩‍🎓**                  | Übersicht über alle zu erbringenden Nachweise, einfache Einreichung, transparentes Feedback, Üben mit KI.                                   |
+| **Schulleitung / Schuladmin 🦸🏻** | Zentrale Steuerung: wer darf sich als Lehrperson anmelden, Branding (Logo/Farbe), Sprache, Betrieb/Auslastung, Backups.                     |
+| **IT / Betrieb 🧑‍💻**              | Selbst-Hosting auf eigener Infrastruktur (Docker), volle Datenhoheit, Standard-Technologien.                                                |
 
 ---
 
@@ -116,7 +120,7 @@ Neben der Sprachauswahl lässt sich der Anzeigemodus umschalten: **Hell**, **Dun
 
 ---
 
-## 6. Handbuch für Lehrpersonen
+## 6. Handbuch für Lehrpersonen 👩‍🏫
 
 Nach der Anmeldung als Lehrperson sehen Sie links die Navigation: **Dashboard**, **Module & Matrizen**, **Modulanlässe**, **Bewerten**, **KI-Einstellungen**.
 
@@ -165,7 +169,7 @@ Im Modul-Editor zunächst **Handlungsziele** anlegen (Code + Beschreibung). Sie 
 >
 > ![Screenshot: Nachweis-Konfiguration mit Einreichungsarten](docs/Images/Pasted%20image%2020260623120435.png)
 
-### 6.3 Lernpfade
+### 6.3 Lernpfade 
 
 Im Modul können Sie unter **„Lernpfade"** eine **empfohlene Reihenfolge** der Kompetenzfelder definieren (Felder links hinzufügen, rechts in Reihenfolge bringen). Ein Pfad lässt sich **aktiv** schalten; Lernende sehen dann eine Zeitachse statt der reinen Matrix.
 
@@ -191,7 +195,7 @@ Sie sehen Ihre **eigenen** sowie die Modulanlässe, bei denen Sie als **Co-Leitu
 >
 > ![Screenshot: Modulanlass mit Beitrittscode](docs/Images/Pasted%20image%2020260623120925.png)
 
-### 6.5 Co-Leitung (Co-Teaching)
+### 6.5 Co-Leitung (Co-Teaching) 👨‍💼👩‍💼
 
 Ein Modulanlass kann von mehreren Lehrpersonen gemeinsam geführt werden. Im Detailbereich eines Modulanlasses gibt es dafür den Abschnitt **„Co-Leitung"**:
 
@@ -227,7 +231,7 @@ In der Modul-Detailansicht:
 
 So lassen sich Module zwischen Lehrpersonen oder Schulen austauschen.
 
-### 6.8 KI-Einstellungen (Lehrperson)
+### 6.8 KI-Einstellungen 🤖 (Lehrperson)
 
 Unter **KI-Einstellungen** hinterlegen Sie Ihre eigene KI-Anbindung (Provider/Endpoint und API-Schlüssel). Der Schlüssel wird **verschlüsselt** gespeichert und nie im Klartext angezeigt. Optional können Sie Ihre KI **für Ihre Lernenden freigeben**, damit diese die Übungs-Funktionen nutzen können.
 
@@ -237,7 +241,7 @@ Unter **KI-Einstellungen** hinterlegen Sie Ihre eigene KI-Anbindung (Provider/En
 
 ---
 
-## 7. Handbuch für Lernende
+## 7. Handbuch für Lernende 👨‍🎓
 
 Navigation: **Meine Matrix**, **Lernpfad**, **Meine Nachweise**, **Modul mit KI üben**, **Einstellungen**.
 
@@ -276,7 +280,7 @@ Hat die Lehrperson einen Lernpfad aktiviert, zeigt **Lernpfad** die empfohlene R
 >
 > ![Screenshot: Lernpfad-Zeitachse](docs/Images/Pasted%20image%2020260623122447.png)
 
-### 7.5 Modul mit KI üben
+### 7.5 Modul mit KI üben 🤖
 
 Unter **Modul mit KI üben** führt die KI ein **Fachgespräch** und prüft verschiedene Themen ab. Als Kontext dienen alle Kompetenzen der Matrix. Die KI gibt **Lernhinweise** und **Rückmeldung zur Qualität** Ihrer Antworten. Das Üben ist unverbindlich und fliesst nicht in die Bewertung ein.
 
@@ -290,7 +294,7 @@ Unter **Einstellungen** können Sie Sprache/Anzeige festlegen und – falls gew�
 
 ---
 
-## 8. KI-Funktionen im Detail
+## 8. KI-Funktionen im Detail 🤖
 
 KompetenzHub nutzt KI **assistierend** – nie automatisch entscheidend:
 
@@ -304,7 +308,7 @@ KompetenzHub nutzt KI **assistierend** – nie automatisch entscheidend:
 
 ---
 
-## 9. Handbuch für die Schuladministration
+## 9. Handbuch für die Schuladministration 📔
 
 Die Schuladmin meldet sich an und gelangt zum **Schuladmin-Dashboard** mit der Navigation: **Übersicht**, **Personen**, **Einladungen**, **Betrieb**, **Audit-Log**, **Schul-Einstellungen**.
 
@@ -347,7 +351,7 @@ Bereits vorhandene Personen werden nicht eingeladen, sondern direkt in der Perso
 >
 > ![Screenshot: Einladungen anlegen und Liste offener Einladungen](docs/Images/Pasted%20image%2020260623123208.png)
 
-### 9.4 Schul-Einstellungen
+### 9.4 Schul-Einstellungen 🏫
 
 - **Schulname** (erscheint im Kontext der App).
 - **Standardsprache**: Sprache, die neue Konten beim ersten Login erhalten.
@@ -369,7 +373,7 @@ Bereits vorhandene Personen werden nicht eingeladen, sondern direkt in der Perso
 >
 > ![Screenshot: Betriebs-Seite mit Health-Ampel und Kennzahlen](docs/Images/Pasted%20image%2020260623123303.png)
 
-### 9.6 Audit-Log
+### 9.6 Audit-Log 👁️‍🗨️
 
 Chronologische Liste sicherheitsrelevanter Ereignisse (Anmeldungen, abgewiesene Anmeldungen, Abmeldungen) mit Zeitpunkt, Aktion und Person.
 
