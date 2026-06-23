@@ -14,7 +14,7 @@
 | Mandanten-/Eigentümer-Isolation           | ✅ durchgängig erzwungen (Smoke-getestet)                                 |
 | Einheitliche Fehler ohne Informationsleck | ✅ RFC-7807-Filter                                                        |
 
-**Keine kritischen Findings offen.** Verbleibende Punkte sind Deployment-Aufgaben (HTTPS-Terminierung, Reverse-Proxy-Trust, IdP-Anbindung) und in [docs/21-Anleitung.md, Kap. 12](21-Anleitung.md) als Checkliste hinterlegt.
+**Keine kritischen Findings offen.** Verbleibende Punkte sind Deployment-Aufgaben (HTTPS-Terminierung, Reverse-Proxy-Trust, IdP-Anbindung) und in [docs/21-Anleitung.md, Kap. 12](21-README.md) als Checkliste hinterlegt.
 
 ---
 

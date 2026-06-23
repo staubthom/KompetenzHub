@@ -415,6 +415,7 @@ const de: Record<string, string> = {
   'nav.adminInvites': 'Einladungen',
   'nav.adminSettings': 'Schul-Einstellungen',
   'common.buyMeACoffee': 'Spende einen Kaffee',
+  'common.sourceCode': 'Quellcode (AGPLv3)',
 
   'admin.title': 'Schuladmin',
   'admin.subtitle': 'Personen, Zugänge und Einstellungen deiner Schule verwalten',
@@ -921,6 +922,7 @@ const fr: Record<string, string> = {
   'nav.adminInvites': 'Invitations',
   'nav.adminSettings': 'Paramètres de l’école',
   'common.buyMeACoffee': 'Offrez-moi un café',
+  'common.sourceCode': 'Code source (AGPLv3)',
 
   'admin.title': 'Admin école',
   'admin.subtitle': 'Gérer les personnes, les accès et les paramètres de votre école',
@@ -1426,6 +1428,7 @@ const it: Record<string, string> = {
   'nav.adminInvites': 'Inviti',
   'nav.adminSettings': 'Impostazioni scuola',
   'common.buyMeACoffee': 'Offrimi un caffè',
+  'common.sourceCode': 'Codice sorgente (AGPLv3)',
 
   'admin.title': 'Admin scuola',
   'admin.subtitle': 'Gestisci persone, accessi e impostazioni della tua scuola',
@@ -1926,6 +1929,7 @@ const en: Record<string, string> = {
   'nav.adminInvites': 'Invitations',
   'nav.adminSettings': 'School settings',
   'common.buyMeACoffee': 'Buy me a coffee',
+  'common.sourceCode': 'Source code (AGPLv3)',
 
   'admin.title': 'School admin',
   'admin.subtitle': 'Manage people, access and settings for your school',

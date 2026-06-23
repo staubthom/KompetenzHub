@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "KompetenzHub – Kompetenzmatrix-Plattform (Monorepo)",
+  "license": "AGPL-3.0-or-later",
   "workspaces": [
     "apps/*"
   ],

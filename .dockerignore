@@ -1,0 +1,16 @@
+# Kontext klein halten – Build-Artefakte & lokale Dateien ausschliessen
+**/node_modules
+**/dist
+**/.next
+**/coverage
+.git
+.github
+**/.env
+**/.env.*
+!**/.env.example
+mockups
+docs
+*.log
+**/.DS_Store
+playwright-report
+test-results

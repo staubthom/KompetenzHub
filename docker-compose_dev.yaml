@@ -63,7 +63,7 @@ services:
       redis: { condition: service_healthy }
       minio: { condition: service_healthy }
     environment:
-      NODE_ENV: production
+      NODE_ENV: development
       API_PORT: 3001
       DATABASE_URL: postgresql://${POSTGRES_USER:-kompetenzhub}:${POSTGRES_PASSWORD:-kompetenzhub}@postgres:5432/${POSTGRES_DB:-kompetenzhub}?schema=public
       REDIS_URL: redis://redis:6379
@@ -77,7 +77,7 @@ services:
       JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:?Bitte starken Wert in .env setzen}
       JWT_TTL_SECONDS: ${JWT_TTL_SECONDS:-900}
       AI_CONFIG_ENC_KEY: ${AI_CONFIG_ENC_KEY:?Bitte starken Wert in .env setzen}
-      DEV_LOGIN_ENABLED: 'false'
+      DEV_LOGIN_ENABLED: 'true'
       AUTH_EXCHANGE_SECRET: ${AUTH_EXCHANGE_SECRET:-}
       ADMIN_EMAILS: ${ADMIN_EMAILS:-}
       DEFAULT_TENANT_ID: ${DEFAULT_TENANT_ID:-00000000-0000-0000-0000-000000000001}
@@ -112,7 +112,7 @@ services:
     depends_on:
       api: { condition: service_healthy }
     environment:
-      NODE_ENV: production
+      NODE_ENV: development     
       PORT: 3000
     ports:
       - '${WEB_PORT:-3000}:3000'
