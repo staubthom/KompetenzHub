@@ -279,6 +279,7 @@ a {
 .user.open .menu {
   display: block;
 }
+.menu a,
 .menu button {
   display: flex;
   width: 100%;
@@ -290,9 +291,12 @@ a {
   padding: 8px 10px;
   border-radius: 6px;
   font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
   text-align: left;
+  text-decoration: none;
 }
+.menu a:hover,
 .menu button:hover {
   background: var(--surface-2);
 }
