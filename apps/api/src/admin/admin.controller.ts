@@ -27,6 +27,7 @@ interface InviteDto {
 interface SettingsDto {
   schoolName?: string;
   authProviders?: { microsoft?: boolean; google?: boolean };
+  logoUrl?: string | null;
 }
 
 /** Schuladmin-Dashboard: Personen, Einladungen, Einstellungen. Nur ADMIN. */

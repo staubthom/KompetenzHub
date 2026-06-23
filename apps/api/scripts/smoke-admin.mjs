@@ -124,6 +124,15 @@ const msStillOk = await exchange(`m-${stamp}@schule.ch`, 'MICROSOFT');
 check('Aktiver Provider weiterhin möglich', msStillOk.status === 201 || msStillOk.status === 200);
 await req('PATCH', '/admin/settings', { authProviders: { google: true } }, admin); // zurücksetzen
 
+// ── Branding / Logo ───────────────────────────────────────────────
+const logoUrl = `http://localhost:9000/kompetenzhub/rte/smoke-logo-${stamp}.png`;
+const setLogo = await req('PATCH', '/admin/settings', { logoUrl }, admin);
+check('Logo gesetzt', setLogo.status === 200 && setLogo.body?.logoUrl === logoUrl);
+const branding = await req('GET', '/branding', null, teacher);
+check('Branding für alle Rollen lesbar (Logo sichtbar)', branding.status === 200 && branding.body?.logoUrl === logoUrl);
+const clearLogo = await req('PATCH', '/admin/settings', { logoUrl: null }, admin);
+check('Logo entfernt', clearLogo.status === 200 && clearLogo.body?.logoUrl === null);
+
 // ── Einladung zurückziehen ────────────────────────────────────────
 const inv2 = await req('POST', '/admin/invitations', { email: `revoke-${stamp}@schule.ch`, role: 'TEACHER' }, admin);
 const rev = await req('DELETE', `/admin/invitations/${inv2.body?.id}`, null, admin);

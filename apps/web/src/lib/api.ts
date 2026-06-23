@@ -857,10 +857,21 @@ export interface AdminOverview {
 
 export interface AdminSettings {
   schoolName: string;
+  logoUrl: string | null;
   authProviders: { microsoft: boolean; google: boolean };
   devLoginEnabled: boolean;
   adminEmailsConfigured: boolean;
 }
+
+export interface Branding {
+  logoUrl: string | null;
+  displayName: string | null;
+}
+
+/** Schul-Branding (Logo) – für die Kopfzeile, alle Rollen. */
+export const branding = {
+  get: () => apiFetch<Branding>('/branding'),
+};
 
 export const admin = {
   overview: () => apiFetch<AdminOverview>('/admin/overview'),
@@ -888,6 +899,7 @@ export const admin = {
   updateSettings: (dto: {
     schoolName?: string;
     authProviders?: { microsoft?: boolean; google?: boolean };
+    logoUrl?: string | null;
   }) =>
     apiFetch<AdminSettings>('/admin/settings', {
       method: 'PATCH',

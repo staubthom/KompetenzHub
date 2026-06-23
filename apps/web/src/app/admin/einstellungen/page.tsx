@@ -6,7 +6,7 @@ import AppShell from '../../../components/AppShell';
 import { useToast } from '../../../components/ToastProvider';
 import { useI18n } from '../../../lib/i18n';
 import { getUser, isAdmin, homePathForRole } from '../../../lib/session';
-import { admin, type AdminSettings } from '../../../lib/api';
+import { admin, uploadRichTextImage, type AdminSettings } from '../../../lib/api';
 
 export default function AdminSettingsPage() {
   const router = useRouter();
@@ -41,6 +41,7 @@ export default function AdminSettingsPage() {
       const next = await admin.updateSettings({
         schoolName: patch.schoolName,
         authProviders: patch.authProviders,
+        logoUrl: patch.logoUrl,
       });
       setSettings(next);
       setSchoolName(next.schoolName);
@@ -58,6 +59,18 @@ export default function AdminSettingsPage() {
     void save({
       authProviders: { ...settings.authProviders, [key]: !settings.authProviders[key] },
     });
+  }
+
+  async function uploadLogo(file: File) {
+    setBusy(true);
+    try {
+      const url = await uploadRichTextImage(file);
+      await save({ logoUrl: url });
+    } catch (err: unknown) {
+      const e2 = err as { body?: { title?: string }; message?: string };
+      toast.error(e2.body?.title ?? e2.message ?? 'Aktion fehlgeschlagen.');
+      setBusy(false);
+    }
   }
 
   return (
@@ -97,6 +110,50 @@ export default function AdminSettingsPage() {
                 {t('common.save')}
               </button>
             </form>
+          </div>
+
+          {/* Logo */}
+          <div className="panel">
+            <div className="panel-head">
+              <h2>{t('admin.logo')}</h2>
+            </div>
+            <div className="panel-body">
+              <p className="kh-muted" style={{ marginTop: 0 }}>
+                {t('admin.logoHint')}
+              </p>
+              <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+                {settings.logoUrl && (
+                  <img
+                    src={settings.logoUrl}
+                    alt="Logo"
+                    style={{ height: 40, maxWidth: 200, objectFit: 'contain' }}
+                  />
+                )}
+                <label className="btn sm" style={{ cursor: 'pointer' }}>
+                  {busy ? '…' : t('admin.uploadLogo')}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    disabled={busy}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) void uploadLogo(f);
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
+                {settings.logoUrl && (
+                  <button
+                    className="btn sm danger"
+                    disabled={busy}
+                    onClick={() => void save({ logoUrl: null })}
+                  >
+                    {t('admin.removeLogo')}
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Auth-Provider */}

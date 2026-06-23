@@ -11,7 +11,7 @@ import {
   initials,
   type SessionUser,
 } from '../lib/session';
-import { logout as apiLogout, updatePreferences } from '../lib/api';
+import { logout as apiLogout, updatePreferences, branding } from '../lib/api';
 import { useI18n, normalizeLocale, LOCALES, LOCALE_LABEL, type Locale } from '../lib/i18n';
 
 type Theme = 'light' | 'dark' | 'gray';
@@ -64,6 +64,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('light');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [ready, setReady] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   // Session prüfen – ohne Login zur Login-Seite; Sprache & Theme aus dem Konto anwenden.
   useEffect(() => {
@@ -83,6 +84,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     setThemeState(savedTheme);
     localStorage.setItem('km-theme', savedTheme);
     document.documentElement.setAttribute('data-theme', savedTheme);
+
+    // Schul-Logo für die Kopfzeile laden (Fehler nicht fatal).
+    void branding
+      .get()
+      .then((b) => setLogoUrl(b.logoUrl))
+      .catch(() => {});
   }, [router, setLocale]);
 
   // Klick ausserhalb schliesst das Nutzer-Menü
@@ -150,6 +157,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           ☰
         </button>
         <Link className="brand" href={homeHref}>
+          {logoUrl && <img className="brand-logo" src={logoUrl} alt="" />}
           <span className="name">
             Kompetenz<span>Hub</span>
           </span>

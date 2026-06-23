@@ -131,6 +131,12 @@ a {
   text-decoration: none;
   color: inherit;
 }
+.appbar .brand .brand-logo {
+  height: 28px;
+  max-width: 140px;
+  object-fit: contain;
+  display: block;
+}
 .appbar .brand .name {
   font-weight: 700;
   font-size: 15px;

@@ -481,6 +481,11 @@ const de: Record<string, string> = {
   'admin.adminEmailsHint':
     'Über ADMIN_EMAILS in der Server-Konfiguration erhalten festgelegte E-Mails beim Login Admin-Rechte.',
   'admin.settingsSaved': 'Einstellungen gespeichert.',
+  'admin.logo': 'Logo',
+  'admin.logoHint':
+    'Erscheint oben links in der Kopfzeile neben „KompetenzHub". Empfohlen: PNG/SVG mit transparentem Hintergrund.',
+  'admin.uploadLogo': '⬆ Logo hochladen',
+  'admin.removeLogo': 'Logo entfernen',
 };
 
 const fr: Record<string, string> = {
@@ -934,6 +939,11 @@ const fr: Record<string, string> = {
   'admin.adminEmailsHint':
     'Via ADMIN_EMAILS dans la configuration du serveur, les e-mails définis obtiennent les droits admin à la connexion.',
   'admin.settingsSaved': 'Paramètres enregistrés.',
+  'admin.logo': 'Logo',
+  'admin.logoHint':
+    'Apparaît en haut à gauche dans l’en-tête, à côté de « KompetenzHub ». Recommandé : PNG/SVG à fond transparent.',
+  'admin.uploadLogo': '⬆ Téléverser le logo',
+  'admin.removeLogo': 'Retirer le logo',
 };
 
 const it: Record<string, string> = {
@@ -1386,6 +1396,11 @@ const it: Record<string, string> = {
   'admin.adminEmailsHint':
     'Tramite ADMIN_EMAILS nella configurazione del server, le e-mail definite ottengono i diritti admin all’accesso.',
   'admin.settingsSaved': 'Impostazioni salvate.',
+  'admin.logo': 'Logo',
+  'admin.logoHint':
+    'Appare in alto a sinistra nell’intestazione, accanto a «KompetenzHub». Consigliato: PNG/SVG con sfondo trasparente.',
+  'admin.uploadLogo': '⬆ Carica logo',
+  'admin.removeLogo': 'Rimuovi logo',
 };
 
 const en: Record<string, string> = {
@@ -1833,6 +1848,11 @@ const en: Record<string, string> = {
   'admin.adminEmailsHint':
     'Via ADMIN_EMAILS in the server configuration, listed emails receive admin rights at login.',
   'admin.settingsSaved': 'Settings saved.',
+  'admin.logo': 'Logo',
+  'admin.logoHint':
+    'Shown top-left in the header next to “KompetenzHub”. Recommended: PNG/SVG with transparent background.',
+  'admin.uploadLogo': '⬆ Upload logo',
+  'admin.removeLogo': 'Remove logo',
 };
 
 const DICT: Record<Locale, Record<string, string>> = { de, fr, it, en };

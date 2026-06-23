@@ -151,12 +151,16 @@ export class AdminService {
 
   // ── Schul-Einstellungen / Auth-Provider ─────────────────────
   async getSettings(tenantId: string) {
-    const tenant = await this.prisma.tenant.findUnique({ where: { id: tenantId } });
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      include: { branding: true },
+    });
     if (!tenant) throw new NotFoundException('Schule nicht gefunden.');
     const settings = (tenant.settings ?? {}) as Record<string, unknown>;
     const providers = (settings.authProviders ?? {}) as Record<string, boolean>;
     return {
       schoolName: tenant.name,
+      logoUrl: tenant.branding?.logoLightKey ?? null,
       authProviders: {
         microsoft: providers.microsoft !== false,
         google: providers.google !== false,
@@ -168,7 +172,11 @@ export class AdminService {
 
   async updateSettings(
     tenantId: string,
-    dto: { schoolName?: string; authProviders?: { microsoft?: boolean; google?: boolean } },
+    dto: {
+      schoolName?: string;
+      authProviders?: { microsoft?: boolean; google?: boolean };
+      logoUrl?: string | null;
+    },
   ) {
     const tenant = await this.prisma.tenant.findUnique({ where: { id: tenantId } });
     if (!tenant) throw new NotFoundException('Schule nicht gefunden.');
@@ -185,6 +193,15 @@ export class AdminService {
         settings: { ...settings, authProviders: next },
       },
     });
+    // Logo (null = entfernen, undefined = unverändert) in TenantBranding ablegen.
+    if (dto.logoUrl !== undefined) {
+      const logo = dto.logoUrl?.trim() || null;
+      await this.prisma.tenantBranding.upsert({
+        where: { tenantId },
+        update: { logoLightKey: logo },
+        create: { tenantId, logoLightKey: logo },
+      });
+    }
     return this.getSettings(tenantId);
   }
 

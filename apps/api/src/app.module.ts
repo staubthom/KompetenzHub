@@ -18,11 +18,13 @@ import { LearningPathsModule } from './learning-paths/learning-paths.module';
 import { MatrixIoModule } from './matrix-io/matrix-io.module';
 import { ClassArchiveModule } from './class-archive/class-archive.module';
 import { AdminModule } from './admin/admin.module';
+import { BrandingModule } from './branding/branding.module';
 
 @Module({
   imports: [
     AuthModule,
     AdminModule,
+    BrandingModule,
     ModulesModule,
     MatrixModule,
     ClassesModule,

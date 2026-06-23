@@ -7,6 +7,12 @@ import { useToast } from '../../components/ToastProvider';
 import { getUser, homePathForRole, type Role } from '../../lib/session';
 import { useI18n } from '../../lib/i18n';
 
+const DEMO_EMAIL: Record<Role, string> = {
+  TEACHER: 'lehrperson@demo.ch',
+  LEARNER: 'lernende@demo.ch',
+  ADMIN: 'admin@demo.ch',
+};
+
 export default function LoginPage() {
   const router = useRouter();
   const toast = useToast();
@@ -31,7 +37,7 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const mail = email.trim() || (role === 'TEACHER' ? 'lehrperson@demo.ch' : 'lernende@demo.ch');
+      const mail = email.trim() || DEMO_EMAIL[role];
       const result = await devLogin(mail, role);
       router.replace(homePathForRole(result.user));
     } catch {
@@ -123,7 +129,7 @@ export default function LoginPage() {
             className="provider-btn"
             style={{ justifyContent: 'flex-start', cursor: 'text', fontWeight: 400 }}
             type="email"
-            placeholder={role === 'TEACHER' ? 'lehrperson@demo.ch' : 'lernende@demo.ch'}
+            placeholder={DEMO_EMAIL[role]}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
