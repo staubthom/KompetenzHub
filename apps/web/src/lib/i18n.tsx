@@ -520,6 +520,17 @@ const de: Record<string, string> = {
   'admin.auditAction': 'Aktion',
   'admin.auditWho': 'Person',
   'admin.auditDetail': 'Details',
+  'co.title': 'Co-Leitung',
+  'co.badge': 'Co-Leitung',
+  'co.hint':
+    'Weitere Lehrpersonen als Co-Leitung hinzufügen. Sie sehen den Modulanlass und können Kompetenzen bewerten. Nur die besitzende Lehrperson verwaltet die Co-Leitung und kann den Modulanlass löschen.',
+  'co.emailPlaceholder': 'lehrperson@schule.ch',
+  'co.add': 'Hinzufügen',
+  'co.remove': 'Entfernen',
+  'co.confirmRemove': 'Co-Leitung entfernen?',
+  'co.added': 'Co-Leitung hinzugefügt.',
+  'co.removed': 'Co-Leitung entfernt.',
+  'co.none': 'Keine Co-Leitung festgelegt.',
 };
 
 const fr: Record<string, string> = {
@@ -1012,6 +1023,17 @@ const fr: Record<string, string> = {
   'admin.auditAction': 'Action',
   'admin.auditWho': 'Personne',
   'admin.auditDetail': 'Détails',
+  'co.title': 'Co-enseignement',
+  'co.badge': 'Co-responsable',
+  'co.hint':
+    'Ajoutez d’autres enseignant·e·s comme co-responsables. Ils voient la session de module et peuvent évaluer les compétences. Seule la personne propriétaire gère les co-responsables et peut supprimer la session.',
+  'co.emailPlaceholder': 'enseignant@ecole.ch',
+  'co.add': 'Ajouter',
+  'co.remove': 'Retirer',
+  'co.confirmRemove': 'Retirer le co-responsable ?',
+  'co.added': 'Co-responsable ajouté.',
+  'co.removed': 'Co-responsable retiré.',
+  'co.none': 'Aucun co-responsable défini.',
 };
 
 const it: Record<string, string> = {
@@ -1503,6 +1525,17 @@ const it: Record<string, string> = {
   'admin.auditAction': 'Azione',
   'admin.auditWho': 'Persona',
   'admin.auditDetail': 'Dettagli',
+  'co.title': 'Co-conduzione',
+  'co.badge': 'Co-conduzione',
+  'co.hint':
+    'Aggiungi altri docenti come co-conduzione. Vedono la sessione di modulo e possono valutare le competenze. Solo il docente proprietario gestisce la co-conduzione e può eliminare la sessione.',
+  'co.emailPlaceholder': 'docente@scuola.ch',
+  'co.add': 'Aggiungi',
+  'co.remove': 'Rimuovi',
+  'co.confirmRemove': 'Rimuovere la co-conduzione?',
+  'co.added': 'Co-conduzione aggiunta.',
+  'co.removed': 'Co-conduzione rimossa.',
+  'co.none': 'Nessuna co-conduzione definita.',
 };
 
 const en: Record<string, string> = {
@@ -1988,6 +2021,17 @@ const en: Record<string, string> = {
   'admin.auditAction': 'Action',
   'admin.auditWho': 'Person',
   'admin.auditDetail': 'Details',
+  'co.title': 'Co-teaching',
+  'co.badge': 'Co-teacher',
+  'co.hint':
+    'Add other teachers as co-leaders. They see the module session and can grade competences. Only the owning teacher manages co-leaders and can delete the session.',
+  'co.emailPlaceholder': 'teacher@school.org',
+  'co.add': 'Add',
+  'co.remove': 'Remove',
+  'co.confirmRemove': 'Remove co-teacher?',
+  'co.added': 'Co-teacher added.',
+  'co.removed': 'Co-teacher removed.',
+  'co.none': 'No co-teachers set.',
 };
 
 const DICT: Record<Locale, Record<string, string>> = { de, fr, it, en };

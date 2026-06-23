@@ -156,6 +156,14 @@ export const classes = {
   members: (id: string) => apiFetch<Member[]>(`/classes/${id}/members`),
   removeMember: (id: string, userId: string) =>
     apiFetch<void>(`/classes/${id}/members/${userId}`, { method: 'DELETE' }),
+  coTeachers: (id: string) => apiFetch<CoTeacher[]>(`/classes/${id}/co-teachers`),
+  addCoTeacher: (id: string, email: string) =>
+    apiFetch<CoTeacher>(`/classes/${id}/co-teachers`, {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+  removeCoTeacher: (id: string, userId: string) =>
+    apiFetch<void>(`/classes/${id}/co-teachers/${userId}`, { method: 'DELETE' }),
 };
 
 // Evidence / Kompetenznachweise (FA-30, 36, 40)
@@ -636,6 +644,16 @@ export interface ClassSummary {
   createdAt: string;
   module: ClassModuleRef | null;
   _count?: { enrollments: number };
+  /** true, wenn die aktuelle Lehrperson nur Co-Leitung ist (nicht Besitzerin). */
+  isCoLeader?: boolean;
+}
+
+export interface CoTeacher {
+  userId: string;
+  email: string;
+  displayName: string;
+  avatarUrl: string | null;
+  since?: string;
 }
 
 export interface JoinCode {

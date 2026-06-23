@@ -6,7 +6,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ClassStatus, EnrollmentStatus, Role } from '@prisma/client';
+import { ClassStatus, EnrollmentStatus, MembershipStatus, Role } from '@prisma/client';
 import { randomInt } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -33,13 +33,16 @@ const CODE_LENGTH = 6;
 export class ClassesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Klassen der Lehrperson (Admins sehen alle des Tenants). Standard: ohne archivierte. */
+  /**
+   * Klassen der Lehrperson – eigene UND als Co-Leitung geführte (Admins: alle).
+   * Standard: ohne archivierte.
+   */
   async list(tenantId: string, userId: string, roles: Role[], archived = false) {
     const isAdmin = roles.includes(Role.ADMIN);
-    return this.prisma.class.findMany({
+    const classes = await this.prisma.class.findMany({
       where: {
         tenantId,
-        ...(isAdmin ? {} : { ownerId: userId }),
+        ...(isAdmin ? {} : { OR: [{ ownerId: userId }, { coTeachers: { some: { userId } } }] }),
         status: archived ? ClassStatus.ARCHIVED : ClassStatus.ACTIVE,
       },
       select: {
@@ -49,11 +52,14 @@ export class ClassesService {
         year: true,
         schoolYear: true,
         createdAt: true,
+        ownerId: true,
         module: { select: { id: true, number: true, title: true } },
         _count: { select: { enrollments: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
+    // Markiere, ob die Lehrperson nur Co-Leitung ist (nicht Besitzerin).
+    return classes.map(({ ownerId, ...c }) => ({ ...c, isCoLeader: ownerId !== userId }));
   }
 
   /** Aktive Klassenmitgliedschaften einer/eines Lernenden inkl. Modul. */
@@ -82,7 +88,7 @@ export class ClassesService {
   }
 
   async findOne(id: string, tenantId: string, userId: string, roles: Role[]) {
-    const cls = await this.assertOwner(id, tenantId, userId, roles);
+    const cls = await this.assertAccess(id, tenantId, userId, roles);
     const activeCode = await this.prisma.joinCode.findFirst({
       where: { classId: id, isActive: true },
       orderBy: { createdAt: 'desc' },
@@ -115,7 +121,7 @@ export class ClassesService {
   }
 
   async update(id: string, dto: UpdateClassDto, tenantId: string, userId: string, roles: Role[]) {
-    const cls = await this.assertOwner(id, tenantId, userId, roles);
+    const cls = await this.assertAccess(id, tenantId, userId, roles);
     if (cls.status === ClassStatus.ARCHIVED) {
       throw new ConflictException('Archivierter Modulanlass ist read-only.');
     }
@@ -140,14 +146,15 @@ export class ClassesService {
   }
 
   async remove(id: string, tenantId: string, userId: string, roles: Role[]) {
+    // Löschen nur durch die besitzende Lehrperson (oder Admin).
     // Auch archivierte Modulanlässe dürfen gelöscht werden.
-    await this.assertOwner(id, tenantId, userId, roles);
+    await this.assertOwnerOnly(id, tenantId, userId, roles);
     await this.prisma.class.delete({ where: { id } });
   }
 
   /** FA-103: Modulanlass archivieren (read-only, aus Standardlisten ausgeblendet). */
   async archive(id: string, tenantId: string, userId: string, roles: Role[]) {
-    await this.assertOwner(id, tenantId, userId, roles);
+    await this.assertAccess(id, tenantId, userId, roles);
     return this.prisma.class.update({
       where: { id },
       data: { status: ClassStatus.ARCHIVED },
@@ -157,7 +164,7 @@ export class ClassesService {
 
   /** FA-103: Archivierten Modulanlass wiederherstellen. */
   async restore(id: string, tenantId: string, userId: string, roles: Role[]) {
-    await this.assertOwner(id, tenantId, userId, roles);
+    await this.assertAccess(id, tenantId, userId, roles);
     return this.prisma.class.update({
       where: { id },
       data: { status: ClassStatus.ACTIVE },
@@ -175,7 +182,7 @@ export class ClassesService {
     roles: Role[],
     expiresAt?: Date,
   ) {
-    const cls = await this.assertOwner(id, tenantId, userId, roles);
+    const cls = await this.assertAccess(id, tenantId, userId, roles);
     if (cls.status === ClassStatus.ARCHIVED) {
       throw new ConflictException('Archivierter Modulanlass ist read-only.');
     }
@@ -228,7 +235,7 @@ export class ClassesService {
   // ── Mitglieder (FA-25) ────────────────────────────────────────
 
   async listMembers(id: string, tenantId: string, userId: string, roles: Role[]) {
-    await this.assertOwner(id, tenantId, userId, roles);
+    await this.assertAccess(id, tenantId, userId, roles);
     return this.prisma.enrollment.findMany({
       where: { classId: id },
       select: {
@@ -250,7 +257,7 @@ export class ClassesService {
     userId: string,
     roles: Role[],
   ) {
-    const cls = await this.assertOwner(id, tenantId, userId, roles);
+    const cls = await this.assertAccess(id, tenantId, userId, roles);
     if (cls.status === ClassStatus.ARCHIVED) {
       throw new ConflictException('Archivierter Modulanlass ist read-only.');
     }
@@ -261,9 +268,121 @@ export class ClassesService {
     await this.prisma.enrollment.delete({ where: { id: enrollment.id } });
   }
 
+  // ── Co-Leitung / Co-Teaching ──────────────────────────────────
+
+  /** Listet die Co-Leitungen eines Modulanlasses (Besitzerin & Co-Leitung dürfen sehen). */
+  async listCoTeachers(id: string, tenantId: string, userId: string, roles: Role[]) {
+    await this.assertAccess(id, tenantId, userId, roles);
+    const rows = await this.prisma.classTeacher.findMany({
+      where: { classId: id },
+      select: {
+        userId: true,
+        createdAt: true,
+        user: { select: { id: true, email: true, displayName: true, avatarUrl: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+    return rows.map((r) => ({
+      userId: r.userId,
+      email: r.user.email,
+      displayName: r.user.displayName,
+      avatarUrl: r.user.avatarUrl,
+      since: r.createdAt,
+    }));
+  }
+
+  /** Fügt eine Lehrperson per E-Mail als Co-Leitung hinzu (nur Besitzerin/Admin). */
+  async addCoTeacher(
+    id: string,
+    emailRaw: string,
+    tenantId: string,
+    userId: string,
+    roles: Role[],
+  ) {
+    const cls = await this.assertOwnerOnly(id, tenantId, userId, roles);
+    const email = emailRaw?.trim().toLowerCase();
+    if (!email) throw new BadRequestException('E-Mail-Adresse erforderlich.');
+
+    // Zielperson muss im Tenant existieren und Lehrperson/Admin sein.
+    // E-Mail case-insensitiv (Konten können gemischte Schreibweise haben).
+    const target = await this.prisma.user.findFirst({
+      where: {
+        email: { equals: email, mode: 'insensitive' },
+        memberships: {
+          some: {
+            tenantId,
+            status: MembershipStatus.ACTIVE,
+            role: { in: [Role.TEACHER, Role.ADMIN] },
+          },
+        },
+      },
+      select: { id: true, email: true, displayName: true, avatarUrl: true },
+    });
+    if (!target) {
+      throw new NotFoundException('Keine Lehrperson mit dieser E-Mail in der Schule gefunden.');
+    }
+    if (target.id === cls.ownerId) {
+      throw new ConflictException('Diese Person ist bereits die besitzende Lehrperson.');
+    }
+
+    await this.prisma.classTeacher.upsert({
+      where: { classId_userId: { classId: id, userId: target.id } },
+      update: {},
+      create: { classId: id, userId: target.id, addedById: userId },
+    });
+    return {
+      userId: target.id,
+      email: target.email,
+      displayName: target.displayName,
+      avatarUrl: target.avatarUrl,
+    };
+  }
+
+  /** Entfernt eine Co-Leitung (nur Besitzerin/Admin). */
+  async removeCoTeacher(
+    id: string,
+    coUserId: string,
+    tenantId: string,
+    userId: string,
+    roles: Role[],
+  ) {
+    await this.assertOwnerOnly(id, tenantId, userId, roles);
+    await this.prisma.classTeacher.deleteMany({ where: { classId: id, userId: coUserId } });
+  }
+
   // ── Helfer ────────────────────────────────────────────────────
 
-  private async assertOwner(id: string, tenantId: string, userId: string, roles: Role[]) {
+  /** Besitzerin ODER Co-Leitung ODER Admin – operativer Zugriff auf den Modulanlass. */
+  private async assertAccess(id: string, tenantId: string, userId: string, roles: Role[]) {
+    const cls = await this.prisma.class.findFirst({
+      where: { id, tenantId },
+      select: {
+        id: true,
+        name: true,
+        ownerId: true,
+        status: true,
+        year: true,
+        schoolYear: true,
+        createdAt: true,
+        module: { select: { id: true, number: true, title: true } },
+        _count: { select: { enrollments: true } },
+        coTeachers: { where: { userId }, select: { userId: true } },
+      },
+    });
+    if (!cls) throw new NotFoundException('Klasse nicht gefunden.');
+    const hasAccess =
+      cls.ownerId === userId || cls.coTeachers.length > 0 || roles.includes(Role.ADMIN);
+    if (!hasAccess) {
+      throw new ForbiddenException(
+        'Nur die Lehrperson oder Co-Leitung des Modulanlasses hat Zugriff.',
+      );
+    }
+    const { coTeachers: _ct, ...rest } = cls;
+    return rest;
+  }
+
+  /** Nur die besitzende Lehrperson ODER Admin (Löschen, Co-Leitung verwalten). */
+  private async assertOwnerOnly(id: string, tenantId: string, userId: string, roles: Role[]) {
     const cls = await this.prisma.class.findFirst({
       where: { id, tenantId },
       select: {
@@ -280,7 +399,7 @@ export class ClassesService {
     });
     if (!cls) throw new NotFoundException('Klasse nicht gefunden.');
     if (cls.ownerId !== userId && !roles.includes(Role.ADMIN)) {
-      throw new ForbiddenException('Nur die Lehrperson der Klasse hat Zugriff.');
+      throw new ForbiddenException('Nur die besitzende Lehrperson der Klasse hat Zugriff.');
     }
     return cls;
   }

@@ -21,11 +21,16 @@ export class DashboardService {
         ownerId: true,
         moduleId: true,
         module: { select: { id: true, number: true, title: true } },
+        coTeachers: { where: { userId }, select: { userId: true } },
       },
     });
     if (!cls) throw new NotFoundException('Modulanlass nicht gefunden.');
-    if (cls.ownerId !== userId && !roles.includes(Role.ADMIN)) {
-      throw new ForbiddenException('Nur die Lehrperson des Modulanlasses hat Zugriff.');
+    const hasAccess =
+      cls.ownerId === userId || cls.coTeachers.length > 0 || roles.includes(Role.ADMIN);
+    if (!hasAccess) {
+      throw new ForbiddenException(
+        'Nur die Lehrperson oder Co-Leitung des Modulanlasses hat Zugriff.',
+      );
     }
 
     const enrollments = await this.prisma.enrollment.findMany({

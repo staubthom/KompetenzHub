@@ -13,6 +13,7 @@ import {
   type ClassSummary,
   type ClassDetail,
   type Member,
+  type CoTeacher,
   type ModuleSummary,
 } from '../../../lib/api';
 
@@ -24,6 +25,8 @@ export default function KlassenPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<ClassDetail | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
+  const [coTeachers, setCoTeachers] = useState<CoTeacher[]>([]);
+  const [coEmail, setCoEmail] = useState('');
 
   const [creating, setCreating] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -43,9 +46,14 @@ export default function KlassenPage() {
   const loadDetail = useCallback(
     async (id: string) => {
       try {
-        const [d, m] = await Promise.all([classes.get(id), classes.members(id)]);
+        const [d, m, co] = await Promise.all([
+          classes.get(id),
+          classes.members(id),
+          classes.coTeachers(id),
+        ]);
         setDetail(d);
         setMembers(m);
+        setCoTeachers(co);
       } catch {
         toast.error('Details konnten nicht geladen werden.');
       }
@@ -141,6 +149,31 @@ export default function KlassenPage() {
     }
   }
 
+  async function handleAddCoTeacher(e: React.FormEvent) {
+    e.preventDefault();
+    if (!detail || !coEmail.trim()) return;
+    try {
+      await classes.addCoTeacher(detail.id, coEmail.trim());
+      setCoEmail('');
+      setCoTeachers(await classes.coTeachers(detail.id));
+      toast.success(t('co.added'));
+    } catch (e: unknown) {
+      showError(e);
+    }
+  }
+
+  async function handleRemoveCoTeacher(userId: string) {
+    if (!detail) return;
+    if (!confirm(t('co.confirmRemove'))) return;
+    try {
+      await classes.removeCoTeacher(detail.id, userId);
+      setCoTeachers(await classes.coTeachers(detail.id));
+      toast.success(t('co.removed'));
+    } catch (e: unknown) {
+      showError(e);
+    }
+  }
+
   async function handleArchive(id: string) {
     try {
       await classes.archive(id);
@@ -193,6 +226,9 @@ export default function KlassenPage() {
       setImporting(false);
     }
   }
+
+  // Ist die aktuelle Lehrperson nur Co-Leitung des ausgewählten Modulanlasses?
+  const detailIsCoLeader = !!list?.find((c) => c.id === detail?.id)?.isCoLeader;
 
   return (
     <AppShell>
@@ -312,8 +348,11 @@ export default function KlassenPage() {
             >
               <div className="classcard-head">
                 <strong>{c.name}</strong>
-                <span className={`badge b-${c.status === 'ACTIVE' ? 'published' : 'archived'}`}>
-                  {c.status === 'ACTIVE' ? t('cl.active') : t('cl.archived')}
+                <span style={{ display: 'flex', gap: 4 }}>
+                  {c.isCoLeader && <span className="badge b-draft">{t('co.badge')}</span>}
+                  <span className={`badge b-${c.status === 'ACTIVE' ? 'published' : 'archived'}`}>
+                    {c.status === 'ACTIVE' ? t('cl.active') : t('cl.archived')}
+                  </span>
                 </span>
               </div>
               <div className="kh-muted" style={{ fontSize: 13 }}>
@@ -351,14 +390,16 @@ export default function KlassenPage() {
                   {t('cl.restore')}
                 </button>
               )}
-              <button
-                className="btn danger sm"
-                onClick={() => {
-                  void handleDeleteClass(detail.id, detail.name);
-                }}
-              >
-                <TrashIcon /> {t('common.delete')}
-              </button>
+              {!detailIsCoLeader && (
+                <button
+                  className="btn danger sm"
+                  onClick={() => {
+                    void handleDeleteClass(detail.id, detail.name);
+                  }}
+                >
+                  <TrashIcon /> {t('common.delete')}
+                </button>
+              )}
             </div>
           </div>
 
@@ -498,6 +539,78 @@ export default function KlassenPage() {
               </tbody>
             </table>
           )}
+
+          {/* Co-Leitung (Co-Teaching) */}
+          <div className="panel-head" style={{ borderTop: '1px solid var(--border)' }}>
+            <h2>
+              {t('co.title')} ({coTeachers.length})
+            </h2>
+          </div>
+          <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <p className="kh-muted" style={{ margin: 0, fontSize: 13 }}>
+              {t('co.hint')}
+            </p>
+
+            {coTeachers.length > 0 && (
+              <table className="table">
+                <tbody>
+                  {coTeachers.map((co) => (
+                    <tr key={co.userId}>
+                      <td>
+                        <div className="member-cell">
+                          <span className="avatar sm">{initials(co.displayName)}</span>{' '}
+                          {co.displayName}
+                        </div>
+                      </td>
+                      <td className="kh-muted">{co.email}</td>
+                      <td>
+                        {!detailIsCoLeader && (
+                          <div className="row-actions">
+                            <button
+                              className="btn-icon"
+                              title={t('co.remove')}
+                              onClick={() => {
+                                void handleRemoveCoTeacher(co.userId);
+                              }}
+                            >
+                              <TrashIcon />
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+
+            {!detailIsCoLeader ? (
+              <form
+                className="joincode-row"
+                onSubmit={(e) => {
+                  void handleAddCoTeacher(e);
+                }}
+              >
+                <input
+                  className="link-input"
+                  type="email"
+                  placeholder={t('co.emailPlaceholder')}
+                  value={coEmail}
+                  onChange={(e) => setCoEmail(e.target.value)}
+                  style={{ flex: 1, minWidth: 220 }}
+                />
+                <button type="submit" className="btn primary sm">
+                  {t('co.add')}
+                </button>
+              </form>
+            ) : (
+              coTeachers.length === 0 && (
+                <p className="kh-muted" style={{ margin: 0, fontSize: 13 }}>
+                  {t('co.none')}
+                </p>
+              )
+            )}
+          </div>
         </div>
       )}
     </AppShell>
