@@ -426,6 +426,8 @@ cp .env.example-dev .env
 docker compose -f docker-compose_dev.yaml --profile  app up -d --build
 
 ```
+Im Ordner Vorlagen finden Sie ein Demomodul zum Importieren
+
 
 #### Für lokale Entwicklung
 
