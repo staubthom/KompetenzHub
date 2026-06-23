@@ -12,6 +12,7 @@ import {
   Res,
 } from '@nestjs/common';
 import { Role } from '@prisma/client';
+import { IsEmail, IsEnum, IsOptional } from 'class-validator';
 import type { Response } from 'express';
 import { CurrentUser, Roles } from '../auth/decorators';
 import type { RequestContext } from '../common/request-context';
@@ -23,8 +24,12 @@ interface RoleDto {
 interface StatusDto {
   active?: boolean;
 }
-interface InviteDto {
-  email?: string;
+class InviteDto {
+  @IsEmail()
+  email!: string;
+
+  @IsOptional()
+  @IsEnum(Role)
   role?: Role;
 }
 interface SettingsDto {

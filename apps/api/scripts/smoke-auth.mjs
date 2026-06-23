@@ -108,13 +108,17 @@ async function main() {
     check('PATCH /auth/me -> 200', patch.status === 200, `HTTP ${patch.status}`);
     check('Locale auf fr gesetzt', patched.locale === 'fr');
     check('Theme auf dark gesetzt', patched.theme === 'dark');
+    // Ungültiger Enum-Wert wird durch die ValidationPipe abgewiesen (400).
     const invalid = await fetch(`${BASE}/auth/me`, {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ locale: 'xx', theme: 'neon' }),
     });
-    const inv = await invalid.json();
-    check('Ungültige Werte ignoriert (bleibt fr/dark)', inv.locale === 'fr' && inv.theme === 'dark');
+    check('Ungültige Locale → 400 (Validierung)', invalid.status === 400, `HTTP ${invalid.status}`);
+    // Werte unverändert (fr/dark)
+    const after = await fetch(`${BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+    const af = await after.json();
+    check('Werte bleiben fr/dark', af.locale === 'fr' && af.theme === 'dark');
     // Re-Login mit gleicher E-Mail → Präferenzen bleiben erhalten
     const again = await devLogin('LEARNER', email);
     check('Nach Re-Login: Locale fr erhalten', again.body.user?.locale === 'fr');

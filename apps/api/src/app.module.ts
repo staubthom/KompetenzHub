@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { HealthController } from './health/health.controller';
 import { ConnectivityService } from './health/connectivity.service';
 import { PrismaService } from './prisma/prisma.service';
@@ -22,6 +23,14 @@ import { BrandingModule } from './branding/branding.module';
 
 @Module({
   imports: [
+    // Rate Limiting pro IP. Grosszügig, da ganze Klassen hinter einer
+    // Schul-IP (NAT) arbeiten können; über ENV tunebar.
+    ThrottlerModule.forRoot([
+      {
+        ttl: Number(process.env.THROTTLE_TTL ?? 60_000),
+        limit: Number(process.env.THROTTLE_LIMIT ?? 300),
+      },
+    ]),
     AuthModule,
     AdminModule,
     BrandingModule,
@@ -41,8 +50,9 @@ import { BrandingModule } from './branding/branding.module';
   providers: [
     PrismaService,
     ConnectivityService,
-    // Reihenfolge wichtig: zuerst Authentifizierung (setzt req.user),
-    // danach Rollenprüfung.
+    // Reihenfolge wichtig: zuerst Rate Limiting, dann Authentifizierung
+    // (setzt req.user), danach Rollenprüfung.
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],

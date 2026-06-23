@@ -1,8 +1,20 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query } from '@nestjs/common';
 import { Role } from '@prisma/client';
+import { IsEmail, IsString, MaxLength } from 'class-validator';
 import { CurrentUser, Roles } from '../auth/decorators';
 import type { RequestContext } from '../common/request-context';
 import { ClassesService } from './classes.service';
+
+class AddCoTeacherDto {
+  @IsEmail()
+  email!: string;
+}
+
+class JoinDto {
+  @IsString()
+  @MaxLength(12)
+  code!: string;
+}
 
 @Controller('classes')
 export class ClassesController {
@@ -83,8 +95,8 @@ export class ClassesController {
   /** Lernende:r tritt per Code bei. */
   @Post('join')
   @Roles(Role.LEARNER, Role.TEACHER, Role.ADMIN)
-  join(@Body() dto: { code?: string }, @CurrentUser() user: RequestContext) {
-    return this.classes.joinByCode(dto?.code ?? '', user.tenantId, user.userId);
+  join(@Body() dto: JoinDto, @CurrentUser() user: RequestContext) {
+    return this.classes.joinByCode(dto.code, user.tenantId, user.userId);
   }
 
   // ── FA-25: Mitglieder ─────────────────────────────────────────
@@ -118,10 +130,10 @@ export class ClassesController {
   @Roles(Role.TEACHER, Role.ADMIN)
   addCoTeacher(
     @Param('id') id: string,
-    @Body() dto: { email?: string },
+    @Body() dto: AddCoTeacherDto,
     @CurrentUser() user: RequestContext,
   ) {
-    return this.classes.addCoTeacher(id, dto?.email ?? '', user.tenantId, user.userId, user.roles);
+    return this.classes.addCoTeacher(id, dto.email, user.tenantId, user.userId, user.roles);
   }
 
   @Delete(':id/co-teachers/:userId')
