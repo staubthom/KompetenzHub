@@ -8,8 +8,9 @@ import { useI18n, LOCALES, LOCALE_LABEL, type Locale } from '../../../lib/i18n';
 import { getUser, isAdmin, homePathForRole } from '../../../lib/session';
 import { admin, uploadRichTextImage, type AdminSettings } from '../../../lib/api';
 
-// Akzentfarben-Vorschläge (siehe Branding-Mockup)
-const COLOR_PRESETS = ['#2563eb', '#0d9488', '#9333ea', '#e11d48', '#ea580c', '#16a34a', '#0369a1'];
+// Akzentfarben-Vorschläge – alle mit AA-Kontrast (≥ 4.5:1 zu Weiss),
+// damit weisser Text auf der Fläche und farbiger Text auf Weiss lesbar bleiben.
+const COLOR_PRESETS = ['#1d4ed8', '#0f766e', '#6d28d9', '#be123c', '#b45309', '#15803d', '#0369a1'];
 
 export default function AdminSettingsPage() {
   const router = useRouter();
@@ -114,6 +115,7 @@ export default function AdminSettingsPage() {
             >
               <input
                 value={schoolName}
+                aria-label={t('admin.schoolName')}
                 onChange={(e) => setSchoolName(e.target.value)}
                 style={{ flex: 1, minWidth: 220 }}
               />
@@ -127,6 +129,7 @@ export default function AdminSettingsPage() {
                 <select
                   value={settings.defaultLocale}
                   disabled={busy}
+                  aria-label={t('admin.defaultLocale')}
                   onChange={(e) => void save({ defaultLocale: e.target.value })}
                 >
                   {LOCALES.map((l) => (
@@ -157,6 +160,8 @@ export default function AdminSettingsPage() {
                     key={c}
                     type="button"
                     title={c}
+                    aria-label={`${t('admin.accent')} ${c}`}
+                    aria-pressed={settings.primaryColor.toLowerCase() === c}
                     disabled={busy}
                     onClick={() => pickColor(c)}
                     className={`color-sw${settings.primaryColor.toLowerCase() === c ? ' sel' : ''}`}
@@ -169,6 +174,7 @@ export default function AdminSettingsPage() {
                   type="color"
                   value={settings.primaryColor}
                   disabled={busy}
+                  aria-label={t('admin.accentCustom')}
                   onChange={(e) => pickColor(e.target.value)}
                   style={{ width: 44, height: 36, padding: 0, cursor: 'pointer' }}
                 />

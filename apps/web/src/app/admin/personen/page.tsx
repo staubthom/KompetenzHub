@@ -148,6 +148,8 @@ export default function AdminPeoplePage() {
                       <td>
                         {editId === u.id ? (
                           <input
+                            // Fokus folgt der gerade geöffneten Inline-Bearbeitung (a11y-konform)
+                            // eslint-disable-next-line jsx-a11y/no-autofocus
                             autoFocus
                             value={editName}
                             disabled={busy === u.id}
@@ -168,6 +170,7 @@ export default function AdminPeoplePage() {
                         <select
                           value={u.role}
                           disabled={busy === u.id}
+                          aria-label={`${t('admin.colRole')} – ${u.displayName}`}
                           onChange={(e) => void changeRole(u, e.target.value as Role)}
                         >
                           {ROLES.map((r) => (

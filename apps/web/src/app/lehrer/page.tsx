@@ -203,15 +203,28 @@ export default function LehrerDashboardPage() {
                                 ? '!'
                                 : '·';
                           const clickable = f.evidenceCount > 0 && status !== 'OPEN';
+                          const cellLabel = `${f.band}${LEVEL_SHORT[f.level]} · ${t(`status.${status}`)}`;
                           return (
                             <td key={f.id} className="hm-cell-td">
-                              <span
-                                className={`hm-cell hm-${status.toLowerCase()}${clickable ? ' hm-click' : ''}`}
-                                title={`${f.band}${LEVEL_SHORT[f.level]} · ${status}`}
-                                onClick={() => clickable && router.push('/lehrer/bewerten')}
-                              >
-                                {label}
-                              </span>
+                              {clickable ? (
+                                <button
+                                  type="button"
+                                  className={`hm-cell hm-${status.toLowerCase()} hm-click`}
+                                  title={cellLabel}
+                                  aria-label={cellLabel}
+                                  onClick={() => router.push('/lehrer/bewerten')}
+                                >
+                                  {label}
+                                </button>
+                              ) : (
+                                <span
+                                  className={`hm-cell hm-${status.toLowerCase()}`}
+                                  title={cellLabel}
+                                  aria-label={cellLabel}
+                                >
+                                  {label}
+                                </span>
+                              )}
                             </td>
                           );
                         })}

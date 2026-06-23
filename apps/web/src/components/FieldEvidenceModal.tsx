@@ -219,7 +219,12 @@ export default function FieldEvidenceModal({
 
   return (
     <div className="modal-overlay">
-      <div className="modal">
+      <div
+        className="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${t('fe.title')} · ${fieldLabel}`}
+      >
         <div className="modal-head">
           <h2>
             {t('fe.title')} · {fieldLabel}

@@ -595,6 +595,7 @@ export default function KlassenPage() {
                   className="link-input"
                   type="email"
                   placeholder={t('co.emailPlaceholder')}
+                  aria-label={t('co.title')}
                   value={coEmail}
                   onChange={(e) => setCoEmail(e.target.value)}
                   style={{ flex: 1, minWidth: 220 }}

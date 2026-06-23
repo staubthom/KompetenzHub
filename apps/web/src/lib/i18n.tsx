@@ -493,7 +493,7 @@ const de: Record<string, string> = {
   'admin.defaultLocaleHint': 'Sprache für neue Konten beim ersten Login.',
   'admin.accent': 'Akzentfarbe',
   'admin.accentHint':
-    'Primärfarbe der App (Buttons, Links, aktive Elemente). Statusfarben bleiben unverändert.',
+    'Primärfarbe der App (Buttons, Links, aktive Elemente). Statusfarben bleiben unverändert. Die Vorschläge sind kontraststark (lesbar); sehr helle eigene Farben können die Lesbarkeit verschlechtern.',
   'admin.accentCustom': 'Eigene Farbe',
   'admin.opsTitle': 'Betrieb & Gesundheit',
   'admin.opsSubtitle': 'Systemzustand, Auslastung und Backup',
@@ -531,6 +531,9 @@ const de: Record<string, string> = {
   'co.added': 'Co-Leitung hinzugefügt.',
   'co.removed': 'Co-Leitung entfernt.',
   'co.none': 'Keine Co-Leitung festgelegt.',
+  'a11y.skip': 'Zum Inhalt springen',
+  'a11y.menu': 'Menü',
+  'a11y.account': 'Konto',
 };
 
 const fr: Record<string, string> = {
@@ -996,7 +999,7 @@ const fr: Record<string, string> = {
   'admin.defaultLocaleHint': 'Langue des nouveaux comptes lors de la première connexion.',
   'admin.accent': 'Couleur d’accent',
   'admin.accentHint':
-    'Couleur primaire de l’app (boutons, liens, éléments actifs). Les couleurs de statut restent inchangées.',
+    'Couleur primaire de l’app (boutons, liens, éléments actifs). Les couleurs de statut restent inchangées. Les suggestions ont un bon contraste ; des couleurs très claires peuvent nuire à la lisibilité.',
   'admin.accentCustom': 'Couleur personnalisée',
   'admin.opsTitle': 'Exploitation & santé',
   'admin.opsSubtitle': 'État du système, utilisation et sauvegarde',
@@ -1034,6 +1037,9 @@ const fr: Record<string, string> = {
   'co.added': 'Co-responsable ajouté.',
   'co.removed': 'Co-responsable retiré.',
   'co.none': 'Aucun co-responsable défini.',
+  'a11y.skip': 'Aller au contenu',
+  'a11y.menu': 'Menu',
+  'a11y.account': 'Compte',
 };
 
 const it: Record<string, string> = {
@@ -1498,7 +1504,7 @@ const it: Record<string, string> = {
   'admin.defaultLocaleHint': 'Lingua dei nuovi account al primo accesso.',
   'admin.accent': 'Colore d’accento',
   'admin.accentHint':
-    'Colore primario dell’app (pulsanti, link, elementi attivi). I colori di stato restano invariati.',
+    'Colore primario dell’app (pulsanti, link, elementi attivi). I colori di stato restano invariati. I suggerimenti hanno un buon contrasto; colori molto chiari possono ridurre la leggibilità.',
   'admin.accentCustom': 'Colore personalizzato',
   'admin.opsTitle': 'Esercizio & salute',
   'admin.opsSubtitle': 'Stato del sistema, utilizzo e backup',
@@ -1536,6 +1542,9 @@ const it: Record<string, string> = {
   'co.added': 'Co-conduzione aggiunta.',
   'co.removed': 'Co-conduzione rimossa.',
   'co.none': 'Nessuna co-conduzione definita.',
+  'a11y.skip': 'Vai al contenuto',
+  'a11y.menu': 'Menu',
+  'a11y.account': 'Account',
 };
 
 const en: Record<string, string> = {
@@ -1995,7 +2004,7 @@ const en: Record<string, string> = {
   'admin.defaultLocaleHint': 'Language for new accounts on first login.',
   'admin.accent': 'Accent color',
   'admin.accentHint':
-    'Primary color of the app (buttons, links, active elements). Status colors stay unchanged.',
+    'Primary color of the app (buttons, links, active elements). Status colors stay unchanged. The presets have strong contrast; very light custom colors can reduce readability.',
   'admin.accentCustom': 'Custom color',
   'admin.opsTitle': 'Operations & health',
   'admin.opsSubtitle': 'System status, usage and backup',
@@ -2032,6 +2041,9 @@ const en: Record<string, string> = {
   'co.added': 'Co-teacher added.',
   'co.removed': 'Co-teacher removed.',
   'co.none': 'No co-teachers set.',
+  'a11y.skip': 'Skip to content',
+  'a11y.menu': 'Menu',
+  'a11y.account': 'Account',
 };
 
 const DICT: Record<Locale, Record<string, string>> = { de, fr, it, en };
