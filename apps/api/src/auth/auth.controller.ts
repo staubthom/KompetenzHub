@@ -11,6 +11,8 @@ import {
   Res,
 } from '@nestjs/common';
 import { AuthProvider, Locale, Role } from '@prisma/client';
+import { Throttle } from '@nestjs/throttler';
+import { IsEmail, IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 import { Request, Response } from 'express';
 import { AuthService, ExternalProfile } from './auth.service';
 import { TokenService } from './token.service';
@@ -20,20 +22,65 @@ import type { RequestContext } from '../common/request-context';
 const DEV_LOGIN_ENABLED = (process.env.DEV_LOGIN_ENABLED ?? 'true') === 'true';
 const COOKIE_NAME = 'kh_token';
 
-interface DevLoginDto {
+// Strengeres Rate-Limit für Anmelde-Endpunkte (Brute-Force-Schutz). Pro IP,
+// daher grosszügig genug für eine ganze Klasse hinter einer Schul-IP; tunebar.
+const AUTH_THROTTLE = {
+  default: { ttl: 60_000, limit: Number(process.env.THROTTLE_AUTH_LIMIT ?? 60) },
+};
+
+class DevLoginDto {
+  @IsOptional()
+  @IsEmail()
   email?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
   displayName?: string;
+
+  @IsOptional()
+  @IsEnum(Role)
   role?: Role;
 }
 
-interface ExchangeDto {
-  provider?: AuthProvider;
-  externalId?: string;
-  email?: string;
-  displayName?: string;
+class ExchangeDto {
+  @IsEnum(AuthProvider)
+  provider!: AuthProvider;
+
+  @IsString()
+  @MaxLength(255)
+  externalId!: string;
+
+  @IsEmail()
+  email!: string;
+
+  @IsString()
+  @MaxLength(160)
+  displayName!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2048)
   avatarUrl?: string;
+
+  @IsOptional()
+  @IsEnum(Locale)
   locale?: Locale;
+
+  @IsOptional()
+  @IsEnum(Role)
   desiredRole?: Role;
+}
+
+class UpdateMeDto {
+  @IsOptional()
+  @IsEnum(Locale)
+  locale?: Locale;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  theme?: string;
 }
 
 @Controller('auth')
@@ -48,6 +95,7 @@ export class AuthController {
    * Nur aktiv, wenn DEV_LOGIN_ENABLED=true (Standard in Entwicklung).
    */
   @Public()
+  @Throttle(AUTH_THROTTLE)
   @Post('dev-login')
   async devLogin(
     @Body() dto: DevLoginDto,
@@ -77,6 +125,7 @@ export class AuthController {
    * Schutz: nur mit gültigem AUTH_EXCHANGE_SECRET im Header.
    */
   @Public()
+  @Throttle(AUTH_THROTTLE)
   @Post('exchange')
   async exchange(
     @Body() dto: ExchangeDto,
@@ -113,10 +162,7 @@ export class AuthController {
 
   /** FA-10: Sprache/Anzeigemodus des eingeloggten Nutzers speichern. */
   @Patch('me')
-  async updateMe(
-    @Body() dto: { locale?: string; theme?: string },
-    @CurrentUser() user: RequestContext,
-  ): Promise<unknown> {
+  async updateMe(@Body() dto: UpdateMeDto, @CurrentUser() user: RequestContext): Promise<unknown> {
     const profile = await this.auth.updatePreferences(user.userId, user.tenantId, dto ?? {});
     if (!profile) throw new NotFoundException('Benutzer nicht gefunden.');
     return profile;

@@ -43,8 +43,11 @@ export class JwtAuthGuard implements CanActivate {
     };
     // Für Param-Decorator @CurrentUser und Controller verfügbar machen
     (req as Request & { user?: RequestContext }).user = ctx;
-    // Für AsyncLocalStorage-basiertes Tenant-Scoping verfügbar machen
-    requestContextStore.enterWith(ctx);
+    // Für AsyncLocalStorage-basiertes Tenant-Scoping: den per Middleware
+    // eröffneten Store mutieren (überlebt asynchrone Pipes), sonst neu setzen.
+    const store = requestContextStore.getStore();
+    if (store) Object.assign(store, ctx);
+    else requestContextStore.enterWith(ctx);
     return true;
   }
 
