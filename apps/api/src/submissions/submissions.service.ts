@@ -48,10 +48,14 @@ export class SubmissionsService {
         evidence: { tenantId },
         ...(filter.status ? { status: filter.status } : {}),
         ...(filter.evidenceId ? { evidenceId: filter.evidenceId } : {}),
-        // Lehrperson sieht nur Einreichungen aus eigenen Klassen/Modulanlässen.
+        // Lehrperson sieht nur Einreichungen aus eigenen oder co-geleiteten Modulanlässen.
         enrollment: {
           ...(filter.classId ? { classId: filter.classId } : {}),
-          ...(isAdmin ? {} : { class: { ownerId: userId } }),
+          ...(isAdmin
+            ? {}
+            : {
+                class: { OR: [{ ownerId: userId }, { coTeachers: { some: { userId } } }] },
+              }),
         },
       },
       select: {
@@ -83,7 +87,14 @@ export class SubmissionsService {
           select: {
             userId: true,
             displayName: true,
-            class: { select: { id: true, name: true, ownerId: true } },
+            class: {
+              select: {
+                id: true,
+                name: true,
+                ownerId: true,
+                coTeachers: { where: { userId }, select: { userId: true } },
+              },
+            },
           },
         },
         evaluation: true,
@@ -95,11 +106,12 @@ export class SubmissionsService {
     });
     if (!sub) throw new NotFoundException('Einreichung nicht gefunden.');
 
-    // Zugriff: Admin; ODER Lehrperson, der die Klasse gehört; ODER einreichende:r Lernende:r.
+    // Zugriff: Admin; ODER Lehrperson (Besitz/Co-Leitung); ODER einreichende:r Lernende:r.
     const isAdmin = roles.includes(Role.ADMIN);
-    const isOwningTeacher = roles.includes(Role.TEACHER) && sub.enrollment.class.ownerId === userId;
+    const isTeacher =
+      roles.includes(Role.TEACHER) && this.teacherHasClass(sub.enrollment.class, userId);
     const isOwner = sub.enrollment.userId === userId;
-    if (!isAdmin && !isOwningTeacher && !isOwner) {
+    if (!isAdmin && !isTeacher && !isOwner) {
       throw new ForbiddenException('Kein Zugriff auf diese Einreichung.');
     }
 
@@ -221,12 +233,25 @@ export class SubmissionsService {
   async history(id: string, tenantId: string, userId: string, roles: Role[]) {
     const sub = await this.prisma.submission.findFirst({
       where: { id, evidence: { tenantId } },
-      select: { enrollment: { select: { userId: true, class: { select: { ownerId: true } } } } },
+      select: {
+        enrollment: {
+          select: {
+            userId: true,
+            class: {
+              select: {
+                ownerId: true,
+                coTeachers: { where: { userId }, select: { userId: true } },
+              },
+            },
+          },
+        },
+      },
     });
     if (!sub) throw new NotFoundException('Einreichung nicht gefunden.');
     const isAdmin = roles.includes(Role.ADMIN);
-    const isOwningTeacher = roles.includes(Role.TEACHER) && sub.enrollment.class.ownerId === userId;
-    if (!isAdmin && !isOwningTeacher && sub.enrollment.userId !== userId) {
+    const isTeacher =
+      roles.includes(Role.TEACHER) && this.teacherHasClass(sub.enrollment.class, userId);
+    if (!isAdmin && !isTeacher && sub.enrollment.userId !== userId) {
       throw new ForbiddenException('Kein Zugriff.');
     }
     return this.prisma.evaluationHistory.findMany({
@@ -346,18 +371,37 @@ export class SubmissionsService {
 
   // ── Helfer ────────────────────────────────────────────────────
 
+  /** Lehrperson hat Zugriff, wenn sie Besitzerin ODER Co-Leitung der Klasse ist. */
+  private teacherHasClass(
+    cls: { ownerId: string; coTeachers: { userId: string }[] },
+    userId: string,
+  ): boolean {
+    return cls.ownerId === userId || cls.coTeachers.length > 0;
+  }
+
   private async loadInTenant(id: string, tenantId: string, userId: string, roles: Role[]) {
     const sub = await this.prisma.submission.findFirst({
       where: { id, evidence: { tenantId } },
       include: {
         evidence: { select: { maxPoints: true } },
-        enrollment: { select: { class: { select: { ownerId: true, status: true } } } },
+        enrollment: {
+          select: {
+            class: {
+              select: {
+                ownerId: true,
+                status: true,
+                coTeachers: { where: { userId }, select: { userId: true } },
+              },
+            },
+          },
+        },
       },
     });
     if (!sub) throw new NotFoundException('Einreichung nicht gefunden.');
     const isAdmin = roles.includes(Role.ADMIN);
-    const isOwningTeacher = roles.includes(Role.TEACHER) && sub.enrollment.class.ownerId === userId;
-    if (!isAdmin && !isOwningTeacher) {
+    const isTeacher =
+      roles.includes(Role.TEACHER) && this.teacherHasClass(sub.enrollment.class, userId);
+    if (!isAdmin && !isTeacher) {
       throw new ForbiddenException('Kein Zugriff auf diese Einreichung.');
     }
     if (sub.enrollment.class.status === 'ARCHIVED') {
@@ -396,13 +440,26 @@ export class SubmissionsService {
   ) {
     const sub = await this.prisma.submission.findFirst({
       where: { id, evidence: { tenantId } },
-      select: { enrollment: { select: { userId: true, class: { select: { ownerId: true } } } } },
+      select: {
+        enrollment: {
+          select: {
+            userId: true,
+            class: {
+              select: {
+                ownerId: true,
+                coTeachers: { where: { userId }, select: { userId: true } },
+              },
+            },
+          },
+        },
+      },
     });
     if (!sub) throw new NotFoundException('Einreichung nicht gefunden.');
     const isAdmin = roles.includes(Role.ADMIN);
-    const isOwningTeacher = roles.includes(Role.TEACHER) && sub.enrollment.class.ownerId === userId;
-    if (teacherOnly && !isAdmin && !isOwningTeacher) throw new ForbiddenException('Kein Zugriff.');
-    if (!isAdmin && !isOwningTeacher && sub.enrollment.userId !== userId) {
+    const isTeacher =
+      roles.includes(Role.TEACHER) && this.teacherHasClass(sub.enrollment.class, userId);
+    if (teacherOnly && !isAdmin && !isTeacher) throw new ForbiddenException('Kein Zugriff.');
+    if (!isAdmin && !isTeacher && sub.enrollment.userId !== userId) {
       throw new ForbiddenException('Kein Zugriff.');
     }
   }

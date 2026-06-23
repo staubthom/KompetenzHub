@@ -150,6 +150,7 @@ model User {
   memberships       Membership[]
   ownedModules      Module[]            @relation("ModuleOwner")
   ownedClasses      Class[]             @relation("ClassOwner")
+  coTeachings       ClassTeacher[]      @relation("ClassCoTeacher")
   enrollments       Enrollment[]
   evaluations       Evaluation[]
   evaluationChanges EvaluationHistory[]
@@ -343,14 +344,34 @@ model Class {
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
 
-  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  owner       User         @relation("ClassOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  module      Module?      @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  owner       User           @relation("ClassOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  module      Module?        @relation(fields: [moduleId], references: [id], onDelete: SetNull)
   joinCodes   JoinCode[]
   enrollments Enrollment[]
+  coTeachers  ClassTeacher[]
 
   @@index([tenantId])
   @@index([ownerId])
+}
+
+// Co-Teaching: weitere Lehrpersonen als Co-Leitung eines Modulanlasses.
+// Sie sehen den Modulanlass und dürfen Einreichungen bewerten. Die
+// Besitzer-Lehrperson (Class.ownerId) verwaltet die Co-Leitungen und
+// kann den Modulanlass als Einzige löschen.
+model ClassTeacher {
+  id        String   @id @default(uuid())
+  classId   String
+  userId    String
+  addedById String?
+  createdAt DateTime @default(now())
+
+  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  user  User  @relation("ClassCoTeacher", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, userId])
+  @@index([classId])
+  @@index([userId])
 }
 
 model JoinCode {

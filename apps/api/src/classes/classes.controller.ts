@@ -105,4 +105,33 @@ export class ClassesController {
   ) {
     return this.classes.removeMember(id, memberUserId, user.tenantId, user.userId, user.roles);
   }
+
+  // ── Co-Leitung / Co-Teaching ──────────────────────────────────
+
+  @Get(':id/co-teachers')
+  @Roles(Role.TEACHER, Role.ADMIN)
+  coTeachers(@Param('id') id: string, @CurrentUser() user: RequestContext) {
+    return this.classes.listCoTeachers(id, user.tenantId, user.userId, user.roles);
+  }
+
+  @Post(':id/co-teachers')
+  @Roles(Role.TEACHER, Role.ADMIN)
+  addCoTeacher(
+    @Param('id') id: string,
+    @Body() dto: { email?: string },
+    @CurrentUser() user: RequestContext,
+  ) {
+    return this.classes.addCoTeacher(id, dto?.email ?? '', user.tenantId, user.userId, user.roles);
+  }
+
+  @Delete(':id/co-teachers/:userId')
+  @HttpCode(204)
+  @Roles(Role.TEACHER, Role.ADMIN)
+  removeCoTeacher(
+    @Param('id') id: string,
+    @Param('userId') coUserId: string,
+    @CurrentUser() user: RequestContext,
+  ) {
+    return this.classes.removeCoTeacher(id, coUserId, user.tenantId, user.userId, user.roles);
+  }
 }
