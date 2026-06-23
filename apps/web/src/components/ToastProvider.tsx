@@ -60,16 +60,13 @@ export default function ToastProvider({ children }: { children: React.ReactNode 
       {children}
       <div className="toast-container" role="region" aria-live="polite">
         {toasts.map((t) => (
-          <div
-            key={t.id}
-            className={`toast toast-${t.type}`}
-            role="alert"
-            onClick={() => remove(t.id)}
-          >
-            <span className="toast-icon">{ICON[t.type]}</span>
+          <div key={t.id} className={`toast toast-${t.type}`} role="alert">
+            <span className="toast-icon" aria-hidden="true">
+              {ICON[t.type]}
+            </span>
             <span className="toast-msg">{t.message}</span>
             <button className="toast-close" aria-label="Schliessen" onClick={() => remove(t.id)}>
-              ✕
+              <span aria-hidden="true">✕</span>
             </button>
           </div>
         ))}

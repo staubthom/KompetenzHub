@@ -1,7 +1,7 @@
 /* KompetenzHub – Design-System (an mockups/shared.css orientiert) */
 
 :root {
-  --brand-primary: #2563eb;
+  --brand-primary: #1d4ed8; /* AA-Kontrast: Text auf Weiss & Weiss auf Fläche ≥ 4.5:1 */
   --brand-primary-fg: #ffffff;
   --radius: 12px;
   --radius-sm: 8px;
@@ -12,7 +12,7 @@
   --surface: #ffffff;
   --surface-2: #f1f3f5;
   --fg: #0f172a;
-  --fg-muted: #64748b;
+  --fg-muted: #556070; /* AA-Kontrast auch auf getönten Flächen */
   --border: #e2e8f0;
   --shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 4px 16px rgba(15, 23, 42, 0.06);
 
@@ -24,6 +24,11 @@
   --st-submitted-bg: #fef3c7;
   --st-graded-bg: #dcfce7;
   --st-rejected-bg: #fee2e2;
+  /* AA-taugliche Textfarben für Badges (dunkel auf hellem Tint) */
+  --st-open-fg: #475569;
+  --st-submitted-fg: #b45309;
+  --st-graded-fg: #166534;
+  --st-rejected-fg: #b91c1c;
 }
 
 [data-theme='dark'] {
@@ -38,6 +43,11 @@
   --st-submitted-bg: #422006;
   --st-graded-bg: #052e16;
   --st-rejected-bg: #450a0a;
+  /* Badge-Text im Dunkelmodus: hell auf dunklem Tint */
+  --st-open-fg: #cbd5e1;
+  --st-submitted-fg: #fcd34d;
+  --st-graded-fg: #4ade80;
+  --st-rejected-fg: #fca5a5;
 }
 
 [data-theme='gray'] {
@@ -46,7 +56,7 @@
   --surface: #ffffff;
   --surface-2: #e9ebef;
   --fg: #1f2937;
-  --fg-muted: #6b7280;
+  --fg-muted: #5b6473; /* AA-Kontrast auch auf getönten Flächen */
   --border: #d6d9de;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 4px 14px rgba(0, 0, 0, 0.05);
   --st-submitted: #6b7280;
@@ -78,6 +88,51 @@ button {
 }
 a {
   color: var(--brand-primary);
+}
+
+/* ===== A11y: sichtbarer Tastatur-Fokus (WCAG 2.4.7) ===== */
+:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+/* Maus-Klicks erzeugen keinen Fokusring, Tastatur schon */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+.rte-area:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: -2px;
+}
+
+/* Skip-Link „Zum Inhalt springen" – nur bei Fokus sichtbar */
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: -48px;
+  z-index: 100;
+  background: var(--brand-primary);
+  color: var(--brand-primary-fg);
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  transition: top 0.15s ease;
+}
+.skip-link:focus {
+  top: 12px;
+}
+
+/* Nur für Screenreader sichtbar */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* ===== App-Header ===== */
@@ -460,19 +515,19 @@ a {
 }
 .b-draft {
   background: var(--st-submitted-bg);
-  color: var(--st-submitted);
+  color: var(--st-submitted-fg);
 }
 .b-published {
   background: var(--st-graded-bg);
-  color: var(--st-graded);
+  color: var(--st-graded-fg);
 }
 .b-archived {
   background: var(--st-open-bg);
-  color: var(--st-open);
+  color: var(--st-open-fg);
 }
 .b-rejected {
   background: var(--st-rejected-bg);
-  color: var(--st-rejected);
+  color: var(--st-rejected-fg);
 }
 
 /* Empty state */
@@ -1320,6 +1375,13 @@ a {
   border-radius: 6px;
   font-size: 12px;
   font-weight: 700;
+}
+/* Klickbare Heatmap-Zelle ist ein <button> – Button-Defaults zurücksetzen */
+button.hm-cell {
+  border: none;
+  font-family: inherit;
+  color: inherit;
+  padding: 0;
 }
 .hm-click {
   cursor: pointer;

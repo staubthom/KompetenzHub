@@ -658,6 +658,8 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
                       {isEditing ? (
                         <div className="desc-editor">
                           <textarea
+                            // Fokus folgt dem gerade geöffneten Deskriptor-Editor (a11y-konform)
+                            // eslint-disable-next-line jsx-a11y/no-autofocus
                             autoFocus
                             rows={3}
                             value={editingDesc.text}

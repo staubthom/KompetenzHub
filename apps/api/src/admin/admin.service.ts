@@ -15,7 +15,7 @@ const ROLE_RANK: Record<Role, number> = { ADMIN: 3, TEACHER: 2, LEARNER: 1 };
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 const LOCALES = ['de', 'fr', 'it', 'en'];
-const DEFAULT_PRIMARY = '#2563eb';
+const DEFAULT_PRIMARY = '#1d4ed8';
 
 export interface AdminUser {
   id: string;

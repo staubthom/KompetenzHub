@@ -91,11 +91,16 @@ export default function AdminInvitesPage() {
             <input
               type="email"
               placeholder={t('admin.inviteEmailPlaceholder')}
+              aria-label={t('admin.inviteEmail')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               style={{ flex: 1, minWidth: 220 }}
             />
-            <select value={role} onChange={(e) => setRole(e.target.value as Role)}>
+            <select
+              aria-label={t('admin.inviteRole')}
+              value={role}
+              onChange={(e) => setRole(e.target.value as Role)}
+            >
               <option value="TEACHER">{roleLabel('TEACHER')}</option>
               <option value="ADMIN">{roleLabel('ADMIN')}</option>
             </select>

@@ -296,6 +296,7 @@ export default function LernendeMatrixPage() {
             <input
               className="join-input"
               placeholder="z. B. A1B2C3"
+              aria-label={t('mx.joinTitle')}
               value={code}
               maxLength={6}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
@@ -316,7 +317,12 @@ export default function LernendeMatrixPage() {
       {/* Nachweis einreichen (Modal) */}
       {openEvidence && (
         <div className="modal-overlay">
-          <div className="modal">
+          <div
+            className="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={localized(openEvidence.title, locale)}
+          >
             <div className="modal-head">
               <h2>{localized(openEvidence.title, locale)}</h2>
               <button className="btn-icon" title={t('common.cancel')} onClick={closeEvidence}>

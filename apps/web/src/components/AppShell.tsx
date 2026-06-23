@@ -65,6 +65,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [theme, setThemeState] = useState<Theme>('light');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [ready, setReady] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
@@ -153,15 +154,20 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <>
+      <a className="skip-link" href="#main">
+        {t('a11y.skip')}
+      </a>
       <header className="appbar">
         <button
           className="hamburger"
-          aria-label="Menü"
+          aria-label={t('a11y.menu')}
+          aria-expanded={menuOpen}
           onClick={() => {
-            document.body.classList.toggle('menu-open');
+            const open = document.body.classList.toggle('menu-open');
+            setMenuOpen(open);
           }}
         >
-          ☰
+          <span aria-hidden="true">☰</span>
         </button>
         <Link className="brand" href={homeHref}>
           {logoUrl && <img className="brand-logo" src={logoUrl} alt="" />}
@@ -196,6 +202,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <div className={`user ${userMenuOpen ? 'open' : ''}`}>
           <button
             aria-haspopup="true"
+            aria-expanded={userMenuOpen}
             onClick={(e) => {
               e.stopPropagation();
               setUserMenuOpen((o) => !o);
@@ -208,9 +215,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </span>
             <span aria-hidden="true">▾</span>
           </button>
-          <div className="menu" role="menu" aria-label="Konto">
+          <div className="menu" role="menu" aria-label={t('a11y.account')}>
             <Link role="menuitem" href={settingsHref} onClick={() => setUserMenuOpen(false)}>
-              ⚙️ {t('nav.einstellungen')}
+              <span aria-hidden="true">⚙️</span> {t('nav.einstellungen')}
             </Link>
             <div className="sep" />
             <button
@@ -219,7 +226,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 void handleLogout();
               }}
             >
-              ⎋ {t('header.logout')}
+              <span aria-hidden="true">⎋</span> {t('header.logout')}
             </button>
           </div>
         </div>
@@ -237,11 +244,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   key={item.id}
                   href={item.href}
                   className={active ? 'active' : ''}
+                  aria-current={active ? 'page' : undefined}
                   onClick={() => {
                     document.body.classList.remove('menu-open');
+                    setMenuOpen(false);
                   }}
                 >
-                  <span className="ic">{item.icon}</span> {t(item.labelKey)}
+                  <span className="ic" aria-hidden="true">
+                    {item.icon}
+                  </span>{' '}
+                  {t(item.labelKey)}
                 </Link>
               );
             })}
@@ -252,17 +264,21 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             target="_blank"
             rel="noopener noreferrer"
           >
-            ☕ {t('common.buyMeACoffee')}
+            <span aria-hidden="true">☕</span> {t('common.buyMeACoffee')}
           </a>
         </aside>
 
-        <main className="main">{children}</main>
+        <main className="main" id="main">
+          {children}
+        </main>
       </div>
 
       <div
         className="scrim"
+        aria-hidden="true"
         onClick={() => {
           document.body.classList.remove('menu-open');
+          setMenuOpen(false);
         }}
       />
     </>
