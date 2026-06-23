@@ -4,9 +4,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell from '../../../components/AppShell';
 import { useToast } from '../../../components/ToastProvider';
-import { useI18n } from '../../../lib/i18n';
+import { useI18n, LOCALES, LOCALE_LABEL, type Locale } from '../../../lib/i18n';
 import { getUser, isAdmin, homePathForRole } from '../../../lib/session';
 import { admin, uploadRichTextImage, type AdminSettings } from '../../../lib/api';
+
+// Akzentfarben-Vorschläge (siehe Branding-Mockup)
+const COLOR_PRESETS = ['#2563eb', '#0d9488', '#9333ea', '#e11d48', '#ea580c', '#16a34a', '#0369a1'];
 
 export default function AdminSettingsPage() {
   const router = useRouter();
@@ -42,6 +45,8 @@ export default function AdminSettingsPage() {
         schoolName: patch.schoolName,
         authProviders: patch.authProviders,
         logoUrl: patch.logoUrl,
+        primaryColor: patch.primaryColor,
+        defaultLocale: patch.defaultLocale,
       });
       setSettings(next);
       setSchoolName(next.schoolName);
@@ -59,6 +64,12 @@ export default function AdminSettingsPage() {
     void save({
       authProviders: { ...settings.authProviders, [key]: !settings.authProviders[key] },
     });
+  }
+
+  function pickColor(color: string) {
+    // Sofort sichtbar machen (Live-Vorschau in der ganzen App).
+    document.documentElement.style.setProperty('--brand-primary', color);
+    void save({ primaryColor: color });
   }
 
   async function uploadLogo(file: File) {
@@ -110,6 +121,62 @@ export default function AdminSettingsPage() {
                 {t('common.save')}
               </button>
             </form>
+            <div className="panel-body" style={{ paddingTop: 0 }}>
+              <label className="fld" style={{ maxWidth: 320 }}>
+                <span className="field-label">{t('admin.defaultLocale')}</span>
+                <select
+                  value={settings.defaultLocale}
+                  disabled={busy}
+                  onChange={(e) => void save({ defaultLocale: e.target.value })}
+                >
+                  {LOCALES.map((l) => (
+                    <option key={l} value={l}>
+                      {LOCALE_LABEL[l as Locale]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <p className="kh-muted" style={{ fontSize: 13, margin: '6px 0 0' }}>
+                {t('admin.defaultLocaleHint')}
+              </p>
+            </div>
+          </div>
+
+          {/* Akzentfarbe */}
+          <div className="panel">
+            <div className="panel-head">
+              <h2>{t('admin.accent')}</h2>
+            </div>
+            <div className="panel-body">
+              <p className="kh-muted" style={{ marginTop: 0 }}>
+                {t('admin.accentHint')}
+              </p>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+                {COLOR_PRESETS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    title={c}
+                    disabled={busy}
+                    onClick={() => pickColor(c)}
+                    className={`color-sw${settings.primaryColor.toLowerCase() === c ? ' sel' : ''}`}
+                    style={{ background: c }}
+                  />
+                ))}
+              </div>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+                <input
+                  type="color"
+                  value={settings.primaryColor}
+                  disabled={busy}
+                  onChange={(e) => pickColor(e.target.value)}
+                  style={{ width: 44, height: 36, padding: 0, cursor: 'pointer' }}
+                />
+                <span className="kh-muted" style={{ fontSize: 13 }}>
+                  {t('admin.accentCustom')} ({settings.primaryColor})
+                </span>
+              </label>
+            </div>
           </div>
 
           {/* Logo */}

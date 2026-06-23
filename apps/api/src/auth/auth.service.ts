@@ -75,6 +75,8 @@ export class AuthService {
       throw new UnauthorizedException('Dieser Anmelde-Anbieter ist deaktiviert.');
     }
 
+    // Neue Konten erben die Default-Sprache der Schule (Schuladmin-Einstellung).
+    const fallbackLocale = profile.locale ?? (await this.tenantDefaultLocale(tenantId));
     const user = await this.prisma.user.upsert({
       where: {
         authProvider_externalId: {
@@ -93,7 +95,7 @@ export class AuthService {
         authProvider: profile.provider,
         externalId: profile.externalId,
         avatarUrl: profile.avatarUrl,
-        locale: profile.locale ?? Locale.de,
+        locale: fallbackLocale,
       },
     });
 
@@ -186,7 +188,11 @@ export class AuthService {
     bypassGate: boolean,
   ): Promise<void> {
     if (bypassGate) {
-      await this.grantRole(tenantId, userId, profile.desiredRole ?? Role.LEARNER);
+      // Dev-Login ist autoritativ: genau die gewählte Rolle (andere entfernen),
+      // damit Tests deterministisch sind.
+      const role = profile.desiredRole ?? Role.LEARNER;
+      await this.prisma.membership.deleteMany({ where: { tenantId, userId, role: { not: role } } });
+      await this.grantRole(tenantId, userId, role);
       return;
     }
 
@@ -217,6 +223,16 @@ export class AuthService {
 
     // 4. Neue, nicht eingeladene Person → LERNENDE.
     await this.grantRole(tenantId, userId, Role.LEARNER);
+  }
+
+  /** Default-Sprache der Schule (Schuladmin-Einstellung; Fallback de). */
+  private async tenantDefaultLocale(tenantId: string): Promise<Locale> {
+    const tenant = await this.prisma.tenant.findUnique({ where: { id: tenantId } });
+    const settings = (tenant?.settings ?? {}) as Record<string, unknown>;
+    const loc = settings.defaultLocale;
+    return typeof loc === 'string' && ['de', 'fr', 'it', 'en'].includes(loc)
+      ? (loc as Locale)
+      : Locale.de;
   }
 
   /** Ob ein Auth-Provider in den Schul-Einstellungen aktiviert ist (Default: ja). */

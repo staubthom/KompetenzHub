@@ -14,13 +14,14 @@ export class BrandingController {
   @Get()
   async get(
     @CurrentUser() user: RequestContext,
-  ): Promise<{ logoUrl: string | null; displayName: string | null }> {
+  ): Promise<{ logoUrl: string | null; displayName: string | null; primaryColor: string | null }> {
     const branding = await this.prisma.tenantBranding.findUnique({
       where: { tenantId: user.tenantId },
     });
     return {
       logoUrl: branding?.logoLightKey ?? null,
       displayName: branding?.displayName ?? null,
+      primaryColor: branding?.primaryColor ?? null,
     };
   }
 }
