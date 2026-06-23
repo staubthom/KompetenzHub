@@ -2,8 +2,7 @@
 
 > Stand: Juni 2026 · Sprache: Deutsch
 > Diese Anleitung richtet sich an **Lehrpersonen**, **Schulleitungen** und **technisch interessierte Personen**, die prüfen möchten, ob sich KompetenzHub für ihre Schule eignet – sowie an alle, die die Software selbst betreiben wollen.
->
-> 📷 _Hinweis: An den mit „Screenshot" markierten Stellen werden später Bildschirmfotos eingefügt._
+
 
 ---
 
@@ -26,6 +25,7 @@
 15. [Datenschutz](#15-datenschutz)
 16. [Fehlerbehebung (FAQ)](#16-fehlerbehebung-faq)
 17. [Glossar](#17-glossar)
+18. [Lizenz](#18-Lizenz)
 
 ---
 
@@ -99,7 +99,9 @@ KompetenzHub wird im Webbrowser geöffnet (Standard-Adresse im Betrieb: die URL 
 
 Nach der Anmeldung werden Sie automatisch auf die zu Ihrer Rolle passende Startseite geleitet.
 
-> 📷 _Screenshot: Anmeldeseite mit Microsoft/Google und Dev-Login._
+> 📷 _Screenshot: Anmeldeseite mit Microsoft/Google und Dev-Login.
+>
+> ![Screenshot: Anmeldeseite mit Microsoft/Google und Dev-Login](Images/Pasted%20image%2020260623114415.png)
 
 ### Sprache umstellen
 
@@ -109,7 +111,9 @@ Oben rechts in der Kopfzeile befindet sich ein **Sprachauswahl-Menü** (DE · FR
 
 Neben der Sprachauswahl lässt sich der Anzeigemodus umschalten: **Hell**, **Dunkel** oder **Grau**. Auch diese Einstellung wird pro Konto gespeichert.
 
-> 📷 _Screenshot: Kopfzeile mit Sprach- und Theme-Auswahl sowie Nutzer-Menü._
+> 📷 _Screenshot: Kopfzeile mit Sprach- und Theme-Auswahl sowie Nutzer-Menü.
+>
+> ![Screenshot: Kopfzeile mit Sprach- und Theme-Auswahl sowie Nutzer-Menü](Images/Pasted%20image%2020260623114640.png)
 
 ---
 
@@ -121,7 +125,9 @@ Nach der Anmeldung als Lehrperson sehen Sie links die Navigation: **Dashboard**,
 
 Das Dashboard zeigt pro Modulanlass den **Lernfortschritt der Klasse** als Heatmap (Lernende × Kompetenzfelder) sowie Kennzahlen (Anzahl Lernende, „zu bewerten", „bewertet", Durchschnittsfortschritt). Ein Klick auf eine Zelle führt direkt zur Bewertung.
 
-> 📷 _Screenshot: Lehrer-Dashboard mit Fortschritts-Heatmap._
+> 📷 _Screenshot: Lehrer-Dashboard mit Fortschritts-Heatmap.
+>
+> ![Screenshot: Lehrer-Dashboard mit Fortschritts-Heatmap](Images/Pasted%20image%2020260623115232.png)
 
 ### 6.2 Module & Matrizen anlegen
 
@@ -129,7 +135,9 @@ Das Dashboard zeigt pro Modulanlass den **Lernfortschritt der Klasse** als Heatm
 2. **Modulnummer** und **Titel** erfassen (optional Beschreibung). Das Modul wird als **Entwurf** angelegt.
 3. Modul öffnen, um die Matrix zu bearbeiten.
 
-> 📷 _Screenshot: Modul-Liste mit Kennzahlen._
+> 📷 _Screenshot: Modul-Liste mit Kennzahlen.
+>
+> ![Screenshot: Modul-Liste mit Kennzahlen](Images/Pasted%20image%2020260623120316.png)
 
 #### Handlungsziele
 
@@ -141,7 +149,9 @@ Im Modul-Editor zunächst **Handlungsziele** anlegen (Code + Beschreibung). Sie 
 2. In jeder Zelle auf den Deskriptor klicken und im „Ich kann …"-Format formulieren.
 3. Bänder lassen sich umsortieren und bearbeiten.
 
-> 📷 _Screenshot: Matrix-Editor mit Bändern, Feldern und Deskriptoren._
+> 📷 _Screenshot: Matrix-Editor mit Bändern, Feldern und Deskriptoren.
+>
+> ![Screenshot: Matrix-Editor mit Bändern, Feldern und Deskriptoren](Images/Pasted%20image%2020260623115324.png)
 
 #### Kompetenznachweise definieren
 
@@ -153,12 +163,20 @@ Im Modul-Editor zunächst **Handlungsziele** anlegen (Code + Beschreibung). Sie 
 - Optionaler **Anhang** zum Download (z. B. Aufgabenblatt).
 
 > 📷 _Screenshot: Nachweis-Konfiguration mit Einreichungsarten._
+>
+> ![Screenshot: Nachweis-Konfiguration mit Einreichungsarten](Images/Pasted%20image%2020260623120435.png)
 
 ### 6.3 Lernpfade
 
 Im Modul können Sie unter **„Lernpfade"** eine **empfohlene Reihenfolge** der Kompetenzfelder definieren (Felder links hinzufügen, rechts in Reihenfolge bringen). Ein Pfad lässt sich **aktiv** schalten; Lernende sehen dann eine Zeitachse statt der reinen Matrix.
 
-> 📷 _Screenshot: Lernpfad-Editor (verfügbare Felder ↔ Reihenfolge)._
+> 📷 _Screenshot: Lernpfad-Editor (verfügbare Felder ↔ Reihenfolge).
+>
+> ![Screenshot: Lernpfad-Editor (verfügbare Felder ↔ Reihenfolge)](Images/Pasted%20image%2020260623120533.png)
+>
+> 📷 _Screenshot: Lernpfad-Editor (verfügbare Felder ↔ Reihenfolge)._ 
+>
+> ![Screenshot: Lernpfad-Editor (verfügbare Felder ↔ Reihenfolge)](Images/Pasted%20image%2020260623120702.png)
 
 ### 6.4 Modulanlässe (Klassen) führen
 
@@ -171,6 +189,8 @@ Unter **Modulanlässe**:
 Sie sehen Ihre **eigenen** sowie die Modulanlässe, bei denen Sie als **Co-Leitung** eingetragen sind (entsprechend markiert), und jeweils nur die zugeordneten Lernenden. Modulanlässe können **archiviert** (schreibgeschützt) und als **ZIP exportiert/importiert** werden (inkl. aller Einreichungen, Bewertungen und Zeitstempel).
 
 > 📷 _Screenshot: Modulanlass mit Beitrittscode._
+>
+> ![Screenshot: Modulanlass mit Beitrittscode](Images/Pasted%20image%2020260623120925.png)
 
 ### 6.5 Co-Leitung (Co-Teaching)
 
@@ -182,7 +202,9 @@ Ein Modulanlass kann von mehreren Lehrpersonen gemeinsam geführt werden. Im Det
 
 **Rechteabgrenzung:** Nur die **besitzende** Lehrperson (die den Modulanlass erstellt hat) kann die Co-Leitung verwalten (hinzufügen/entfernen) und den Modulanlass **löschen**. Co-Leitungen können den Anlass weder löschen noch weitere Co-Leitungen ernennen.
 
-> 📷 _Screenshot: Abschnitt „Co-Leitung" im Modulanlass._
+> 📷 _Screenshot: Abschnitt „Co-Leitung" im Modulanlass.
+>
+> ![Screenshot: Abschnitt Co-Leitung im Modulanlass](Images/Pasted%20image%2020260623121158.png)
 
 ### 6.6 Bewerten
 
@@ -194,6 +216,8 @@ Unter **Bewerten** sehen Sie alle offenen Einreichungen Ihrer Modulanlässe – 
 - Optional: **KI-Bewertungsvorschlag** und **KI-Feedbacktext** als Entwurf erzeugen (Sie entscheiden, ob Sie ihn übernehmen).
 
 > 📷 _Screenshot: Bewertungsansicht mit KI-Vorschlag._
+>
+> ![Screenshot: Bewertungsansicht mit KI-Vorschlag](Images/Pasted%20image%2020260623121610.png)
 
 ### 6.7 Export / Import von Modulen
 
@@ -209,6 +233,9 @@ So lassen sich Module zwischen Lehrpersonen oder Schulen austauschen.
 Unter **KI-Einstellungen** hinterlegen Sie Ihre eigene KI-Anbindung (Provider/Endpoint und API-Schlüssel). Der Schlüssel wird **verschlüsselt** gespeichert und nie im Klartext angezeigt. Optional können Sie Ihre KI **für Ihre Lernenden freigeben**, damit diese die Übungs-Funktionen nutzen können.
 
 > 📷 _Screenshot: KI-Einstellungen der Lehrperson._
+>
+> ![Screenshot: KI-Einstellungen der Lehrperson](Images/Pasted%20image%2020260623121719.png)
+> 
 
 ---
 
@@ -221,6 +248,8 @@ Navigation: **Meine Matrix**, **Lernpfad**, **Meine Nachweise**, **Modul mit KI 
 Auf **Meine Matrix** den **Beitrittscode** der Lehrperson eingeben (oder den Beitrittslink öffnen). Danach erscheint die Kompetenzmatrix des Moduls.
 
 > 📷 _Screenshot: Beitritt mit Code._
+>
+> ![Screenshot: Beitritt mit Code](Images/Pasted%20image%2020260623122058.png)
 
 ### 7.2 Matrix ansehen & Nachweise einreichen
 
@@ -234,6 +263,8 @@ Je nach Vorgabe der Lehrperson stehen zur Verfügung:
 Nach der Einreichung sehen Sie den **Status** (eingereicht / bewertet / zurückgewiesen) sowie ggf. **Punkte und Feedback**.
 
 > 📷 _Screenshot: Einreichungs-Dialog mit den verschiedenen Einreichungsarten._
+>
+> ![Screenshot: Einreichungs-Dialog mit den verschiedenen Einreichungsarten](Images/Pasted%20image%2020260623122231.png)
 
 ### 7.3 Meine Nachweise
 
@@ -244,12 +275,16 @@ Die Seite **Meine Nachweise** bündelt alle Aufträge in „zu erledigen" und �
 Hat die Lehrperson einen Lernpfad aktiviert, zeigt **Lernpfad** die empfohlene Reihenfolge als Zeitachse. Die jeweils nächsten Nachweise sind direkt anklick- und einreichbar.
 
 > 📷 _Screenshot: Lernpfad-Zeitachse._
+>
+> ![Screenshot: Lernpfad-Zeitachse](Images/Pasted%20image%2020260623122447.png)
 
 ### 7.5 Modul mit KI üben
 
 Unter **Modul mit KI üben** führt die KI ein **Fachgespräch** und prüft verschiedene Themen ab. Als Kontext dienen alle Kompetenzen der Matrix. Die KI gibt **Lernhinweise** und **Rückmeldung zur Qualität** Ihrer Antworten. Das Üben ist unverbindlich und fliesst nicht in die Bewertung ein.
 
 > 📷 _Screenshot: KI-Übungs-Chat._
+>
+> ![Screenshot: KI-Übungs-Chat](Images/Pasted%20image%2020260623122740.png)
 
 ### 7.6 Einstellungen (Lernende)
 
@@ -269,8 +304,6 @@ KompetenzHub nutzt KI **assistierend** – nie automatisch entscheidend:
 
 **Datenschutz/Sicherheit:** API-Schlüssel werden mit **AES-256-GCM verschlüsselt** gespeichert und nie zurückgegeben. Die KI-Anbindung ist **pro Lehrperson** konfigurierbar; Lernende können eigene Schlüssel hinterlegen. Ob eine Lehrperson-KI für Lernende nutzbar ist, steuert die Lehrperson per Freigabe.
 
-> Für den Betrieb ohne externen KI-Aufruf existiert ein **Stub-Modus** (deterministische Antworten, nur für Tests).
-
 ---
 
 ## 9. Handbuch für die Schuladministration
@@ -284,6 +317,8 @@ Die Schuladmin meldet sich an und gelangt zum **Schuladmin-Dashboard** mit der N
 Kennzahlen auf einen Blick: Anzahl Lehrpersonen, Lernende, Admins, offene Einladungen, gesperrte Konten, Module und Modulanlässe.
 
 > 📷 _Screenshot: Admin-Übersicht._
+>
+> ![Screenshot: Admin-Übersicht](Images/Pasted%20image%2020260623122920.png)
 
 ### 9.2 Personen verwalten
 
@@ -297,6 +332,8 @@ Liste aller Personen der Schule. Möglich sind:
 Schutzmechanismen: Man kann **sich nicht selbst sperren/entfernen**, und die **letzte aktive Schuladmin** kann nicht entfernt/degradiert werden.
 
 > 📷 _Screenshot: Personenverwaltung mit Rollen-Auswahl und Aktionen._
+>
+> ![Screenshot: Personenverwaltung mit Rollen-Auswahl und Aktionen](Images/Pasted%20image%2020260623123106.png)
 
 ### 9.3 Einladungen (wer darf Lehrperson werden?)
 
@@ -309,6 +346,8 @@ Da neue Anmeldungen standardmässig Lernende werden, steuert die Schuladmin den 
 Bereits vorhandene Personen werden nicht eingeladen, sondern direkt in der Personenverwaltung **befördert**.
 
 > 📷 _Screenshot: Einladungen anlegen und Liste offener Einladungen._
+>
+> ![Screenshot: Einladungen anlegen und Liste offener Einladungen](Images/Pasted%20image%2020260623123208.png)
 
 ### 9.4 Schul-Einstellungen
 
@@ -320,6 +359,8 @@ Bereits vorhandene Personen werden nicht eingeladen, sondern direkt in der Perso
 - Statusanzeige: ob **Dev-Login** aktiv ist und ob der **Bootstrap-Admin** (`ADMIN_EMAILS`) konfiguriert ist.
 
 > 📷 _Screenshot: Schul-Einstellungen mit Akzentfarben-Auswahl und Logo._
+>
+> ![Screenshot: Einladungen anlegen und Liste offener Einladungen](Images/image-1782213871616.png)
 
 ### 9.5 Betrieb & Gesundheit
 
@@ -327,16 +368,20 @@ Bereits vorhandene Personen werden nicht eingeladen, sondern direkt in der Perso
 - **Auslastung**: Anzahl Lehrpersonen/Lernende, Module, Modulanlässe, Einreichungen, **belegter Speicher** sowie **Anmeldungen der letzten 7 / 30 Tage**.
 
 > 📷 _Screenshot: Betriebs-Seite mit Health-Ampel und Kennzahlen._
+>
+> ![Screenshot: Betriebs-Seite mit Health-Ampel und Kennzahlen](Images/Pasted%20image%2020260623123303.png)
 
 ### 9.6 Audit-Log
 
 Chronologische Liste sicherheitsrelevanter Ereignisse (Anmeldungen, abgewiesene Anmeldungen, Abmeldungen) mit Zeitpunkt, Aktion und Person.
 
-### 9.7 Backup
+### 9.7 Backup (Beta) 
 
 Per Knopfdruck erzeugt die Schuladmin ein **Voll-Backup als ZIP**: die Schuldaten als `backup.json` (Personen, Module, Matrizen, Modulanlässe, Einreichungen, Bewertungen, Audit-Log, Einstellungen) **plus alle Dateien** aus dem Objektspeicher (Logos, Bilder, Anhänge, Belege). Details siehe [Kapitel 13](#13-backup--wiederherstellung).
 
 > 📷 _Screenshot: Backup-Schaltfläche auf der Betriebs-Seite._
+>
+> ![Screenshot: Backup-Schaltfläche auf der Betriebs-Seite](Images/Pasted%20image%2020260623123404.png)
 
 ---
 
@@ -550,7 +595,7 @@ Empfehlung: regelmässig (z. B. wöchentlich) herunterladen und sicher ablegen.
 
 ### Infrastruktur-Backup (IT)
 
-Für ein vollständiges, wiederherstellbares Backup zusätzlich auf Infrastruktur-Ebene sichern:
+==Für ein vollständiges, wiederherstellbares Backup zusätzlich auf Infrastruktur-Ebene sichern:==
 
 - **PostgreSQL**: `pg_dump` (bzw. das Docker-Volume `postgres-data`).
 - **MinIO**: das Docker-Volume `minio-data` bzw. den Bucket spiegeln.
@@ -658,5 +703,12 @@ Mindestens einer der Dienste DB/Redis/S3 ist nicht erreichbar – Container-Stat
 > erlaubt aber lernortspezifische Anpassung.
 
 ---
+## 18 Lizenz
 
+Dieses Projekt steht unter der **GNU Affero General Public License v3.0 (AGPLv3)**. 
+Details findest du in der Datei [LICENSE](LICENSE).
+
+Wenn du Funktionen erweiterst oder Fehler behebst, freuen wir uns über einen Pull Request hier im Haupt-Repository!
+
+---
 _KompetenzHub · Benutzerhandbuch · weitere technische Dokumentation siehe Ordner `docs/`._
