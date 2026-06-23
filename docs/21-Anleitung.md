@@ -1,4 +1,4 @@
-# KompetenzHub – Benutzerhandbuch & Installationsanleitung
+# KompetenzHub – Benutzerhandbuch & Installationsanleitung für Schulen 🏫
 
 > Stand: Juni 2026 · Sprache: Deutsch
 > Diese Anleitung richtet sich an **Lehrpersonen**, **Schulleitungen** und **technisch interessierte Personen**, die prüfen möchten, ob sich KompetenzHub für ihre Schule eignet – sowie an alle, die die Software selbst betreiben wollen.
@@ -60,11 +60,11 @@ Die Oberfläche ist vollständig **mehrsprachig** (Deutsch, Französisch, Italie
 
 KompetenzHub kennt drei Rollen. Jede Person hat genau **eine** aktive Rolle pro Schule.
 
-| Rolle                    | Darf …                                                                                                                                                                                                                                               |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Lernende:r** (LEARNER) | Modulanlässen beitreten, Kompetenzmatrix der eigenen Module ansehen, Nachweise einreichen, Lernpfad verfolgen, mit KI üben, eigene Sprache/Anzeige & optional eigene KI konfigurieren.                                                               |
-| **Lehrperson** (TEACHER) | Module & Matrizen erstellen/bearbeiten, Nachweise definieren, Modulanlässe (Klassen) führen, Einreichungen bewerten, Lernpfade pflegen, KI konfigurieren, Module/Klassen exportieren/importieren. Sieht **nur die eigenen** Module und Modulanlässe. |
-| **Schuladmin** (ADMIN)   | Alles rund um die Verwaltung: Personen (Lehrpersonen & Lernende), Einladungen/Zugänge, Schul-Einstellungen (Branding, Sprache, Anmelde-Anbieter), Betrieb/Gesundheit, Audit-Log, Backup.                                                             |
+| Rolle                    | Darf …                                                                                                                                                                                                                                                                                                            |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Lernende:r** (LEARNER) | Modulanlässen beitreten, Kompetenzmatrix der eigenen Module ansehen, Nachweise einreichen, Lernpfad verfolgen, mit KI üben, eigene Sprache/Anzeige & optional eigene KI konfigurieren.                                                                                                                            |
+| **Lehrperson** (TEACHER) | Module & Matrizen erstellen/bearbeiten, Nachweise definieren, Modulanlässe (Klassen) führen, Einreichungen bewerten, Lernpfade pflegen, KI konfigurieren, Module/Klassen exportieren/importieren. Sieht die **eigenen** Module/Modulanlässe sowie Modulanlässe, bei denen sie als **Co-Leitung** eingetragen ist. |
+| **Schuladmin** (ADMIN)   | Alles rund um die Verwaltung: Personen (Lehrpersonen & Lernende), Einladungen/Zugänge, Schul-Einstellungen (Branding, Sprache, Anmelde-Anbieter), Betrieb/Gesundheit, Audit-Log, Backup.                                                                                                                          |
 
 > **Wichtig (Zugangssteuerung):** Wer sich neu anmeldet, wird **standardmässig Lernende:r**. Lehrpersonen- und Admin-Rechte vergibt ausschliesslich die Schuladmin – über **Einladung** oder **Beförderung** (siehe [Kapitel 9](#9-handbuch-für-die-schuladministration)).
 
@@ -83,6 +83,7 @@ KompetenzHub kennt drei Rollen. Jede Person hat genau **eine** aktive Rolle pro 
 | **Deskriptor**         | „Ich kann …"-Beschreibung eines Feldes.                                                  |
 | **Kompetenznachweis**  | Auftrag, den Lernende zu einem Feld einreichen.                                          |
 | **Modulanlass**        | Durchführung eines Moduls mit einer konkreten Klasse (inkl. Beitrittscode).              |
+| **Co-Leitung**         | Weitere Lehrperson, die einen Modulanlass mitführt und mitbewertet.                      |
 | **Lernpfad**           | Empfohlene Reihenfolge der Kompetenzfelder.                                              |
 
 ---
@@ -167,22 +168,34 @@ Unter **Modulanlässe**:
 2. Einen **Beitrittscode** (bzw. Beitrittslink) erzeugen und an die Klasse weitergeben.
 3. Lernende treten mit dem Code bei und sehen sofort die Matrix und die Nachweise.
 
-Sie sehen **ausschliesslich die eigenen** Modulanlässe und nur die Lernenden, die diesen zugeordnet sind. Modulanlässe können **archiviert** (schreibgeschützt) und als **ZIP exportiert/importiert** werden (inkl. aller Einreichungen, Bewertungen und Zeitstempel).
+Sie sehen Ihre **eigenen** sowie die Modulanlässe, bei denen Sie als **Co-Leitung** eingetragen sind (entsprechend markiert), und jeweils nur die zugeordneten Lernenden. Modulanlässe können **archiviert** (schreibgeschützt) und als **ZIP exportiert/importiert** werden (inkl. aller Einreichungen, Bewertungen und Zeitstempel).
 
 > 📷 _Screenshot: Modulanlass mit Beitrittscode._
 
-### 6.5 Bewerten
+### 6.5 Co-Leitung (Co-Teaching)
 
-Unter **Bewerten** sehen Sie alle offenen Einreichungen Ihrer Modulanlässe:
+Ein Modulanlass kann von mehreren Lehrpersonen gemeinsam geführt werden. Im Detailbereich eines Modulanlasses gibt es dafür den Abschnitt **„Co-Leitung"**:
+
+1. E-Mail-Adresse der gewünschten Lehrperson eingeben und **Hinzufügen**.
+2. Die Person muss bereits als **Lehrperson** (oder Schuladmin) an der Schule angemeldet/eingeladen sein.
+3. Die Co-Leitung sieht den Modulanlass ab sofort in ihrem Login (mit der Markierung **„Co-Leitung"**) und kann dessen **Einreichungen bewerten**, den Fortschritt einsehen, Mitglieder und Beitrittscode verwalten.
+
+**Rechteabgrenzung:** Nur die **besitzende** Lehrperson (die den Modulanlass erstellt hat) kann die Co-Leitung verwalten (hinzufügen/entfernen) und den Modulanlass **löschen**. Co-Leitungen können den Anlass weder löschen noch weitere Co-Leitungen ernennen.
+
+> 📷 _Screenshot: Abschnitt „Co-Leitung" im Modulanlass._
+
+### 6.6 Bewerten
+
+Unter **Bewerten** sehen Sie alle offenen Einreichungen Ihrer Modulanlässe – auch jener, bei denen Sie als Co-Leitung mitwirken:
 
 - Einreichung öffnen (Text/Link/Datei/Screenshot ansehen).
 - **Gütestufe**, **Punkte** und **Feedback** erfassen oder die Einreichung **zurückweisen** (mit Begründung → Lernende:r kann erneut einreichen).
-- Eine **Historie** dokumentiert jede Bewertungsaktion.
+- Eine **Historie** dokumentiert jede Bewertungsaktion (inkl. der bewertenden Person).
 - Optional: **KI-Bewertungsvorschlag** und **KI-Feedbacktext** als Entwurf erzeugen (Sie entscheiden, ob Sie ihn übernehmen).
 
 > 📷 _Screenshot: Bewertungsansicht mit KI-Vorschlag._
 
-### 6.6 Export / Import von Modulen
+### 6.7 Export / Import von Modulen
 
 In der Modul-Detailansicht:
 
@@ -191,7 +204,7 @@ In der Modul-Detailansicht:
 
 So lassen sich Module zwischen Lehrpersonen oder Schulen austauschen.
 
-### 6.7 KI-Einstellungen (Lehrperson)
+### 6.8 KI-Einstellungen (Lehrperson)
 
 Unter **KI-Einstellungen** hinterlegen Sie Ihre eigene KI-Anbindung (Provider/Endpoint und API-Schlüssel). Der Schlüssel wird **verschlüsselt** gespeichert und nie im Klartext angezeigt. Optional können Sie Ihre KI **für Ihre Lernenden freigeben**, damit diese die Übungs-Funktionen nutzen können.
 
@@ -532,7 +545,7 @@ Migrationen liegen versioniert unter `apps/api/prisma/migrations`. Vor einem Upd
 
 - Beim Self-Hosting bleiben **alle Daten auf Ihrer Infrastruktur**.
 - Personenbezogene Daten beschränken sich im Kern auf Konto (Name, E-Mail) sowie Einreichungen/Bewertungen.
-- KI-Aufrufe erfolgen nur, wenn eine KI konfiguriert ist; dabei werden die zur Bewertung/Übung nötigen Inhalte an den gewählten KI-Anbieter übermittelt. Die Wahl des Anbieters und damit der Datenverarbeitung liegt bei der Schule/Lehrperson.
+- KI-Aufrufe erfolgen nur, wenn eine KI konfiguriert ist; dabei werden die zur Bewertung/Übung nötigen Inhalte an den gewählten KI-Anbieter übermittelt. Die Wahl des Anbieters und damit der Datenverarbeitung liegt bei der Schule/Lehrperson/Lernenden.
 - Beim **Export von Modulen** werden bewusst **keine personenbezogenen Daten** mitgegeben; beim **Modulanlass-Export** hingegen schon (inkl. Einreichungen) – entsprechend vertraulich behandeln.
 
 > Diese Anleitung ersetzt keine rechtliche Beratung. Klären Sie den Einsatz mit der/dem Datenschutzverantwortlichen Ihrer Schule.
@@ -575,6 +588,41 @@ Mindestens einer der Dienste DB/Redis/S3 ist nicht erreichbar – Container-Stat
 | **S3 / MinIO**       | Objektspeicher für Dateien.                    |
 | **Stub-Modus**       | KI liefert Testantworten ohne externen Aufruf. |
 | **Modulanlass**      | Durchführung eines Moduls mit einer Klasse.    |
+
+### Glossar (ICT-BBCH-Begriffe)
+
+| Begriff                       | Bedeutung                                                                                                              |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| **Modul**                     | Inhaltliche Einheit der Grundbildung (z.B. Modul 293). Grundlage ist die _Modulidentifikation_ aus dem Modulbaukasten. |
+| **Modulidentifikation**       | Offizielle Beschreibung eines Moduls inkl. Handlungsziele. Quelle: [modulbaukasten.ch](https://www.modulbaukasten.ch). |
+| **Handlungsziel (HZ)**        | Beschreibung dessen, was in einer beruflichen Handlungssituation erreicht werden soll. Grundlage der Kompetenzen.      |
+| **Kompetenzmatrix**           | Tabellarische Überführung der Handlungsziele in Kompetenzen. National i.d.R. eine pro Modulidentifikation.             |
+| **Kompetenzband**             | Thematisch zusammenhängende Gruppe von Kompetenzen (z.B. A1, B1, C1). Referenziert 1–n Handlungsziele.                 |
+| **Gütestufe**                 | Niveaustufe der Kompetenz: Beginner, Intermediate, Advanced, (nicht erfüllt).                                          |
+| **Kompetenzfeld**             | Schnittpunkt von Kompetenzband × Gütestufe in der Matrix.                                                              |
+| **Deskriptor**                | „Ich kann …"-Beschreibung einer Kompetenz in einem Kompetenzfeld.                                                      |
+| **Bewertungsraster**          | Konkretes Beurteilungsinstrument je Lernsituation/Leistungsnachweis: Kriterien + Indikatoren je Gütestufe.             |
+| **Kriterium**                 | Kurzbeschreibung der Zielhandlung im Bewertungsraster (z.B. „Container-Umgebung definieren").                          |
+| **Indikator**                 | Beobachtbare Beschreibung der erwarteten Leistung je Gütestufe.                                                        |
+| **Leistungsbeurteilung (LB)** | Überprüfung des Kompetenzerwerbs anhand der Kompetenzmatrix als Referenz.                                              |
+| **Kompetenznachweis**         | In dieser App: konkrete Lernaufgabe, mit der eine Kompetenz belegt wird (Upload, Quiz, Fachgespräch …).                |
+| **Lernpfad**                  | Alternative, didaktisch sinnvollere Reihenfolge der Kompetenzen durch die Matrix.                                      |
+| **MLP**                       | Modullehrplan der Berufsfachschule.                                                                                    |
+| **üK**                        | Überbetrieblicher Kurs.                                                                                                |
+| **EFZ**                       | Eidgenössisches Fähigkeitszeugnis.                                                                                     |
+
+### Gütestufen & Noten-Richtwerte
+
+| Gütestufe     | Kürzel | Note (Richtwert) | Beschreibung (verkürzt)                                            |
+| ------------- | ------ | ---------------- | ------------------------------------------------------------------ |
+| Beginner      | B      | 3.0              | Kann Teile der geforderten Kompetenzen anwenden.                   |
+| Intermediate  | I      | 4.5              | Beherrscht die selbständige Anwendung.                             |
+| Advanced      | A      | 6.0              | Beherrscht die fachgerechte Anwendung.                             |
+| Nicht erfüllt | 0      | –                | Kompetenzband nicht bearbeitet (nur im Bewertungsraster vermerkt). |
+
+> ⚠️ Die **Gewichtung der Kompetenzbänder** und die **Notenvergabe je Gütestufe** wird durch den
+> Lernort (die Lehrperson/Schule) festgelegt. Die App stellt die Richtwerte als Default bereit,
+> erlaubt aber lernortspezifische Anpassung.
 
 ---
 
