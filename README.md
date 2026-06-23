@@ -411,7 +411,23 @@ KompetenzHub ist ein **Monorepo** mit zwei Anwendungen:
 - ca. 2 GB freier Arbeitsspeicher für die Dienste
 - Betriebssystem: Linux, macOS oder Windows
 
-### 10.3 Schnellstart (lokale Entwicklung)
+### 10.3 Schnellstart 
+#### Zum Ausprobieren in Docker nicht als Produktivumgebung gedacht! 
+
+```bash
+# 1) Repository holen
+git clone https://github.com/staubthom/KompetenzHub.git
+cd KompetenzHub
+
+# 2) Umgebungsdatei anlegen und bei Bedarf anpassen
+cp .env.example-dev .env
+
+# 3) Infrastruktur starten (PostgreSQL, Redis, MinIO)
+docker compose -f docker-compose_dev.yaml --profile  app up -d --build
+
+```
+
+#### Für lokale Entwicklung
 
 ```bash
 # 1) Repository holen
