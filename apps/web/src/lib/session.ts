@@ -60,8 +60,13 @@ export function isTeacher(user: SessionUser | null): boolean {
   return !!user?.roles.some((r) => r === 'TEACHER' || r === 'ADMIN');
 }
 
+export function isAdmin(user: SessionUser | null): boolean {
+  return !!user?.roles.some((r) => r === 'ADMIN');
+}
+
 /** Wohin nach dem Login je nach Rolle? */
 export function homePathForRole(user: SessionUser | null): string {
+  if (isAdmin(user)) return '/admin';
   return isTeacher(user) ? '/lehrer' : '/lernende';
 }
 

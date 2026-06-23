@@ -3,8 +3,15 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { getUser, clearSession, isTeacher, initials, type SessionUser } from '../lib/session';
-import { logout as apiLogout, updatePreferences } from '../lib/api';
+import {
+  getUser,
+  clearSession,
+  isTeacher,
+  isAdmin,
+  initials,
+  type SessionUser,
+} from '../lib/session';
+import { logout as apiLogout, updatePreferences, branding } from '../lib/api';
 import { useI18n, normalizeLocale, LOCALES, LOCALE_LABEL, type Locale } from '../lib/i18n';
 
 type Theme = 'light' | 'dark' | 'gray';
@@ -22,6 +29,18 @@ const TEACHER_NAV: NavItem[] = [
   { id: 'klassen', icon: '◫', labelKey: 'nav.klassen', href: '/lehrer/klassen' },
   { id: 'bewerten', icon: '✓', labelKey: 'nav.bewerten', href: '/lehrer/bewerten' },
   { id: 'ki', icon: '⚙', labelKey: 'nav.ki', href: '/lehrer/ki' },
+];
+
+const ADMIN_NAV: NavItem[] = [
+  { id: 'admin', icon: '▦', labelKey: 'nav.adminOverview', href: '/admin' },
+  { id: 'admin-personen', icon: '👥', labelKey: 'nav.adminPeople', href: '/admin/personen' },
+  { id: 'admin-einladungen', icon: '✉', labelKey: 'nav.adminInvites', href: '/admin/einladungen' },
+  {
+    id: 'admin-einstellungen',
+    icon: '⚙',
+    labelKey: 'nav.adminSettings',
+    href: '/admin/einstellungen',
+  },
 ];
 
 const STUDENT_NAV: NavItem[] = [
@@ -45,6 +64,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('light');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [ready, setReady] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   // Session prüfen – ohne Login zur Login-Seite; Sprache & Theme aus dem Konto anwenden.
   useEffect(() => {
@@ -64,6 +84,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     setThemeState(savedTheme);
     localStorage.setItem('km-theme', savedTheme);
     document.documentElement.setAttribute('data-theme', savedTheme);
+
+    // Schul-Logo für die Kopfzeile laden (Fehler nicht fatal).
+    void branding
+      .get()
+      .then((b) => setLogoUrl(b.logoUrl))
+      .catch(() => {});
   }, [router, setLocale]);
 
   // Klick ausserhalb schliesst das Nutzer-Menü
@@ -99,8 +125,19 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   const teacher = isTeacher(user);
-  const nav = teacher ? TEACHER_NAV : STUDENT_NAV;
-  const roleLabel = teacher ? t('header.roleTeacher') : t('header.roleStudent');
+  const admin = isAdmin(user);
+  const nav = admin ? ADMIN_NAV : teacher ? TEACHER_NAV : STUDENT_NAV;
+  const homeHref = admin ? '/admin' : teacher ? '/lehrer' : '/lernende';
+  const roleLabel = admin
+    ? t('header.roleAdmin')
+    : teacher
+      ? t('header.roleTeacher')
+      : t('header.roleStudent');
+  const settingsHref = admin
+    ? '/admin/einstellungen'
+    : teacher
+      ? '/lehrer/ki'
+      : '/lernende/einstellungen';
   const themeLabel: Record<Theme, string> = {
     light: t('theme.light'),
     dark: t('theme.dark'),
@@ -119,7 +156,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         >
           ☰
         </button>
-        <Link className="brand" href={teacher ? '/lehrer' : '/lernende'}>
+        <Link className="brand" href={homeHref}>
+          {logoUrl && <img className="brand-logo" src={logoUrl} alt="" />}
           <span className="name">
             Kompetenz<span>Hub</span>
           </span>
@@ -164,11 +202,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <span aria-hidden="true">▾</span>
           </button>
           <div className="menu" role="menu" aria-label="Konto">
-            <Link
-              role="menuitem"
-              href={teacher ? '/lehrer/ki' : '/lernende/einstellungen'}
-              onClick={() => setUserMenuOpen(false)}
-            >
+            <Link role="menuitem" href={settingsHref} onClick={() => setUserMenuOpen(false)}>
               ⚙️ {t('nav.einstellungen')}
             </Link>
             <div className="sep" />
@@ -188,11 +222,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <aside className="sidebar">
           <nav className="nav">
             {nav.map((item) => {
-              const active =
-                pathname === item.href ||
-                (item.href !== '/lehrer' &&
-                  item.href !== '/lernende' &&
-                  pathname.startsWith(item.href));
+              const isRoot =
+                item.href === '/lehrer' || item.href === '/lernende' || item.href === '/admin';
+              const active = pathname === item.href || (!isRoot && pathname.startsWith(item.href));
               return (
                 <Link
                   key={item.id}
@@ -207,6 +239,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               );
             })}
           </nav>
+          <a
+            className="bmc-link"
+            href="https://buymeacoffee.com/potenzialentwickler"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            ☕ {t('common.buyMeACoffee')}
+          </a>
         </aside>
 
         <main className="main">{children}</main>

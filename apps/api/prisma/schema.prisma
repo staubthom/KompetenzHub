@@ -34,6 +34,12 @@ enum AuthProvider {
   GOOGLE
 }
 
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+}
+
 enum Locale {
   de
   fr
@@ -108,10 +114,11 @@ model Tenant {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  branding TenantBranding?
-  users    Membership[]
-  modules  Module[]
-  classes  Class[]
+  branding    TenantBranding?
+  users       Membership[]
+  modules     Module[]
+  classes     Class[]
+  invitations Invitation[]
 }
 
 model TenantBranding {
@@ -164,6 +171,30 @@ model Membership {
   @@unique([tenantId, userId, role])
   @@index([tenantId])
   @@index([userId])
+}
+
+// ============================================================
+// Einladungen / Zugangssteuerung (Schuladmin)
+// ============================================================
+// Steuert, wer sich mit welcher Rolle anmelden darf. Eine offene
+// Einladung wird beim ersten Login der passenden E-Mail eingelöst
+// (→ Membership mit der eingeladenen Rolle). Erlaubt das Einladen von
+// Personen, deren User-Konto noch gar nicht existiert.
+model Invitation {
+  id          String           @id @default(uuid())
+  tenantId    String
+  email       String
+  role        Role
+  status      InvitationStatus @default(PENDING)
+  invitedById String?
+  createdAt   DateTime         @default(now())
+  acceptedAt  DateTime?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@index([email])
 }
 
 // ============================================================

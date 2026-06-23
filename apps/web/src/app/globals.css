@@ -131,6 +131,12 @@ a {
   text-decoration: none;
   color: inherit;
 }
+.appbar .brand .brand-logo {
+  height: 28px;
+  max-width: 140px;
+  object-fit: contain;
+  display: block;
+}
 .appbar .brand .name {
   font-weight: 700;
   font-size: 15px;
@@ -280,6 +286,23 @@ a {
   background: color-mix(in srgb, var(--brand-primary) 14%, transparent);
   color: var(--brand-primary);
   font-weight: 600;
+}
+.bmc-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 9px 11px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  color: var(--fg-muted);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+}
+.bmc-link:hover {
+  background: var(--surface-2);
+  color: var(--fg);
 }
 .scrim {
   display: none;

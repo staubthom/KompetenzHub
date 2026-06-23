@@ -825,3 +825,84 @@ export interface SubmissionDetail {
   } | null;
   history: HistoryEntry[];
 }
+
+// ── Schuladmin-Dashboard (Sprint 11) ───────────────────────────
+export interface AdminUser {
+  id: string;
+  email: string;
+  displayName: string;
+  avatarUrl: string | null;
+  role: Role;
+  status: 'ACTIVE' | 'DISABLED';
+  createdAt: string;
+}
+
+export interface Invitation {
+  id: string;
+  email: string;
+  role: Role;
+  status: string;
+  createdAt: string;
+}
+
+export interface AdminOverview {
+  admins: number;
+  teachers: number;
+  learners: number;
+  disabled: number;
+  pendingInvites: number;
+  modules: number;
+  classes: number;
+}
+
+export interface AdminSettings {
+  schoolName: string;
+  logoUrl: string | null;
+  authProviders: { microsoft: boolean; google: boolean };
+  devLoginEnabled: boolean;
+  adminEmailsConfigured: boolean;
+}
+
+export interface Branding {
+  logoUrl: string | null;
+  displayName: string | null;
+}
+
+/** Schul-Branding (Logo) – für die Kopfzeile, alle Rollen. */
+export const branding = {
+  get: () => apiFetch<Branding>('/branding'),
+};
+
+export const admin = {
+  overview: () => apiFetch<AdminOverview>('/admin/overview'),
+  users: () => apiFetch<AdminUser[]>('/admin/users'),
+  setRole: (id: string, role: Role) =>
+    apiFetch<AdminUser>(`/admin/users/${id}/role`, {
+      method: 'PATCH',
+      body: JSON.stringify({ role }),
+    }),
+  setStatus: (id: string, active: boolean) =>
+    apiFetch<AdminUser>(`/admin/users/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ active }),
+    }),
+  removeUser: (id: string) => apiFetch<void>(`/admin/users/${id}`, { method: 'DELETE' }),
+  invitations: () => apiFetch<Invitation[]>('/admin/invitations'),
+  invite: (email: string, role: Role) =>
+    apiFetch<Invitation>('/admin/invitations', {
+      method: 'POST',
+      body: JSON.stringify({ email, role }),
+    }),
+  revokeInvitation: (id: string) =>
+    apiFetch<void>(`/admin/invitations/${id}`, { method: 'DELETE' }),
+  settings: () => apiFetch<AdminSettings>('/admin/settings'),
+  updateSettings: (dto: {
+    schoolName?: string;
+    authProviders?: { microsoft?: boolean; google?: boolean };
+    logoUrl?: string | null;
+  }) =>
+    apiFetch<AdminSettings>('/admin/settings', {
+      method: 'PATCH',
+      body: JSON.stringify(dto),
+    }),
+};

@@ -65,7 +65,8 @@ export class AuthController {
       displayName: dto.displayName?.trim() || email.split('@')[0],
       desiredRole: role,
     };
-    const result = await this.auth.loginWithProfile(profile);
+    // Dev-Login umgeht das Zugangs-Gate, damit Entwickler:innen jede Rolle testen können.
+    const result = await this.auth.loginWithProfile(profile, { bypassGate: true });
     this.setCookie(res, result.token);
     return result;
   }
