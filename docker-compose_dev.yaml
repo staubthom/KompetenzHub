@@ -50,7 +50,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # ── Anwendung (nur mit Profil "app", z. B. `docker compose --profile app up -d --build`) ──
+  # ── Anwendung (nur mit Profil "app", z. B. `docker compose -f docker-compose_dev.yaml --profile  app up -d --build`) ──
   api:
     profiles: ['app']
     build:
