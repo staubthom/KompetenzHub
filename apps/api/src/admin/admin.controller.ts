@@ -8,8 +8,11 @@ import {
   Param,
   Patch,
   Post,
+  Query,
+  Res,
 } from '@nestjs/common';
 import { Role } from '@prisma/client';
+import type { Response } from 'express';
 import { CurrentUser, Roles } from '../auth/decorators';
 import type { RequestContext } from '../common/request-context';
 import { AdminService } from './admin.service';
@@ -28,6 +31,11 @@ interface SettingsDto {
   schoolName?: string;
   authProviders?: { microsoft?: boolean; google?: boolean };
   logoUrl?: string | null;
+  primaryColor?: string;
+  defaultLocale?: string;
+}
+interface UserPatchDto {
+  displayName?: string;
 }
 
 /** Schuladmin-Dashboard: Personen, Einladungen, Einstellungen. Nur ADMIN. */
@@ -45,6 +53,15 @@ export class AdminController {
   @Get('users')
   users(@CurrentUser() user: RequestContext) {
     return this.admin.listUsers(user.tenantId);
+  }
+
+  @Patch('users/:id')
+  updateUser(
+    @Param('id') id: string,
+    @Body() dto: UserPatchDto,
+    @CurrentUser() user: RequestContext,
+  ) {
+    return this.admin.updateUser(user.tenantId, id, { displayName: dto.displayName });
   }
 
   @Patch('users/:id/role')
@@ -101,5 +118,27 @@ export class AdminController {
   @Patch('settings')
   updateSettings(@Body() dto: SettingsDto, @CurrentUser() user: RequestContext) {
     return this.admin.updateSettings(user.tenantId, dto ?? {});
+  }
+
+  // ── Betrieb & Gesundheit / Audit / Backup ──
+  @Get('ops')
+  ops(@CurrentUser() user: RequestContext) {
+    return this.admin.ops(user.tenantId);
+  }
+
+  @Get('audit')
+  audit(@Query('limit') limit: string | undefined, @CurrentUser() user: RequestContext) {
+    return this.admin.audit(user.tenantId, limit ? Number(limit) : 100);
+  }
+
+  @Get('backup')
+  async backup(@CurrentUser() user: RequestContext, @Res() res: Response): Promise<void> {
+    const { buffer, filename } = await this.admin.backupZip(user.tenantId);
+    res.set({
+      'Content-Type': 'application/zip',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Length': String(buffer.length),
+    });
+    res.end(buffer);
   }
 }

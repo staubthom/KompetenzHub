@@ -17,6 +17,8 @@ export default function AdminPeoplePage() {
   const [users, setUsers] = useState<AdminUser[] | null>(null);
   const [me, setMe] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
 
   const load = useCallback(async () => {
     try {
@@ -47,6 +49,24 @@ export default function AdminPeoplePage() {
     try {
       await admin.setRole(u.id, role);
       toast.success(t('admin.roleChanged'));
+      await load();
+    } catch (e: unknown) {
+      showError(e);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function saveName(u: AdminUser) {
+    if (!editName.trim() || editName.trim() === u.displayName) {
+      setEditId(null);
+      return;
+    }
+    setBusy(u.id);
+    try {
+      await admin.updateUser(u.id, editName.trim());
+      toast.success(t('admin.saved'));
+      setEditId(null);
       await load();
     } catch (e: unknown) {
       showError(e);
@@ -126,7 +146,21 @@ export default function AdminPeoplePage() {
                   return (
                     <tr key={u.id}>
                       <td>
-                        <strong>{u.displayName}</strong>
+                        {editId === u.id ? (
+                          <input
+                            autoFocus
+                            value={editName}
+                            disabled={busy === u.id}
+                            onChange={(e) => setEditName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') void saveName(u);
+                              if (e.key === 'Escape') setEditId(null);
+                            }}
+                            style={{ width: 180 }}
+                          />
+                        ) : (
+                          <strong>{u.displayName}</strong>
+                        )}
                         {self && <span className="badge b-published"> {t('admin.you')}</span>}
                       </td>
                       <td className="kh-muted">{u.email}</td>
@@ -153,6 +187,31 @@ export default function AdminPeoplePage() {
                         </span>
                       </td>
                       <td style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {editId === u.id ? (
+                          <>
+                            <button
+                              className="btn sm primary"
+                              disabled={busy === u.id}
+                              onClick={() => void saveName(u)}
+                            >
+                              {t('common.save')}
+                            </button>
+                            <button className="btn sm" onClick={() => setEditId(null)}>
+                              {t('common.cancel')}
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            className="btn sm"
+                            disabled={busy === u.id}
+                            onClick={() => {
+                              setEditId(u.id);
+                              setEditName(u.displayName);
+                            }}
+                          >
+                            {t('common.edit')}
+                          </button>
+                        )}
                         <button
                           className="btn sm"
                           disabled={busy === u.id || self}

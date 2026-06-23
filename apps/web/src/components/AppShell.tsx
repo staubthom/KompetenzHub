@@ -35,6 +35,8 @@ const ADMIN_NAV: NavItem[] = [
   { id: 'admin', icon: '▦', labelKey: 'nav.adminOverview', href: '/admin' },
   { id: 'admin-personen', icon: '👥', labelKey: 'nav.adminPeople', href: '/admin/personen' },
   { id: 'admin-einladungen', icon: '✉', labelKey: 'nav.adminInvites', href: '/admin/einladungen' },
+  { id: 'admin-betrieb', icon: '❤', labelKey: 'nav.adminOps', href: '/admin/betrieb' },
+  { id: 'admin-audit', icon: '🛡', labelKey: 'nav.adminAudit', href: '/admin/audit' },
   {
     id: 'admin-einstellungen',
     icon: '⚙',
@@ -85,10 +87,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     localStorage.setItem('km-theme', savedTheme);
     document.documentElement.setAttribute('data-theme', savedTheme);
 
-    // Schul-Logo für die Kopfzeile laden (Fehler nicht fatal).
+    // Schul-Branding (Logo + Akzentfarbe) laden (Fehler nicht fatal).
     void branding
       .get()
-      .then((b) => setLogoUrl(b.logoUrl))
+      .then((b) => {
+        setLogoUrl(b.logoUrl);
+        if (b.primaryColor) {
+          document.documentElement.style.setProperty('--brand-primary', b.primaryColor);
+        }
+      })
       .catch(() => {});
   }, [router, setLocale]);
 

@@ -133,6 +133,35 @@ check('Branding für alle Rollen lesbar (Logo sichtbar)', branding.status === 20
 const clearLogo = await req('PATCH', '/admin/settings', { logoUrl: null }, admin);
 check('Logo entfernt', clearLogo.status === 200 && clearLogo.body?.logoUrl === null);
 
+// ── Akzentfarbe + Default-Sprache + Branding ──────────────────────
+const setColor = await req('PATCH', '/admin/settings', { primaryColor: '#0d9488', defaultLocale: 'fr' }, admin);
+check('Akzentfarbe + Default-Sprache gesetzt', setColor.status === 200 && setColor.body?.primaryColor === '#0d9488' && setColor.body?.defaultLocale === 'fr');
+const badColor = await req('PATCH', '/admin/settings', { primaryColor: 'blau' }, admin);
+check('Ungültige Farbe abgewiesen', badColor.status === 400, `status ${badColor.status}`);
+const brand2 = await req('GET', '/branding', null, teacher);
+check('Akzentfarbe via /branding lesbar', brand2.body?.primaryColor === '#0d9488');
+// Default-Sprache greift bei neuem Login
+const newbie = await exchange(`fr-newbie-${stamp}@schule.ch`);
+check('Neues Konto erbt Default-Sprache (fr)', newbie.body?.user?.locale === 'fr', JSON.stringify(newbie.body?.user?.locale));
+await req('PATCH', '/admin/settings', { defaultLocale: 'de' }, admin); // zurücksetzen
+
+// ── Person editieren (Anzeigename) ────────────────────────────────
+const ren = await req('PATCH', `/admin/users/${learnerId}`, { displayName: 'Umbenannt Test' }, admin);
+check('Anzeigename geändert', ren.status === 200 && ren.body?.displayName === 'Umbenannt Test');
+
+// ── Betrieb / Auslastung / Audit ──────────────────────────────────
+const ops = await req('GET', '/admin/ops', null, admin);
+check('Betrieb: Health + Auslastung', ops.status === 200 && ['ok', 'degraded'].includes(ops.body?.health?.status) && typeof ops.body?.usage?.users === 'number');
+const audit = await req('GET', '/admin/audit?limit=10', null, admin);
+check('Audit-Log lesbar', audit.status === 200 && Array.isArray(audit.body) && audit.body.some((e) => e.action === 'auth.login'));
+const opsDenied = await req('GET', '/admin/ops', null, teacher);
+check('RBAC: TEACHER → /admin/ops = 403', opsDenied.status === 403, `status ${opsDenied.status}`);
+
+// ── Backup-Export (ZIP) ───────────────────────────────────────────
+const backupRes = await fetch(`${BASE}/admin/backup`, { headers: { Authorization: `Bearer ${admin}` } });
+const buf = Buffer.from(await backupRes.arrayBuffer());
+check('Backup-ZIP geliefert', backupRes.status === 200 && buf.length > 0 && buf.slice(0, 2).toString() === 'PK', `status ${backupRes.status}, ${buf.length}B`);
+
 // ── Einladung zurückziehen ────────────────────────────────────────
 const inv2 = await req('POST', '/admin/invitations', { email: `revoke-${stamp}@schule.ch`, role: 'TEACHER' }, admin);
 const rev = await req('DELETE', `/admin/invitations/${inv2.body?.id}`, null, admin);

@@ -858,6 +858,8 @@ export interface AdminOverview {
 export interface AdminSettings {
   schoolName: string;
   logoUrl: string | null;
+  primaryColor: string;
+  defaultLocale: string;
   authProviders: { microsoft: boolean; google: boolean };
   devLoginEnabled: boolean;
   adminEmailsConfigured: boolean;
@@ -866,9 +868,34 @@ export interface AdminSettings {
 export interface Branding {
   logoUrl: string | null;
   displayName: string | null;
+  primaryColor: string | null;
 }
 
-/** Schul-Branding (Logo) – für die Kopfzeile, alle Rollen. */
+export interface AdminOps {
+  health: { status: string; db: string; redis: string; s3: string; version: string };
+  usage: {
+    users: number;
+    teachers: number;
+    learners: number;
+    modules: number;
+    classes: number;
+    evidences: number;
+    submissions: number;
+    storageBytes: number | null;
+    logins7: number;
+    logins30: number;
+  };
+}
+
+export interface AuditEntry {
+  id: string;
+  action: string;
+  detail: Record<string, unknown>;
+  createdAt: string;
+  user: { id: string; displayName: string; email: string } | null;
+}
+
+/** Schul-Branding (Logo, Akzentfarbe) – für die Kopfzeile, alle Rollen. */
 export const branding = {
   get: () => apiFetch<Branding>('/branding'),
 };
@@ -886,6 +913,11 @@ export const admin = {
       method: 'PATCH',
       body: JSON.stringify({ active }),
     }),
+  updateUser: (id: string, displayName: string) =>
+    apiFetch<AdminUser>(`/admin/users/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ displayName }),
+    }),
   removeUser: (id: string) => apiFetch<void>(`/admin/users/${id}`, { method: 'DELETE' }),
   invitations: () => apiFetch<Invitation[]>('/admin/invitations'),
   invite: (email: string, role: Role) =>
@@ -900,9 +932,33 @@ export const admin = {
     schoolName?: string;
     authProviders?: { microsoft?: boolean; google?: boolean };
     logoUrl?: string | null;
+    primaryColor?: string;
+    defaultLocale?: string;
   }) =>
     apiFetch<AdminSettings>('/admin/settings', {
       method: 'PATCH',
       body: JSON.stringify(dto),
     }),
+  ops: () => apiFetch<AdminOps>('/admin/ops'),
+  audit: (limit = 100) => apiFetch<AuditEntry[]>(`/admin/audit?limit=${limit}`),
 };
+
+/** Voll-Backup (DB-Daten + Dateien) als ZIP herunterladen. */
+export async function exportBackupZip(): Promise<{ blob: Blob; filename: string }> {
+  const token = getToken();
+  const res = await fetch(`${API_BASE}/api/v1/admin/backup`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ title: res.statusText }));
+    throw Object.assign(new Error(err.title ?? 'Backup fehlgeschlagen'), {
+      status: res.status,
+      body: err,
+    });
+  }
+  const blob = await res.blob();
+  const cd = res.headers.get('Content-Disposition') ?? '';
+  const m = cd.match(/filename="?([^"]+)"?/);
+  return { blob, filename: m?.[1] ?? 'kompetenzhub-backup.zip' };
+}

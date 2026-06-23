@@ -6,6 +6,7 @@ import {
   CreateBucketCommand,
   HeadBucketCommand,
   PutBucketPolicyCommand,
+  ListObjectsV2Command,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'node:crypto';
@@ -116,5 +117,33 @@ export class S3Service implements OnModuleInit {
     await this.client.send(
       new PutObjectCommand({ Bucket: this.bucket, Key: key, Body: body, ContentType: contentType }),
     );
+  }
+
+  /** Alle Objekt-Keys des Buckets (paginiert) – für Voll-Backup. */
+  async listAllKeys(): Promise<string[]> {
+    const keys: string[] = [];
+    let token: string | undefined;
+    do {
+      const out = await this.client.send(
+        new ListObjectsV2Command({ Bucket: this.bucket, ContinuationToken: token }),
+      );
+      for (const obj of out.Contents ?? []) if (obj.Key) keys.push(obj.Key);
+      token = out.IsTruncated ? out.NextContinuationToken : undefined;
+    } while (token);
+    return keys;
+  }
+
+  /** Gesamtgrösse aller Objekte in Bytes – für Speicher-Auslastung. */
+  async totalSize(): Promise<number> {
+    let total = 0;
+    let token: string | undefined;
+    do {
+      const out = await this.client.send(
+        new ListObjectsV2Command({ Bucket: this.bucket, ContinuationToken: token }),
+      );
+      for (const obj of out.Contents ?? []) total += obj.Size ?? 0;
+      token = out.IsTruncated ? out.NextContinuationToken : undefined;
+    } while (token);
+    return total;
   }
 }
