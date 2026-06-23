@@ -346,11 +346,17 @@ a {
   color: var(--brand-primary);
   font-weight: 600;
 }
-.bmc-link {
+.sidebar-foot {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.bmc-link,
+.source-link {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 16px;
   padding: 9px 11px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
@@ -359,7 +365,12 @@ a {
   font-size: 13px;
   font-weight: 500;
 }
-.bmc-link:hover {
+.source-link {
+  border: none;
+  font-size: 12px;
+}
+.bmc-link:hover,
+.source-link:hover {
   background: var(--surface-2);
   color: var(--fg);
 }
@@ -1729,6 +1740,13 @@ button.hm-cell {
   white-space: normal;
   text-align: left;
   max-width: 100%;
+}
+/* Lehrer-Matrix-Editor: lange Nachweistitel umbrechen statt abschneiden */
+.level-col .evidence-chip {
+  white-space: normal;
+  text-align: left;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 /* Kopierschutz (Aufgabenstellung / Deskriptoren für Lernende) */
