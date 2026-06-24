@@ -14,8 +14,13 @@ import type { SessionUser } from './session';
  *     localStorage gespeichert und der Nutzer weitergeleitet.
  */
 
-/** API-URL für server-seitige Aufrufe (NextAuth jwt-Callback läuft auf dem Server). */
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+/**
+ * API-URL fuer server-seitige Aufrufe.
+ * Im Browser darf NEXT_PUBLIC_API_URL oeffentlich sein, im Container braucht
+ * der NextAuth-Callback aber die interne Service-Adresse.
+ */
+const API_BASE =
+  process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 const MICROSOFT_CLIENT_ID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const microsoftClientId = process.env.AUTH_MICROSOFT_CLIENT_ID?.trim();

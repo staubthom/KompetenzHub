@@ -43,7 +43,7 @@ Zusätzlich bietet KompetenzHub **Lernpfade** (empfohlene Reihenfolge), **KI-Unt
 Die Oberfläche ist vollständig **mehrsprachig** (Deutsch, Französisch, Italienisch, Englisch).
 
 ### Demoseite 🌐
-[Demo! Keine persönlichen Daten hochladen ⚠️](http://static.160.78.233.167.clients.your-server.de:3000/lehrer/bewerten)
+[Demo! Keine persönlichen Daten hochladen ⚠️](https://demo.kompetenzhub.ch/)
 Hier gibt es eine Demo welche immer zur vollen Stunde zurückgesetzt wird. 
 
 ---

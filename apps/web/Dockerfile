@@ -17,7 +17,7 @@ RUN npm run build --workspace apps/web
 # ---- Runtime-Stage (schlankes standalone-Bundle) ----
 FROM node:20-alpine AS runner
 WORKDIR /app
-ENV NODE_ENV=production
+ENV NODE_ENV=development
 ENV PORT=3000
 # Next.js standalone: Server + nötige node_modules + statische Assets
 COPY --from=builder /app/apps/web/.next/standalone ./
