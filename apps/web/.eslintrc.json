@@ -1,10 +1,6 @@
 {
-  "extends": ["../../.eslintrc.json", "plugin:jsx-a11y/recommended"],
-  "plugins": ["jsx-a11y"],
-  "parserOptions": {
-    "ecmaFeatures": { "jsx": true }
-  },
-  "settings": {
-    "react": { "version": "detect" }
-  }
+  "extends": [
+    "next/core-web-vitals",
+    "plugin:@typescript-eslint/recommended"
+  ]
 }

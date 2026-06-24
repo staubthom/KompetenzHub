@@ -1,5 +1,5 @@
 'use client';
-
+import * as React from 'react'; // Wichtig: React importieren, falls noch nicht da
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -22,9 +22,10 @@ import {
 
 const LEVELS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'] as const;
 
-// In Next.js 14 ist params ein einfaches Objekt (kein Promise).
-export default function ModuleDetailPage({ params }: { params: { id: string } }) {
-  const id = params.id;
+export default function ModuleDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  // Wir packen das Promise mit React.use() aus
+  const unwrappedParams = React.use(params);
+  const id = unwrappedParams.id;
   const router = useRouter();
   const toast = useToast();
   const { t } = useI18n();
@@ -659,7 +660,7 @@ export default function ModuleDetailPage({ params }: { params: { id: string } })
                         <div className="desc-editor">
                           <textarea
                             // Fokus folgt dem gerade geöffneten Deskriptor-Editor (a11y-konform)
-                            // eslint-disable-next-line jsx-a11y/no-autofocus
+                             
                             autoFocus
                             rows={3}
                             value={editingDesc.text}

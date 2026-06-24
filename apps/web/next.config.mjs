@@ -8,9 +8,14 @@ const nextConfig = {
   reactStrictMode: true,
   // Schlankes, eigenständiges Runtime-Bundle für das Docker-Image.
   output: 'standalone',
-  // Im Monorepo: Datei-Tracing ab der Repo-Wurzel, damit das standalone-Bundle
-  // konsistent unter apps/web/ liegt.
-  experimental: { outputFileTracingRoot: join(__dirname, '../../') },
+  
+  // NEU IN NEXT.JS 15: Direkt auf der obersten Ebene platziert
+  outputFileTracingRoot: join(__dirname, '../../'),
+  
+  experimental: {
+    // Hier kommen nur noch echte experimentelle Features rein.
+    // Da es leer ist, könntest du den gesamten Block auch löschen.
+  },
 };
 
 export default nextConfig;

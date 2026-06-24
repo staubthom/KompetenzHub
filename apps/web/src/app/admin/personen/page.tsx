@@ -149,7 +149,7 @@ export default function AdminPeoplePage() {
                         {editId === u.id ? (
                           <input
                             // Fokus folgt der gerade geöffneten Inline-Bearbeitung (a11y-konform)
-                            // eslint-disable-next-line jsx-a11y/no-autofocus
+                             
                             autoFocus
                             value={editName}
                             disabled={busy === u.id}

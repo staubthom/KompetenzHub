@@ -131,13 +131,13 @@ async function main(): Promise<void> {
     });
   }
 
-  // eslint-disable-next-line no-console
+   
   console.log(`Seed abgeschlossen: Tenant "${tenant.name}", Modul ${module293.number}.`);
 }
 
 main()
   .catch((e) => {
-    // eslint-disable-next-line no-console
+     
     console.error(e);
     process.exit(1);
   })
