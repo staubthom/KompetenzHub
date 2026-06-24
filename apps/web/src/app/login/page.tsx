@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { devLogin } from '../../lib/api';
+import { Suspense, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { signIn } from 'next-auth/react';
+import { devLogin, getLoginOptions, type LoginOptions } from '../../lib/api';
 import { useToast } from '../../components/ToastProvider';
 import { getUser, homePathForRole, type Role } from '../../lib/session';
 import { useI18n } from '../../lib/i18n';
@@ -13,13 +14,24 @@ const DEMO_EMAIL: Record<Role, string> = {
   ADMIN: 'admin@demo.ch',
 };
 
-export default function LoginPage() {
+function LoginPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const toast = useToast();
   const { t } = useI18n();
   const [role, setRole] = useState<Role>('TEACHER');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loginOptions, setLoginOptions] = useState<LoginOptions | null>(null);
+
+  // Effektive Login-Optionen von der API laden
+  useEffect(() => {
+    getLoginOptions()
+      .then(setLoginOptions)
+      .catch(() => {
+        /* Fehler ignorieren – Seite bleibt nutzbar */
+      });
+  }, []);
 
   // Bereits eingeloggt? → direkt weiterleiten
   useEffect(() => {
@@ -32,6 +44,20 @@ export default function LoginPage() {
     const saved = localStorage.getItem('km-theme') ?? 'light';
     document.documentElement.setAttribute('data-theme', saved);
   }, []);
+
+  // OAuth-Fehler aus URL-Parameter anzeigen (Redirect von /login/callback oder NextAuth)
+  useEffect(() => {
+    const error = searchParams.get('error');
+    if (!error) return;
+    const messages: Record<string, string> = {
+      oauth: 'Anmeldung fehlgeschlagen. Bitte erneut versuchen.',
+      exchange: 'Konto wurde beim Server nicht akzeptiert. Bitte an die Schuladmin wenden.',
+      OAuthCallback: 'Fehler beim OAuth-Callback. Bitte erneut versuchen.',
+      OAuthCreateAccount: 'Konto konnte nicht erstellt werden.',
+      AccessDenied: 'Zugriff verweigert.',
+    };
+    toast.error(messages[error] ?? 'Anmeldung fehlgeschlagen.');
+  }, [searchParams, toast]);
 
   async function handleDevLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -47,12 +73,16 @@ export default function LoginPage() {
     }
   }
 
-  function handleOAuth(provider: 'microsoft' | 'google') {
-    // FA-08: OIDC-Flow folgt (NextAuth.js, BFF /auth/exchange).
-    toast.info(
-      `${provider === 'microsoft' ? 'Microsoft' : 'Google'}-Login wird später aktiviert. ` +
-        `Bitte vorerst den Dev-Login verwenden.`,
-    );
+  function handleOAuth(provider: 'microsoft' | 'google' | 'github') {
+    const providerId =
+      provider === 'microsoft' ? 'azure-ad' : provider === 'github' ? 'github' : 'google';
+    const label =
+      provider === 'microsoft' ? 'Microsoft' : provider === 'github' ? 'GitHub' : 'Google';
+    if (loginOptions && !loginOptions.authProviders[provider]) {
+      toast.info(`${label}-Login ist auf diesem Server nicht konfiguriert.`);
+      return;
+    }
+    void signIn(providerId, { callbackUrl: '/login/callback' });
   }
 
   return (
@@ -64,6 +94,7 @@ export default function LoginPage() {
         <p className="login-sub">{t('login.subtitle')}</p>
 
         {/* OAuth-Provider (FA-08) */}
+        {loginOptions?.authProviders.microsoft && (
         <button className="provider-btn" onClick={() => handleOAuth('microsoft')} type="button">
           <svg className="logo" viewBox="0 0 23 23" aria-hidden="true">
             <path fill="#f25022" d="M1 1h10v10H1z" />
@@ -73,6 +104,8 @@ export default function LoginPage() {
           </svg>
           Mit Microsoft anmelden
         </button>
+        )}
+        {loginOptions?.authProviders.google && (
         <button className="provider-btn" onClick={() => handleOAuth('google')} type="button">
           <svg className="logo" viewBox="0 0 18 18" aria-hidden="true">
             <path
@@ -94,10 +127,23 @@ export default function LoginPage() {
           </svg>
           Mit Google anmelden
         </button>
+        )}
+        {loginOptions?.authProviders.github && (
+        <button className="provider-btn" onClick={() => handleOAuth('github')} type="button">
+          <svg className="logo" viewBox="0 0 16 16" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.5 7.5 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"
+            />
+          </svg>
+          Mit GitHub anmelden
+        </button>
+        )}
 
-        <div className="login-divider">oder zum Entwickeln</div>
+        {loginOptions?.devLoginEnabled && <div className="login-divider">oder zum Entwickeln</div>}
 
         {/* Dev-Login mit Rollenwahl */}
+        {loginOptions?.devLoginEnabled && (
         <form
           onSubmit={(e) => {
             void handleDevLogin(e);
@@ -119,9 +165,11 @@ export default function LoginPage() {
             >
               🎓 {t('header.roleStudent')}
             </button>
+            {loginOptions?.showAdminLogin && (
             <button type="button" aria-pressed={role === 'ADMIN'} onClick={() => setRole('ADMIN')}>
               🛠 {t('header.roleAdmin')}
             </button>
+            )}
           </div>
 
           <div className="login-section-label">E-Mail (optional)</div>
@@ -143,11 +191,22 @@ export default function LoginPage() {
             {loading ? t('common.loading') : 'Als Dev anmelden'}
           </button>
         </form>
+        )}
 
-        <p className="login-hint">
-          Dev-Login nur für die lokale Entwicklung. Produktiv via Microsoft/Google.
-        </p>
+        {loginOptions?.devLoginEnabled && (
+          <p className="login-hint">
+            Dev-Login nur für die lokale Entwicklung. Produktiv via Microsoft, Google oder GitHub.
+          </p>
+        )}
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginPageInner />
+    </Suspense>
   );
 }

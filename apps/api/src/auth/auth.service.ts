@@ -37,7 +37,25 @@ export interface AuthResult {
   };
 }
 
+export interface PublicLoginOptions {
+  authProviders: {
+    microsoft: boolean;
+    google: boolean;
+    github: boolean;
+  };
+}
+
 const DEFAULT_TENANT_ID = process.env.DEFAULT_TENANT_ID ?? '00000000-0000-0000-0000-000000000001';
+const MICROSOFT_CLIENT_ID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function hasConfiguredValue(value: string | undefined): boolean {
+  const normalized = value?.trim();
+  if (!normalized) return false;
+  return !['noch-zu-setzen', 'noch-zu-setze', 'todo', 'changeme'].includes(
+    normalized.toLowerCase(),
+  );
+}
 
 @Injectable()
 export class AuthService {
@@ -172,6 +190,24 @@ export class AuthService {
     await this.audit(tenantId, userId, 'auth.logout', {});
   }
 
+  /** Oeffentliche Login-Optionen fuer die Login-Seite. */
+  async loginOptions(): Promise<PublicLoginOptions> {
+    const tenantId = await this.ensureDefaultTenant();
+    return {
+      authProviders: {
+        microsoft:
+          this.isProviderConfigured(AuthProvider.MICROSOFT) &&
+          (await this.isProviderEnabled(tenantId, AuthProvider.MICROSOFT)),
+        google:
+          this.isProviderConfigured(AuthProvider.GOOGLE) &&
+          (await this.isProviderEnabled(tenantId, AuthProvider.GOOGLE)),
+        github:
+          this.isProviderConfigured(AuthProvider.GITHUB) &&
+          (await this.isProviderEnabled(tenantId, AuthProvider.GITHUB)),
+      },
+    };
+  }
+
   /**
    * Zugangssteuerung beim Login (Schuladmin-Modell):
    *  1. E-Mail in ADMIN_EMAILS → ADMIN (Bootstrap, immer aktiv).
@@ -240,8 +276,35 @@ export class AuthService {
     const tenant = await this.prisma.tenant.findUnique({ where: { id: tenantId } });
     const settings = (tenant?.settings ?? {}) as Record<string, unknown>;
     const providers = (settings.authProviders ?? {}) as Record<string, boolean>;
-    const key = provider === AuthProvider.MICROSOFT ? 'microsoft' : 'google';
+    const keyByProvider: Record<AuthProvider, string> = {
+      [AuthProvider.MICROSOFT]: 'microsoft',
+      [AuthProvider.GOOGLE]: 'google',
+      [AuthProvider.GITHUB]: 'github',
+    };
+    const key = keyByProvider[provider];
     return providers[key] !== false;
+  }
+
+  private isProviderConfigured(provider: AuthProvider): boolean {
+    switch (provider) {
+      case AuthProvider.MICROSOFT:
+        return (
+          hasConfiguredValue(process.env.AUTH_MICROSOFT_CLIENT_SECRET) &&
+          MICROSOFT_CLIENT_ID_RE.test(process.env.AUTH_MICROSOFT_CLIENT_ID?.trim() ?? '')
+        );
+      case AuthProvider.GOOGLE:
+        return (
+          hasConfiguredValue(process.env.AUTH_GOOGLE_CLIENT_ID) &&
+          hasConfiguredValue(process.env.AUTH_GOOGLE_CLIENT_SECRET)
+        );
+      case AuthProvider.GITHUB:
+        return (
+          hasConfiguredValue(process.env.AUTH_GITHUB_CLIENT_ID) &&
+          hasConfiguredValue(process.env.AUTH_GITHUB_CLIENT_SECRET)
+        );
+      default:
+        return false;
+    }
   }
 
   /** Setzt genau eine aktive Mitgliedschaft mit der gewünschten Rolle (idempotent). */

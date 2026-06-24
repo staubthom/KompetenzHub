@@ -60,7 +60,7 @@ export default function AdminSettingsPage() {
     }
   }
 
-  function toggleProvider(key: 'microsoft' | 'google') {
+  function toggleProvider(key: 'microsoft' | 'google' | 'github') {
     if (!settings) return;
     void save({
       authProviders: { ...settings.authProviders, [key]: !settings.authProviders[key] },
@@ -255,6 +255,15 @@ export default function AdminSettingsPage() {
                   onChange={() => toggleProvider('google')}
                 />{' '}
                 {t('admin.authGoogle')}
+              </label>
+              <label className="goal-check" style={{ display: 'block', marginTop: 8 }}>
+                <input
+                  type="checkbox"
+                  checked={settings.authProviders.github}
+                  disabled={busy}
+                  onChange={() => toggleProvider('github')}
+                />{' '}
+                {t('admin.authGithub')}
               </label>
             </div>
           </div>

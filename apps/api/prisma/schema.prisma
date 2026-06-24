@@ -34,6 +34,7 @@ enum MembershipStatus {
 enum AuthProvider {
   MICROSOFT
   GOOGLE
+  GITHUB
 }
 
 enum InvitationStatus {

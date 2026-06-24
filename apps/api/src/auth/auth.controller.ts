@@ -10,17 +10,33 @@ import {
   Req,
   Res,
 } from '@nestjs/common';
+import { join } from 'node:path';
+import { config as loadEnv } from 'dotenv';
 import { AuthProvider, Locale, Role } from '@prisma/client';
 import { Throttle } from '@nestjs/throttler';
 import { IsEmail, IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 import { Request, Response } from 'express';
-import { AuthService, ExternalProfile } from './auth.service';
+import { AuthService, ExternalProfile, PublicLoginOptions } from './auth.service';
 import { TokenService } from './token.service';
 import { CurrentUser, Public } from './decorators';
 import type { RequestContext } from '../common/request-context';
 
-const DEV_LOGIN_ENABLED = (process.env.DEV_LOGIN_ENABLED ?? 'true') === 'true';
 const COOKIE_NAME = 'kh_token';
+const ROOT_ENV_PATH = join(__dirname, '..', '..', '..', '..', '.env');
+
+function refreshRootEnv(): void {
+  loadEnv({ path: ROOT_ENV_PATH, override: true });
+}
+
+function isDevLoginEnabled(): boolean {
+  refreshRootEnv();
+  return (process.env.DEV_LOGIN_ENABLED ?? 'true') === 'true';
+}
+
+function isAdminLoginVisible(): boolean {
+  refreshRootEnv();
+  return (process.env.SHOW_ADMIN_LOGIN ?? 'true') === 'true';
+}
 
 // Strengeres Rate-Limit für Anmelde-Endpunkte (Brute-Force-Schutz). Pro IP,
 // daher grosszügig genug für eine ganze Klasse hinter einer Schul-IP; tunebar.
@@ -95,17 +111,38 @@ export class AuthController {
    * Nur aktiv, wenn DEV_LOGIN_ENABLED=true (Standard in Entwicklung).
    */
   @Public()
+  @Get('options')
+  async options(): Promise<
+    PublicLoginOptions & { devLoginEnabled: boolean; showAdminLogin: boolean }
+  > {
+    refreshRootEnv();
+    const options = await this.auth.loginOptions();
+    return {
+      ...options,
+      devLoginEnabled: isDevLoginEnabled(),
+      showAdminLogin: isAdminLoginVisible(),
+    };
+  }
+
+  /**
+   * Dev-Login: erzeugt/aktualisiert einen Test-User und stellt ein JWT aus.
+   * Nur aktiv, wenn DEV_LOGIN_ENABLED=true (Standard in Entwicklung).
+   */
+  @Public()
   @Throttle(AUTH_THROTTLE)
   @Post('dev-login')
   async devLogin(
     @Body() dto: DevLoginDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<unknown> {
-    if (!DEV_LOGIN_ENABLED) {
+    if (!isDevLoginEnabled()) {
       throw new BadRequestException('Dev-Login ist deaktiviert.');
     }
     const email = dto.email?.trim() || 'dev.lehrperson@example.com';
     const role = dto.role ?? Role.TEACHER;
+    if (role === Role.ADMIN && !isAdminLoginVisible()) {
+      throw new BadRequestException('Admin-Login ist deaktiviert.');
+    }
     const profile: ExternalProfile = {
       provider: AuthProvider.MICROSOFT,
       externalId: `dev:${email}`,

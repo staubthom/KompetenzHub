@@ -190,6 +190,7 @@ export class AdminService {
       authProviders: {
         microsoft: providers.microsoft !== false,
         google: providers.google !== false,
+        github: providers.github !== false,
       },
       devLoginEnabled: (process.env.DEV_LOGIN_ENABLED ?? 'true') === 'true',
       adminEmailsConfigured: (process.env.ADMIN_EMAILS ?? '').trim().length > 0,
@@ -200,7 +201,7 @@ export class AdminService {
     tenantId: string,
     dto: {
       schoolName?: string;
-      authProviders?: { microsoft?: boolean; google?: boolean };
+      authProviders?: { microsoft?: boolean; google?: boolean; github?: boolean };
       logoUrl?: string | null;
       primaryColor?: string;
       defaultLocale?: string;
@@ -213,6 +214,7 @@ export class AdminService {
     const next = {
       microsoft: dto.authProviders?.microsoft ?? current.microsoft !== false,
       google: dto.authProviders?.google ?? current.google !== false,
+      github: dto.authProviders?.github ?? current.github !== false,
     };
     if (dto.primaryColor !== undefined && !HEX_RE.test(dto.primaryColor)) {
       throw new BadRequestException('Ungültiger Farbwert (Hex, z. B. #2563eb).');

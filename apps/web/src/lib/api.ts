@@ -28,6 +28,16 @@ interface AuthResult {
   user: SessionUser;
 }
 
+export interface LoginOptions {
+  authProviders: {
+    microsoft: boolean;
+    google: boolean;
+    github: boolean;
+  };
+  devLoginEnabled: boolean;
+  showAdminLogin: boolean;
+}
+
 // Auth (Dev-Login für lokale Entwicklung; speichert die Session)
 export async function devLogin(email: string, role: Role): Promise<AuthResult> {
   const res = await fetch(`${API_BASE}/api/v1/auth/dev-login`, {
@@ -40,6 +50,16 @@ export async function devLogin(email: string, role: Role): Promise<AuthResult> {
   const result = (await res.json()) as AuthResult;
   saveSession(result.token, result.user);
   return result;
+}
+
+export async function getLoginOptions(): Promise<LoginOptions> {
+  const res = await fetch(`${API_BASE}/api/v1/auth/options`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+  if (!res.ok) throw new Error('Login-Optionen konnten nicht geladen werden');
+  return res.json() as Promise<LoginOptions>;
 }
 
 export async function logout(): Promise<void> {
@@ -878,7 +898,7 @@ export interface AdminSettings {
   logoUrl: string | null;
   primaryColor: string;
   defaultLocale: string;
-  authProviders: { microsoft: boolean; google: boolean };
+  authProviders: { microsoft: boolean; google: boolean; github: boolean };
   devLoginEnabled: boolean;
   adminEmailsConfigured: boolean;
 }
@@ -948,7 +968,7 @@ export const admin = {
   settings: () => apiFetch<AdminSettings>('/admin/settings'),
   updateSettings: (dto: {
     schoolName?: string;
-    authProviders?: { microsoft?: boolean; google?: boolean };
+    authProviders?: { microsoft?: boolean; google?: boolean; github?: boolean };
     logoUrl?: string | null;
     primaryColor?: string;
     defaultLocale?: string;
