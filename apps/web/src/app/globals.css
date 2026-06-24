@@ -316,11 +316,14 @@ a {
   background: var(--surface);
   border-right: 1px solid var(--border);
   padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
 }
 .nav {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  flex: 1;
 }
 .nav a {
   display: flex;
@@ -347,7 +350,8 @@ a {
   font-weight: 600;
 }
 .sidebar-foot {
-  margin-top: 16px;
+  margin-top: auto;
+  padding-top: 16px;
   display: flex;
   flex-direction: column;
   gap: 6px;
