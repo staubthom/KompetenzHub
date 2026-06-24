@@ -138,6 +138,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     void updatePreferences({ locale: l }).catch(() => {});
   }
 
+  function closeMenu() {
+    document.body.classList.remove('menu-open');
+    setMenuOpen(false);
+    setUserMenuOpen(false);
+  }
+
   async function handleLogout() {
     await apiLogout();
     clearSession();
@@ -181,6 +187,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           onClick={() => {
             const open = document.body.classList.toggle('menu-open');
             setMenuOpen(open);
+            if (!open) setUserMenuOpen(false);
           }}
         >
           <span aria-hidden="true">☰</span>
@@ -193,57 +200,62 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </Link>
         <div className="appspacer" />
 
-        <select
-          className="lang-select"
-          aria-label={t('common.language')}
-          title={t('common.language')}
-          value={locale}
-          onChange={(e) => changeLocale(e.target.value as Locale)}
-        >
-          {LOCALES.map((l) => (
-            <option key={l} value={l}>
-              {l.toUpperCase()} · {LOCALE_LABEL[l]}
-            </option>
-          ))}
-        </select>
-
-        <div className="seg" role="group" aria-label={t('common.theme')}>
-          {(['light', 'dark', 'gray'] as Theme[]).map((tName) => (
-            <button key={tName} aria-pressed={theme === tName} onClick={() => setTheme(tName)}>
-              {themeLabel[tName]}
-            </button>
-          ))}
-        </div>
-
-        <div className={`user ${userMenuOpen ? 'open' : ''}`}>
-          <button
-            aria-haspopup="true"
-            aria-expanded={userMenuOpen}
-            onClick={(e) => {
-              e.stopPropagation();
-              setUserMenuOpen((o) => !o);
-            }}
+        <div className="appbar-actions">
+          <select
+            className="lang-select"
+            aria-label={t('common.language')}
+            title={t('common.language')}
+            value={locale}
+            onChange={(e) => changeLocale(e.target.value as Locale)}
           >
-            <span className="avatar">{initials(user.displayName)}</span>
-            <span className="u-info">
-              <span className="u-name">{user.displayName}</span>
-              <span className="u-role">{roleLabel}</span>
-            </span>
-            <span aria-hidden="true">▾</span>
-          </button>
-          <div className="menu" role="menu" aria-label={t('a11y.account')}>
-            <Link role="menuitem" href={settingsHref} onClick={() => setUserMenuOpen(false)}>
-              <span aria-hidden="true">⚙️</span> {t('nav.einstellungen')}
-            </Link>
-            <div className="sep" />
+            {LOCALES.map((l) => (
+              <option key={l} value={l}>
+                {l.toUpperCase()} · {LOCALE_LABEL[l]}
+              </option>
+            ))}
+          </select>
+
+          <div className="seg" role="group" aria-label={t('common.theme')}>
+            {(['light', 'dark', 'gray'] as Theme[]).map((tName) => (
+              <button key={tName} aria-pressed={theme === tName} onClick={() => setTheme(tName)}>
+                {themeLabel[tName]}
+              </button>
+            ))}
+          </div>
+
+          <div className={`user ${userMenuOpen ? 'open' : ''}`}>
             <button
-              role="menuitem"
-              onClick={() => {
-                void handleLogout();
+              aria-haspopup="true"
+              aria-expanded={userMenuOpen}
+              aria-label={`${user.displayName} · ${roleLabel}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                setUserMenuOpen((o) => !o);
               }}
             >
-              <span aria-hidden="true">⎋</span> {t('header.logout')}
+              <span className="avatar">{initials(user.displayName)}</span>
+              <span className="u-info">
+                <span className="u-name">{user.displayName}</span>
+                <span className="u-role">{roleLabel}</span>
+              </span>
+              <span className="user-caret" aria-hidden="true">
+                ▾
+              </span>
             </button>
+            <div className="menu" role="menu" aria-label={t('a11y.account')}>
+              <Link role="menuitem" href={settingsHref} onClick={() => setUserMenuOpen(false)}>
+                <span aria-hidden="true">⚙️</span> {t('nav.einstellungen')}
+              </Link>
+              <div className="sep" />
+              <button
+                role="menuitem"
+                onClick={() => {
+                  void handleLogout();
+                }}
+              >
+                <span aria-hidden="true">⎋</span> {t('header.logout')}
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -261,10 +273,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   href={item.href}
                   className={active ? 'active' : ''}
                   aria-current={active ? 'page' : undefined}
-                  onClick={() => {
-                    document.body.classList.remove('menu-open');
-                    setMenuOpen(false);
-                  }}
+                  onClick={closeMenu}
                 >
                   <span className="ic" aria-hidden="true">
                     {item.icon}
@@ -274,6 +283,57 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               );
             })}
           </nav>
+          <div className="mobile-menu-tools">
+            <div className="mobile-menu-group">
+              <div className="mobile-menu-label">{t('common.language')}</div>
+              <select
+                className="lang-select"
+                aria-label={t('common.language')}
+                title={t('common.language')}
+                value={locale}
+                onChange={(e) => changeLocale(e.target.value as Locale)}
+              >
+                {LOCALES.map((l) => (
+                  <option key={l} value={l}>
+                    {l.toUpperCase()} · {LOCALE_LABEL[l]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="mobile-menu-group">
+              <div className="mobile-menu-label">{t('common.theme')}</div>
+              <div className="seg" role="group" aria-label={t('common.theme')}>
+                {(['light', 'dark', 'gray'] as Theme[]).map((tName) => (
+                  <button key={tName} aria-pressed={theme === tName} onClick={() => setTheme(tName)}>
+                    {themeLabel[tName]}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="mobile-user-card">
+              <div className="mobile-user-head">
+                <span className="avatar">{initials(user.displayName)}</span>
+                <div className="u-info">
+                  <div className="u-name">{user.displayName}</div>
+                  <div className="u-role">{roleLabel}</div>
+                </div>
+              </div>
+              <div className="mobile-user-actions">
+                <Link href={settingsHref} onClick={closeMenu}>
+                  <span aria-hidden="true">⚙️</span> {t('nav.einstellungen')}
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    closeMenu();
+                    void handleLogout();
+                  }}
+                >
+                  <span aria-hidden="true">⎋</span> {t('header.logout')}
+                </button>
+              </div>
+            </div>
+          </div>
           <div className="sidebar-foot">
             {/* „Kaffee spenden" nur für Lehrpersonen/Admins, nicht für Lernende */}
             {teacher && (
@@ -306,10 +366,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <div
         className="scrim"
         aria-hidden="true"
-        onClick={() => {
-          document.body.classList.remove('menu-open');
-          setMenuOpen(false);
-        }}
+        onClick={closeMenu}
       />
     </>
   );

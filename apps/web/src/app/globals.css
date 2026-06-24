@@ -202,6 +202,15 @@ a {
 .appbar .appspacer {
   flex: 1;
 }
+.appbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.mobile-menu-tools {
+  display: none;
+}
 
 .seg {
   display: inline-flex;
@@ -261,6 +270,10 @@ a {
 }
 .user .u-info .u-role {
   font-size: 11px;
+  color: var(--fg-muted);
+}
+.user-caret {
+  font-size: 12px;
   color: var(--fg-muted);
 }
 .menu {
@@ -1945,6 +1958,12 @@ button.hm-cell {
 
 /* Responsive */
 @media (max-width: 860px) {
+  .appbar {
+    gap: 12px;
+  }
+  .appbar-actions {
+    display: none;
+  }
   .app {
     grid-template-columns: 1fr;
   }
@@ -1957,13 +1976,82 @@ button.hm-cell {
     justify-content: center;
   }
   body.menu-open .sidebar {
-    display: block;
+    display: flex;
+    flex-direction: column;
     position: fixed;
     top: 59px;
     left: 0;
     bottom: 0;
-    width: 240px;
+    width: min(320px, calc(100vw - 24px));
     z-index: 50;
+    overflow-y: auto;
+  }
+  .mobile-menu-tools {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-top: 16px;
+    margin-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+  .mobile-menu-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .mobile-menu-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .mobile-menu-tools .lang-select {
+    width: 100%;
+    max-width: none;
+  }
+  .mobile-menu-tools .seg {
+    display: flex;
+    width: 100%;
+  }
+  .mobile-menu-tools .seg button {
+    flex: 1 1 0;
+  }
+  .mobile-user-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+  }
+  .mobile-user-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .mobile-user-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .mobile-user-actions a,
+  .mobile-user-actions button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--fg);
+    padding: 9px 11px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
   }
   body.menu-open .scrim {
     display: block;
@@ -1974,12 +2062,27 @@ button.hm-cell {
   }
 }
 @media (max-width: 560px) {
+  .appbar .brand {
+    min-width: 0;
+    flex: 1;
+  }
+  .appbar .appspacer {
+    display: none;
+  }
   .user .u-info {
     display: none;
   }
   .matrix-header,
   .matrix-row {
     grid-template-columns: 120px 1fr 1fr 1fr 40px;
+  }
+}
+@media (max-width: 420px) {
+  .appbar {
+    padding-inline: 12px;
+  }
+  body.menu-open .sidebar {
+    width: calc(100vw - 16px);
   }
 }
 
