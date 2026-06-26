@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AppShell from '../../components/AppShell';
+import PluginSlot from '../../components/PluginSlot';
 import { useToast } from '../../components/ToastProvider';
 import { useI18n, localized } from '../../lib/i18n';
 import { classes, dashboard, type ClassSummary, type ClassProgress } from '../../lib/api';
@@ -176,6 +177,8 @@ export default function LehrerDashboardPage() {
               <div className="v">{progress.avgProgress}%</div>
               <div className="d">{t('dash.kpiAvgHint')}</div>
             </div>
+            {/* Dashboard-Widgets aktiver Plugins (§10.3) */}
+            <PluginSlot name="teacher.dashboard" />
           </div>
 
           {/* Fortschritts-Heatmap (FA-90) */}

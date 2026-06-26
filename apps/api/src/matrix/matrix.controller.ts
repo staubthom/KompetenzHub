@@ -3,12 +3,14 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   HttpCode,
   NotFoundException,
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { CompetenceLevel, Prisma } from '@prisma/client';
 import { Role } from '@prisma/client';
@@ -29,15 +31,35 @@ export class MatrixController {
   /**
    * GET /modules/:id/matrix
    * Liefert die vollständige Rasterstruktur (Bänder × Gütestufen inkl. Feld-IDs).
+   *
+   * Standardmässig werden die Einreichungen der/des aufrufenden Lernenden eingeblendet.
+   * Lehrpersonen/Admins können mit `?enrollmentId=…` die Matrix einer bestimmten
+   * lernenden Person ansehen (Einreichungs-Status & Punkte je Nachweis) – z. B. um aus
+   * den Modulanlässen heraus eine Einreichung nachzubewerten.
    */
   @Get('modules/:id/matrix')
   @Roles(Role.TEACHER, Role.ADMIN, Role.LEARNER)
-  async getMatrix(@Param('id') moduleId: string, @CurrentUser() user: RequestContext) {
+  async getMatrix(
+    @Param('id') moduleId: string,
+    @CurrentUser() user: RequestContext,
+    @Query('enrollmentId') enrollmentId?: string,
+  ) {
     const module = await this.prisma.module.findFirst({
       where: { id: moduleId, tenantId: user.tenantId },
       select: { id: true, number: true, title: true },
     });
     if (!module) throw new NotFoundException('Modul nicht gefunden.');
+
+    const isTeacher = user.roles.includes(Role.TEACHER) || user.roles.includes(Role.ADMIN);
+
+    // Welche Einreichungen werden je Nachweis eingeblendet? Lernende sehen die eigenen;
+    // Lehrpersonen/Admins optional die einer bestimmten lernenden Person (nach Prüfung).
+    let submissionWhere: Prisma.SubmissionWhereInput = { enrollment: { userId: user.userId } };
+    if (enrollmentId) {
+      if (!isTeacher) throw new ForbiddenException('Kein Zugriff auf fremde Einreichungen.');
+      await this.assertEnrollmentAccess(enrollmentId, moduleId, user);
+      submissionWhere = { enrollmentId };
+    }
 
     const matrix = await this.prisma.competenceMatrix.findUnique({
       where: { moduleId },
@@ -63,13 +85,13 @@ export class MatrixController {
                         sortOrder: true,
                         config: true,
                         _count: { select: { submissions: true } },
-                        // Letzte Einreichung des/der aufrufenden Lernenden (für Chip-Status
-                        // und Punkte-Summe des Moduls)
+                        // Letzte Einreichung der betrachteten Person (für Chip-Status,
+                        // Punkte-Summe des Moduls und – für Lehrpersonen – zum Nachbewerten)
                         submissions: {
-                          where: { enrollment: { userId: user.userId } },
+                          where: submissionWhere,
                           orderBy: { createdAt: 'desc' },
                           take: 1,
-                          select: { status: true, points: true },
+                          select: { id: true, status: true, points: true },
                         },
                       },
                     },
@@ -87,7 +109,6 @@ export class MatrixController {
     if (!matrix) throw new NotFoundException('Matrix nicht gefunden.');
 
     // Lernende sehen nur sichtbare Nachweise (Lehrperson/Admin alle).
-    const isTeacher = user.roles.includes(Role.TEACHER) || user.roles.includes(Role.ADMIN);
     if (!isTeacher) {
       for (const band of matrix.bands) {
         for (const field of band.fields) {
@@ -211,6 +232,36 @@ export class MatrixController {
     if (!band) throw new NotFoundException('Kompetenzband nicht gefunden.');
     await this.assertMatrixAccess(band.matrixId, user.tenantId);
     await this.prisma.competenceBand.delete({ where: { id } });
+  }
+
+  /**
+   * Stellt sicher, dass die Einschreibung zum Modul gehört und die aufrufende
+   * Lehrperson die Klasse besitzt oder co-leitet (Admins: immer). Verhindert das
+   * Ausspähen von Einreichungen aus fremden Modulanlässen.
+   */
+  private async assertEnrollmentAccess(
+    enrollmentId: string,
+    moduleId: string,
+    user: RequestContext,
+  ) {
+    const enrollment = await this.prisma.enrollment.findFirst({
+      where: { id: enrollmentId, class: { moduleId, tenantId: user.tenantId } },
+      select: {
+        class: {
+          select: {
+            ownerId: true,
+            coTeachers: { where: { userId: user.userId }, select: { userId: true } },
+          },
+        },
+      },
+    });
+    if (!enrollment) throw new NotFoundException('Lernende Person nicht in diesem Modul gefunden.');
+    const isAdmin = user.roles.includes(Role.ADMIN);
+    const isClassTeacher =
+      enrollment.class.ownerId === user.userId || enrollment.class.coTeachers.length > 0;
+    if (!isAdmin && !isClassTeacher) {
+      throw new ForbiddenException('Kein Zugriff auf diesen Modulanlass.');
+    }
   }
 
   private async assertMatrixAccess(matrixId: string, tenantId: string) {

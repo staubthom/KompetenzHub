@@ -1,7 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { evidence, expertTalk, uploadSubmissionFile, type StudentEvidence } from '../lib/api';
+import {
+  evidence,
+  expertTalk,
+  submissions,
+  uploadSubmissionFile,
+  type StudentEvidence,
+  type SubmissionDetail,
+} from '../lib/api';
 import Celebration, { randomEffect } from './Celebration';
 import ExpertTalkChat from './ExpertTalkChat';
 import TrashIcon from './TrashIcon';
@@ -37,10 +44,33 @@ export default function EvidenceSubmitPanel({
   const [celebration, setCelebration] = useState<number | null>(null);
   const [talkAvailable, setTalkAvailable] = useState<boolean | null>(null);
   const [showTalk, setShowTalk] = useState(false);
+  // Eingereichte Inhalte (read-only), sobald nicht mehr geändert werden darf.
+  const [submitted, setSubmitted] = useState<SubmissionDetail | null>(null);
 
   const cfg = ev.config ?? {};
   const sub = ev.lastSubmission;
   const canSubmit = !justSubmitted && (!sub || sub.status === 'REJECTED');
+
+  // Bei gesperrter Bearbeitung (eingereicht/bewertet) die abgegebenen Inhalte laden,
+  // damit die lernende Person sieht, was sie eingereicht hat.
+  useEffect(() => {
+    if (!sub || canSubmit) {
+      setSubmitted(null);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const d = await submissions.detail(sub.id);
+        if (!cancelled) setSubmitted(d);
+      } catch {
+        /* Anzeige der Inhalte ist optional – Status bleibt sichtbar. */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [sub, canSubmit]);
 
   // Bei Einreichungsart „Fachgespräch/Präsentation": prüfen, ob KI im Mandanten aktiv ist.
   useEffect(() => {
@@ -265,6 +295,65 @@ export default function EvidenceSubmitPanel({
               ? t('sub.alreadyGraded')
               : ''}
         </p>
+      )}
+
+      {/* Read-only-Ansicht der eigenen Einreichung (kann nicht mehr geändert werden) */}
+      {!canSubmit && submitted && (
+        <div
+          style={{
+            marginTop: 12,
+            padding: 14,
+            border: '1px solid var(--border)',
+            borderRadius: 8,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+          }}
+        >
+          <strong>{t('sub.yourSubmission')}</strong>
+          {submitted.submittedAt && (
+            <span className="kh-muted" style={{ fontSize: 12 }}>
+              {t('sub.submittedAt')}: {new Date(submitted.submittedAt).toLocaleString()}
+            </span>
+          )}
+          {submitted.content?.text && (
+            <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{submitted.content.text}</p>
+          )}
+          {submitted.content?.link && (
+            <p style={{ margin: 0 }}>
+              🔗{' '}
+              <a href={submitted.content.link} target="_blank" rel="noopener">
+                {submitted.content.link}
+              </a>
+            </p>
+          )}
+          {submitted.content?.expertTalk && (
+            <p style={{ margin: 0 }}>🗣 {t('sub.expertTalkTitle')}</p>
+          )}
+          {(submitted.files ?? []).length > 0 && (
+            <ul className="hz-list" style={{ margin: 0 }}>
+              {submitted.files!.map((f, i) => (
+                <li key={i} className="hz-item" style={{ alignItems: 'center', padding: '6px 0' }}>
+                  <span style={{ flex: 1 }}>
+                    {f.kind === 'screenshot' ? '🖼 ' : '📄 '}
+                    {f.name}
+                  </span>
+                  <a className="btn sm" href={f.url} target="_blank" rel="noopener">
+                    {t('sub.view')}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+          {!submitted.content?.text &&
+            !submitted.content?.link &&
+            !submitted.content?.expertTalk &&
+            (submitted.files ?? []).length === 0 && (
+              <p className="kh-muted" style={{ margin: 0 }}>
+                {t('bw.noText')}
+              </p>
+            )}
+        </div>
       )}
 
       {canSubmit && (

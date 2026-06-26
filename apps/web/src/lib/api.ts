@@ -70,10 +70,11 @@ export async function logout(): Promise<void> {
   }
 }
 
-/** FA-10: Sprache/Anzeigemodus speichern (überlebt Logout); aktualisiert die Session. */
+/** FA-10: Sprache/Anzeigemodus/Anzeigename speichern (überlebt Logout); aktualisiert die Session. */
 export async function updatePreferences(prefs: {
   locale?: string;
   theme?: string;
+  displayName?: string;
 }): Promise<SessionUser> {
   const user = await apiFetch<SessionUser>('/auth/me', {
     method: 'PATCH',
@@ -122,7 +123,14 @@ export const actionGoals = {
 
 // Matrix / Bands (FA-03)
 export const matrix = {
-  get: (moduleId: string) => apiFetch<MatrixResponse>(`/modules/${moduleId}/matrix`),
+  /**
+   * Matrix eines Moduls. Lehrpersonen/Admins können mit `enrollmentId` die Sicht
+   * einer bestimmten lernenden Person laden (Einreichungs-Status & Punkte je Nachweis).
+   */
+  get: (moduleId: string, enrollmentId?: string) =>
+    apiFetch<MatrixResponse>(
+      `/modules/${moduleId}/matrix${enrollmentId ? `?enrollmentId=${encodeURIComponent(enrollmentId)}` : ''}`,
+    ),
   createBand: (
     matrixId: string,
     data: { code: string; description?: { de: string }; actionGoalIds?: string[] },
@@ -253,6 +261,79 @@ export async function uploadSubmissionFile(
 export const dashboard = {
   progress: (classId: string) => apiFetch<ClassProgress>(`/classes/${classId}/progress`),
 };
+
+// ── Plugin-Plattform (P3 Frontend-Extension-Points) ─────────────────
+export interface PluginNavItem {
+  id: string;
+  labelKey: string;
+  icon: string;
+  href: string;
+  roles: string[];
+}
+export interface PluginSlotComponent {
+  slot: string;
+  component: string;
+  labelKey: string;
+  icon?: string;
+  roles: string[];
+}
+export interface PluginContribution {
+  pluginId: string;
+  nav: PluginNavItem[];
+  pages: { route: string; component: string; roles: string[] }[];
+  widgets: { slot: string; component: string; roles: string[] }[];
+  /** Aktions-Buttons in Zeilen/Toolbars (Slot erhält Zeilenkontext). */
+  actions: PluginSlotComponent[];
+  /** Zusätzliche Tabs auf bestehenden Seiten. */
+  tabs: PluginSlotComponent[];
+}
+
+export const pluginsApi = {
+  /** UI-Beiträge der für den aktuellen User aktiven Plugins. */
+  contributions: () => apiFetch<{ plugins: PluginContribution[] }>('/plugins/contributions'),
+};
+
+export interface AdminPluginItem {
+  pluginId: string;
+  displayName: string;
+  installedVersion: string;
+  installStatus: string;
+  enabled: boolean;
+  tenantStatus: string;
+  config: Record<string, unknown>;
+  configVersion: number;
+  capabilities: string[];
+}
+
+/** Schuladmin-Verwaltung der Plugins (P4). Nur ADMIN. */
+export const adminPlugins = {
+  list: () => apiFetch<AdminPluginItem[]>('/admin/plugins'),
+  enable: (id: string) =>
+    apiFetch<unknown>(`/admin/plugins/${id}/enable`, { method: 'POST', body: '{}' }),
+  disable: (id: string) =>
+    apiFetch<unknown>(`/admin/plugins/${id}/disable`, { method: 'POST', body: '{}' }),
+  configure: (id: string, config: Record<string, unknown>) =>
+    apiFetch<unknown>(`/admin/plugins/${id}/config`, {
+      method: 'PATCH',
+      body: JSON.stringify({ config }),
+    }),
+  uninstall: (id: string) =>
+    apiFetch<{
+      pluginId: string;
+      removedSecrets: number;
+      removedStorage: number;
+      removedData: number;
+    }>(`/admin/plugins/${id}/uninstall`, { method: 'POST', body: '{}' }),
+};
+
+/** Ruft einen Endpunkt eines Plugins auf (/plugins/<id><path>); nutzt Auth/Fehlerbehandlung. */
+export function pluginFetch<T = unknown>(
+  pluginId: string,
+  path: string,
+  options: RequestInit = {},
+): Promise<T> {
+  return apiFetch<T>(`/plugins/${pluginId}${path}`, options);
+}
 
 // KI-Konfiguration je Lehrperson (FA-34)
 export const ai = {
@@ -632,8 +713,8 @@ export interface FieldEvidence {
   maxPoints: string | null;
   config: EvidenceConfig;
   _count?: { submissions: number };
-  /** Letzte Einreichung des/der aufrufenden Lernenden (für Chip-Status & Punkte). */
-  submissions?: { status: string; points: string | null }[];
+  /** Letzte Einreichung der betrachteten Person (für Chip-Status, Punkte & Nachbewerten). */
+  submissions?: { id: string; status: string; points: string | null }[];
 }
 
 export interface Descriptor {
@@ -950,6 +1031,8 @@ export interface AuditEntry {
   action: string;
   detail: Record<string, unknown>;
   createdAt: string;
+  ip: string | null;
+  userAgent: string | null;
   user: { id: string; displayName: string; email: string } | null;
 }
 

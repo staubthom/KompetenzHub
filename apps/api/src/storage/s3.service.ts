@@ -7,6 +7,7 @@ import {
   HeadBucketCommand,
   PutBucketPolicyCommand,
   ListObjectsV2Command,
+  DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'node:crypto';
@@ -125,6 +126,32 @@ export class S3Service implements OnModuleInit {
     await this.client.send(
       new PutObjectCommand({ Bucket: this.bucket, Key: key, Body: body, ContentType: contentType }),
     );
+  }
+
+  /** Alle Objekt-Keys unter einem Präfix (paginiert) – z. B. für Plugin-Cleanup. */
+  async listKeys(prefix: string): Promise<string[]> {
+    const keys: string[] = [];
+    let token: string | undefined;
+    do {
+      const out = await this.client.send(
+        new ListObjectsV2Command({ Bucket: this.bucket, Prefix: prefix, ContinuationToken: token }),
+      );
+      for (const obj of out.Contents ?? []) if (obj.Key) keys.push(obj.Key);
+      token = out.IsTruncated ? out.NextContinuationToken : undefined;
+    } while (token);
+    return keys;
+  }
+
+  /** Löscht ein einzelnes Objekt. */
+  async deleteKey(key: string): Promise<void> {
+    await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }));
+  }
+
+  /** Löscht alle Objekte unter einem Präfix; liefert die Anzahl gelöschter Objekte. */
+  async deletePrefix(prefix: string): Promise<number> {
+    const keys = await this.listKeys(prefix);
+    for (const key of keys) await this.deleteKey(key);
+    return keys.length;
   }
 
   /** Alle Objekt-Keys des Buckets (paginiert) – für Voll-Backup. */

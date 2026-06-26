@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import AppShell from '../../../components/AppShell';
+import ProfileNamePanel from '../../../components/ProfileNamePanel';
 import { useToast } from '../../../components/ToastProvider';
 import { ai, updatePreferences, type AiConfig, type AiTestResult } from '../../../lib/api';
 import { useI18n, LOCALES, LOCALE_LABEL, type Locale } from '../../../lib/i18n';
@@ -161,6 +162,9 @@ export default function LernendeEinstellungenPage() {
           </span>
         )}
       </div>
+
+      {/* Anzeigename (erscheint in der Kopfzeile) */}
+      <ProfileNamePanel />
 
       {/* Sprache & Anzeigemodus (FA-10) */}
       <div className="panel" style={{ maxWidth: 640 }}>

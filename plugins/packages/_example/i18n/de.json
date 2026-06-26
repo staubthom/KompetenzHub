@@ -1,0 +1,8 @@
+{
+  "plugin.example.nav": "Beispiel",
+  "plugin.example.title": "Beispiel-Plugin",
+  "plugin.example.hello": "Hallo aus dem Plugin!",
+  "plugin.example.ping": "Server-Antwort",
+  "plugin.example.widget": "Beispiel-Widget",
+  "plugin.example.widgetHint": "Aktives Plugin"
+}

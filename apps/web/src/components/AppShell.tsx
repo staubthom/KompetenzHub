@@ -27,8 +27,15 @@ import {
   initials,
   type SessionUser,
 } from '../lib/session';
-import { logout as apiLogout, updatePreferences, branding } from '../lib/api';
+import {
+  logout as apiLogout,
+  updatePreferences,
+  branding,
+  pluginsApi,
+  type PluginNavItem,
+} from '../lib/api';
 import { useI18n, normalizeLocale, LOCALES, LOCALE_LABEL, type Locale } from '../lib/i18n';
+import { pluginT } from '../plugins/registry';
 
 type Theme = 'light' | 'dark' | 'gray';
 
@@ -52,12 +59,24 @@ const ADMIN_NAV: NavItem[] = [
   { id: 'admin-personen', icon: '👥', labelKey: 'nav.adminPeople', href: '/admin/personen' },
   { id: 'admin-einladungen', icon: '✉', labelKey: 'nav.adminInvites', href: '/admin/einladungen' },
   { id: 'admin-betrieb', icon: '❤', labelKey: 'nav.adminOps', href: '/admin/betrieb' },
+  {
+    id: 'admin-erweiterungen',
+    icon: '🧩',
+    labelKey: 'nav.adminPlugins',
+    href: '/admin/erweiterungen',
+  },
   { id: 'admin-audit', icon: '🛡', labelKey: 'nav.adminAudit', href: '/admin/audit' },
   {
     id: 'admin-einstellungen',
-    icon: '⚙',
+    icon: '🏫',
     labelKey: 'nav.adminSettings',
     href: '/admin/einstellungen',
+  },
+  {
+    id: 'admin-konto',
+    icon: '⚙',
+    labelKey: 'nav.einstellungen',
+    href: '/admin/konto',
   },
 ];
 
@@ -84,6 +103,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [ready, setReady] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [pluginNav, setPluginNav] = useState<{ pluginId: string; item: PluginNavItem }[]>([]);
 
   // Session prüfen – ohne Login zur Login-Seite; Sprache & Theme aus dem Konto anwenden.
   useEffect(() => {
@@ -115,6 +135,32 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       })
       .catch(() => {});
   }, [router, setLocale]);
+
+  // Anzeigename änderbar in den Einstellungen → Kopfzeile (u-info) sofort aktualisieren.
+  useEffect(() => {
+    const onUserUpdated = () => setUser(getUser());
+    window.addEventListener('kh:user-updated', onUserUpdated);
+    return () => window.removeEventListener('kh:user-updated', onUserUpdated);
+  }, []);
+
+  // Nav-Beiträge aktiver Plugins laden (rollen-/aktivierungsgefiltert vom Server).
+  useEffect(() => {
+    let cancelled = false;
+    void pluginsApi
+      .contributions()
+      .then((r) => {
+        if (cancelled) return;
+        setPluginNav(
+          r.plugins.flatMap((p) => p.nav.map((item) => ({ pluginId: p.pluginId, item }))),
+        );
+      })
+      .catch(() => {
+        /* Ohne Plugins bleibt die Navigation unverändert */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Klick ausserhalb schliesst das Nutzer-Menü
   useEffect(() => {
@@ -163,11 +209,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     : teacher
       ? t('header.roleTeacher')
       : t('header.roleStudent');
-  const settingsHref = admin
-    ? '/admin/einstellungen'
-    : teacher
-      ? '/lehrer/ki'
-      : '/lernende/einstellungen';
+  const settingsHref = admin ? '/admin/konto' : teacher ? '/lehrer/ki' : '/lernende/einstellungen';
   const themeLabel: Record<Theme, string> = {
     light: t('theme.light'),
     dark: t('theme.dark'),
@@ -282,6 +324,39 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 </Link>
               );
             })}
+
+            {pluginNav.length > 0 && (
+              <>
+                <div
+                  className="kh-muted"
+                  style={{
+                    padding: '12px 12px 4px',
+                    fontSize: 11,
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  {t('nav.extensions')}
+                </div>
+                {pluginNav.map(({ pluginId, item }) => {
+                  const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                  return (
+                    <Link
+                      key={`${pluginId}-${item.id}`}
+                      href={item.href}
+                      className={active ? 'active' : ''}
+                      aria-current={active ? 'page' : undefined}
+                      onClick={closeMenu}
+                    >
+                      <span className="ic" aria-hidden="true">
+                        {item.icon}
+                      </span>{' '}
+                      {pluginT(pluginId, locale, item.labelKey, item.labelKey)}
+                    </Link>
+                  );
+                })}
+              </>
+            )}
           </nav>
           <div className="mobile-menu-tools">
             <div className="mobile-menu-group">
@@ -304,7 +379,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               <div className="mobile-menu-label">{t('common.theme')}</div>
               <div className="seg" role="group" aria-label={t('common.theme')}>
                 {(['light', 'dark', 'gray'] as Theme[]).map((tName) => (
-                  <button key={tName} aria-pressed={theme === tName} onClick={() => setTheme(tName)}>
+                  <button
+                    key={tName}
+                    aria-pressed={theme === tName}
+                    onClick={() => setTheme(tName)}
+                  >
                     {themeLabel[tName]}
                   </button>
                 ))}
@@ -363,11 +442,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </main>
       </div>
 
-      <div
-        className="scrim"
-        aria-hidden="true"
-        onClick={closeMenu}
-      />
+      <div className="scrim" aria-hidden="true" onClick={closeMenu} />
     </>
   );
 }

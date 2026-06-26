@@ -1,0 +1,8 @@
+{
+  "plugin.example.nav": "Example",
+  "plugin.example.title": "Example plugin",
+  "plugin.example.hello": "Hello from the plugin!",
+  "plugin.example.ping": "Server response",
+  "plugin.example.widget": "Example widget",
+  "plugin.example.widgetHint": "Active plugin"
+}

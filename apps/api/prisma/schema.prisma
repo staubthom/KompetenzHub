@@ -506,6 +506,80 @@ model EvaluationHistory {
 }
 
 // ============================================================
+// Plugin-Plattform (siehe planung/Planung_Plugin.md §11)
+// ============================================================
+
+enum PluginInstallStatus {
+  INSTALLED
+  INCOMPATIBLE
+  CONFLICT
+  DISABLED
+}
+
+enum PluginTenantStatus {
+  ENABLED
+  DISABLED
+  ERROR
+}
+
+/// Global pro Instanz installiertes Plugin (Modell A: im Deployment vorhanden).
+model PluginInstallation {
+  id               String              @id @default(uuid())
+  pluginId         String              @unique
+  installedVersion String
+  manifestHash     String
+  status           PluginInstallStatus @default(INSTALLED)
+  lastError        String?
+  installedAt      DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+}
+
+/// Aktivierung eines Plugins pro Tenant (Enable/Disable/Konfiguration).
+model PluginTenantActivation {
+  id             String             @id @default(uuid())
+  pluginId       String
+  tenantId       String
+  enabled        Boolean            @default(false)
+  enabledVersion String?
+  config         Json               @default("{}")
+  configVersion  Int                @default(1)
+  status         PluginTenantStatus @default(DISABLED)
+  lastError      String?
+  enabledAt      DateTime?
+  disabledAt     DateTime?
+
+  @@unique([pluginId, tenantId])
+  @@index([tenantId])
+}
+
+/// Generischer, hart auf (pluginId, tenantId) gescopter JSON-Dokumentspeicher (§8 Stufe 1).
+model PluginRecord {
+  id         String   @id @default(uuid())
+  pluginId   String
+  tenantId   String
+  collection String
+  key        String
+  data       Json     @default("{}")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([pluginId, tenantId, collection, key])
+  @@index([pluginId, tenantId, collection])
+}
+
+/// Tenant- oder global-gescopte Secrets eines Plugins (Wert AES-256-GCM at rest).
+model PluginSecret {
+  id        String   @id @default(uuid())
+  pluginId  String
+  tenantId  String? // null = global
+  key       String
+  valueEnc  String
+  updatedAt DateTime @updatedAt
+
+  @@unique([pluginId, tenantId, key])
+}
+
+// ============================================================
 // KI-Konfiguration (FA-34) – Endpoint/Provider je Lehrperson
 // ============================================================
 

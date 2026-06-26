@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell from '../../../components/AppShell';
 import { useToast } from '../../../components/ToastProvider';
@@ -9,6 +9,10 @@ import { getUser, isAdmin, homePathForRole, type Role } from '../../../lib/sessi
 import { admin, type AdminUser } from '../../../lib/api';
 
 const ROLES: Role[] = ['ADMIN', 'TEACHER', 'LEARNER'];
+const SECTIONS: Role[] = ['ADMIN', 'TEACHER', 'LEARNER'];
+
+type SortKey = 'name' | 'email' | 'status' | 'created';
+type SortDir = 'asc' | 'desc';
 
 export default function AdminPeoplePage() {
   const router = useRouter();
@@ -19,6 +23,9 @@ export default function AdminPeoplePage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+  const [query, setQuery] = useState('');
+  const [sortKey, setSortKey] = useState<SortKey>('name');
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
 
   const load = useCallback(async () => {
     try {
@@ -109,6 +116,161 @@ export default function AdminPeoplePage() {
         ? t('admin.roleTeacher')
         : t('admin.roleLearner');
 
+  function toggleSort(key: SortKey) {
+    if (key === sortKey) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  }
+
+  // Suche (Name/E-Mail) + Sortierung, anschliessend nach Rolle gruppieren.
+  const grouped = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const filtered = (users ?? []).filter(
+      (u) => !q || u.displayName.toLowerCase().includes(q) || u.email.toLowerCase().includes(q),
+    );
+    const dir = sortDir === 'asc' ? 1 : -1;
+    const sorted = [...filtered].sort((a, b) => {
+      let cmp = 0;
+      switch (sortKey) {
+        case 'name':
+          cmp = a.displayName.localeCompare(b.displayName);
+          break;
+        case 'email':
+          cmp = a.email.localeCompare(b.email);
+          break;
+        case 'status':
+          cmp = a.status.localeCompare(b.status);
+          break;
+        case 'created':
+          cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          break;
+      }
+      return cmp * dir;
+    });
+    const by: Record<Role, AdminUser[]> = { ADMIN: [], TEACHER: [], LEARNER: [] };
+    for (const u of sorted) by[u.role].push(u);
+    return by;
+  }, [users, query, sortKey, sortDir]);
+
+  const sectionTitle = (r: Role) =>
+    r === 'ADMIN'
+      ? t('admin.sectionAdmins')
+      : r === 'TEACHER'
+        ? t('admin.sectionTeachers')
+        : t('admin.sectionLearners');
+
+  const sortArrow = (key: SortKey) => (sortKey === key ? (sortDir === 'asc' ? ' ▲' : ' ▼') : '');
+
+  function header(key: SortKey, label: string) {
+    return (
+      <th>
+        <button
+          className="linklike"
+          style={{ font: 'inherit', fontWeight: 600 }}
+          onClick={() => toggleSort(key)}
+          aria-label={`${label} – ${t('admin.sortBy')}`}
+        >
+          {label}
+          {sortArrow(key)}
+        </button>
+      </th>
+    );
+  }
+
+  function renderRow(u: AdminUser) {
+    const self = u.id === me;
+    return (
+      <tr key={u.id}>
+        <td>
+          {editId === u.id ? (
+            <input
+              autoFocus
+              value={editName}
+              disabled={busy === u.id}
+              onChange={(e) => setEditName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void saveName(u);
+                if (e.key === 'Escape') setEditId(null);
+              }}
+              style={{ width: 180 }}
+            />
+          ) : (
+            <strong>{u.displayName}</strong>
+          )}
+          {self && <span className="badge b-published"> {t('admin.you')}</span>}
+        </td>
+        <td className="kh-muted">{u.email}</td>
+        <td>
+          <select
+            value={u.role}
+            disabled={busy === u.id}
+            aria-label={`${t('admin.colRole')} – ${u.displayName}`}
+            onChange={(e) => void changeRole(u, e.target.value as Role)}
+          >
+            {ROLES.map((r) => (
+              <option key={r} value={r}>
+                {roleLabel(r)}
+              </option>
+            ))}
+          </select>
+        </td>
+        <td>
+          <span className={`badge ${u.status === 'ACTIVE' ? 'b-published' : 'b-rejected'}`}>
+            {u.status === 'ACTIVE' ? t('admin.statusActive') : t('admin.statusDisabled')}
+          </span>
+        </td>
+        <td className="kh-muted" style={{ whiteSpace: 'nowrap' }}>
+          {new Date(u.createdAt).toLocaleDateString()}
+        </td>
+        <td style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {editId === u.id ? (
+            <>
+              <button
+                className="btn sm primary"
+                disabled={busy === u.id}
+                onClick={() => void saveName(u)}
+              >
+                {t('common.save')}
+              </button>
+              <button className="btn sm" onClick={() => setEditId(null)}>
+                {t('common.cancel')}
+              </button>
+            </>
+          ) : (
+            <button
+              className="btn sm"
+              disabled={busy === u.id}
+              onClick={() => {
+                setEditId(u.id);
+                setEditName(u.displayName);
+              }}
+            >
+              {t('common.edit')}
+            </button>
+          )}
+          <button
+            className="btn sm"
+            disabled={busy === u.id || self}
+            onClick={() => void toggleStatus(u)}
+          >
+            {u.status === 'ACTIVE' ? t('admin.disable') : t('admin.enable')}
+          </button>
+          <button
+            className="btn sm danger"
+            disabled={busy === u.id || self}
+            onClick={() => void remove(u)}
+          >
+            {t('admin.removeUser')}
+          </button>
+        </td>
+      </tr>
+    );
+  }
+
+  const totalShown = grouped.ADMIN.length + grouped.TEACHER.length + grouped.LEARNER.length;
+
   return (
     <AppShell>
       <div className="breadcrumb">
@@ -119,125 +281,65 @@ export default function AdminPeoplePage() {
           <h1>{t('admin.peopleTitle')}</h1>
           <p>{t('admin.peopleSubtitle')}</p>
         </div>
+        <input
+          className="link-input"
+          style={{ minWidth: 240, maxWidth: 320 }}
+          type="search"
+          placeholder={t('admin.searchPeople')}
+          aria-label={t('admin.searchPeople')}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
       </div>
 
-      <div className="panel">
-        {!users ? (
+      {!users ? (
+        <div className="panel">
           <div className="loading">{t('common.loading')}</div>
-        ) : users.length === 0 ? (
+        </div>
+      ) : users.length === 0 ? (
+        <div className="panel">
           <div className="empty">
             <p>{t('admin.empty')}</p>
           </div>
-        ) : (
-          <div className="tablewrap">
-            <table className="smatrix">
-              <thead>
-                <tr>
-                  <th>{t('admin.colName')}</th>
-                  <th>{t('admin.colEmail')}</th>
-                  <th>{t('admin.colRole')}</th>
-                  <th>{t('admin.colStatus')}</th>
-                  <th>{t('admin.colActions')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((u) => {
-                  const self = u.id === me;
-                  return (
-                    <tr key={u.id}>
-                      <td>
-                        {editId === u.id ? (
-                          <input
-                            // Fokus folgt der gerade geöffneten Inline-Bearbeitung (a11y-konform)
-                             
-                            autoFocus
-                            value={editName}
-                            disabled={busy === u.id}
-                            onChange={(e) => setEditName(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') void saveName(u);
-                              if (e.key === 'Escape') setEditId(null);
-                            }}
-                            style={{ width: 180 }}
-                          />
-                        ) : (
-                          <strong>{u.displayName}</strong>
-                        )}
-                        {self && <span className="badge b-published"> {t('admin.you')}</span>}
-                      </td>
-                      <td className="kh-muted">{u.email}</td>
-                      <td>
-                        <select
-                          value={u.role}
-                          disabled={busy === u.id}
-                          aria-label={`${t('admin.colRole')} – ${u.displayName}`}
-                          onChange={(e) => void changeRole(u, e.target.value as Role)}
-                        >
-                          {ROLES.map((r) => (
-                            <option key={r} value={r}>
-                              {roleLabel(r)}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td>
-                        <span
-                          className={`badge ${u.status === 'ACTIVE' ? 'b-published' : 'b-rejected'}`}
-                        >
-                          {u.status === 'ACTIVE'
-                            ? t('admin.statusActive')
-                            : t('admin.statusDisabled')}
-                        </span>
-                      </td>
-                      <td style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                        {editId === u.id ? (
-                          <>
-                            <button
-                              className="btn sm primary"
-                              disabled={busy === u.id}
-                              onClick={() => void saveName(u)}
-                            >
-                              {t('common.save')}
-                            </button>
-                            <button className="btn sm" onClick={() => setEditId(null)}>
-                              {t('common.cancel')}
-                            </button>
-                          </>
-                        ) : (
-                          <button
-                            className="btn sm"
-                            disabled={busy === u.id}
-                            onClick={() => {
-                              setEditId(u.id);
-                              setEditName(u.displayName);
-                            }}
-                          >
-                            {t('common.edit')}
-                          </button>
-                        )}
-                        <button
-                          className="btn sm"
-                          disabled={busy === u.id || self}
-                          onClick={() => void toggleStatus(u)}
-                        >
-                          {u.status === 'ACTIVE' ? t('admin.disable') : t('admin.enable')}
-                        </button>
-                        <button
-                          className="btn sm danger"
-                          disabled={busy === u.id || self}
-                          onClick={() => void remove(u)}
-                        >
-                          {t('admin.removeUser')}
-                        </button>
-                      </td>
+        </div>
+      ) : (
+        SECTIONS.map((role) => (
+          <div className="panel" key={role}>
+            <div className="panel-head">
+              <h2>
+                {sectionTitle(role)} <span className="kh-muted">({grouped[role].length})</span>
+              </h2>
+            </div>
+            {grouped[role].length === 0 ? (
+              <div className="empty">
+                <p>{query.trim() ? t('admin.noMatches') : t('admin.sectionEmpty')}</p>
+              </div>
+            ) : (
+              <div className="tablewrap">
+                <table className="smatrix">
+                  <thead>
+                    <tr>
+                      {header('name', t('admin.colName'))}
+                      {header('email', t('admin.colEmail'))}
+                      <th>{t('admin.colRole')}</th>
+                      {header('status', t('admin.colStatus'))}
+                      {header('created', t('admin.colCreated'))}
+                      <th>{t('admin.colActions')}</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody>{grouped[role].map(renderRow)}</tbody>
+                </table>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        ))
+      )}
+
+      {users && users.length > 0 && totalShown === 0 && (
+        <p className="kh-muted" style={{ textAlign: 'center' }}>
+          {t('admin.noMatches')}
+        </p>
+      )}
     </AppShell>
   );
 }

@@ -351,6 +351,8 @@ export class AdminService {
       action: r.action,
       detail: r.detail,
       createdAt: r.createdAt,
+      ip: r.ip,
+      userAgent: r.userAgent,
       user: r.userId ? (byId.get(r.userId) ?? null) : null,
     }));
   }

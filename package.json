@@ -5,16 +5,20 @@
   "description": "KompetenzHub – Kompetenzmatrix-Plattform (Monorepo)",
   "license": "AGPL-3.0-or-later",
   "workspaces": [
+    "plugins/contracts",
+    "plugins/sdk",
+    "plugins/packages/*",
     "apps/*"
   ],
   "scripts": {
     "dev": "concurrently -n api,web -c blue,green \"npm:dev:api\" \"npm:dev:web\"",
     "dev:api": "npm run dev --workspace apps/api",
     "dev:web": "npm run dev --workspace apps/web",
-    "build": "npm run build --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present",
+    "build:packages": "npm run build --workspace plugins/contracts --workspace plugins/sdk",
+    "build": "npm run build:packages && npm run build --workspaces --if-present",
+    "typecheck": "npm run build:packages && npm run typecheck --workspaces --if-present",
     "lint": "eslint \"apps/**/*.{ts,tsx,js,jsx}\"",
-    "test": "npm run test --workspaces --if-present",
+    "test": "npm run build:packages && npm run test --workspaces --if-present",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "prisma:migrate": "npm run prisma:migrate --workspace apps/api",

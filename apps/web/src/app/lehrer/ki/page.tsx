@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import AppShell from '../../../components/AppShell';
+import ProfileNamePanel from '../../../components/ProfileNamePanel';
 import { useToast } from '../../../components/ToastProvider';
 import { useI18n } from '../../../lib/i18n';
 import { ai, type AiConfig, type AiTestResult } from '../../../lib/api';
@@ -121,12 +122,12 @@ export default function KiSettingsPage() {
   return (
     <AppShell>
       <div className="breadcrumb">
-        {t('common.overview')} / {t('ki.title')}
+        {t('common.overview')} / {t('settings.title')}
       </div>
       <div className="page-head">
         <div>
-          <h1>{t('ki.title')}</h1>
-          <p>{t('ki.subtitle')}</p>
+          <h1>{t('settings.title')}</h1>
+          <p>{t('settings.teacherSubtitle')}</p>
         </div>
         {cfg && (
           <span className={`badge ${cfg.enabled && cfg.hasApiKey ? 'b-published' : 'b-archived'}`}>
@@ -141,9 +142,14 @@ export default function KiSettingsPage() {
         )}
       </div>
 
+      {/* Anzeigename (erscheint in der Kopfzeile) */}
+      <ProfileNamePanel />
+
       <div className="panel" style={{ maxWidth: 640 }}>
         <div className="panel-head">
-          <h2>{t('ki.connection')}</h2>
+          <h2>
+            {t('ki.title')} · {t('ki.connection')}
+          </h2>
         </div>
         <div className="form">
           <label>

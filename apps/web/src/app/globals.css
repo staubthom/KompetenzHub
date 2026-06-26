@@ -1207,6 +1207,10 @@ a {
   width: 100%;
   max-width: 640px;
 }
+/* Breite Variante für den Lehrer-Drilldown (Schüler-Matrix + Bewertung). */
+.modal.modal-wide {
+  max-width: 1100px;
+}
 .modal-head {
   display: flex;
   align-items: center;

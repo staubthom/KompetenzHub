@@ -7,3 +7,7 @@ coverage
 package-lock.json
 docs/backlog.csv
 mockups
+
+# Generierte Plugin-Registrierung (aus den Manifesten erzeugt)
+apps/web/src/plugins/registry.generated.ts
+apps/web/src/plugins/transpile-packages.generated.json
