@@ -27,6 +27,7 @@
     "smoke:admin": "node scripts/smoke-admin.mjs",
     "smoke:co-teaching": "node scripts/smoke-co-teaching.mjs",
     "smoke:security": "node scripts/smoke-security.mjs",
+    "smoke:plugins": "node scripts/smoke-plugins.mjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "dotenv -e ../../.env -- prisma migrate dev",
     "prisma:seed": "dotenv -e ../../.env -- prisma db seed",

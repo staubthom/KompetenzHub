@@ -274,6 +274,39 @@ export const pluginsApi = {
   contributions: () => apiFetch<{ plugins: PluginContribution[] }>('/plugins/contributions'),
 };
 
+export interface AdminPluginItem {
+  pluginId: string;
+  displayName: string;
+  installedVersion: string;
+  installStatus: string;
+  enabled: boolean;
+  tenantStatus: string;
+  config: Record<string, unknown>;
+  configVersion: number;
+  capabilities: string[];
+}
+
+/** Schuladmin-Verwaltung der Plugins (P4). Nur ADMIN. */
+export const adminPlugins = {
+  list: () => apiFetch<AdminPluginItem[]>('/admin/plugins'),
+  enable: (id: string) =>
+    apiFetch<unknown>(`/admin/plugins/${id}/enable`, { method: 'POST', body: '{}' }),
+  disable: (id: string) =>
+    apiFetch<unknown>(`/admin/plugins/${id}/disable`, { method: 'POST', body: '{}' }),
+  configure: (id: string, config: Record<string, unknown>) =>
+    apiFetch<unknown>(`/admin/plugins/${id}/config`, {
+      method: 'PATCH',
+      body: JSON.stringify({ config }),
+    }),
+  uninstall: (id: string) =>
+    apiFetch<{
+      pluginId: string;
+      removedSecrets: number;
+      removedStorage: number;
+      removedData: number;
+    }>(`/admin/plugins/${id}/uninstall`, { method: 'POST', body: '{}' }),
+};
+
 /** Ruft einen Endpunkt eines Plugins auf (/plugins/<id><path>); nutzt Auth/Fehlerbehandlung. */
 export function pluginFetch<T = unknown>(
   pluginId: string,

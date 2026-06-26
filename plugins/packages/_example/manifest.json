@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "pluginId": "example",
+  "displayName": "Beispiel-Plugin",
+  "version": "0.1.0",
+  "publisher": { "name": "KompetenzHub Core", "url": "https://potenzialentwickler.ch" },
+  "license": "AGPL-3.0-or-later",
+  "description": {
+    "de": "Minimal-Plugin zum Verifizieren der Plugin-Plattform (Discovery, Validierung)."
+  },
+  "core": { "minVersion": "0.0.0", "apiVersion": 1 },
+  "capabilities": ["plugin:example:view"],
+  "contributions": {
+    "apiRoutes": [
+      {
+        "method": "GET",
+        "path": "/ping",
+        "capability": "plugin:example:view",
+        "roles": ["TEACHER", "ADMIN", "LEARNER"]
+      }
+    ],
+    "nav": [
+      {
+        "id": "example",
+        "labelKey": "plugin.example.nav",
+        "icon": "🧩",
+        "href": "/plugins/example",
+        "roles": ["TEACHER"]
+      }
+    ],
+    "pages": [{ "route": "/", "component": "ExamplePage", "roles": ["TEACHER"] }],
+    "widgets": [{ "slot": "teacher.dashboard", "component": "ExampleWidget", "roles": ["TEACHER"] }]
+  },
+  "data": { "mode": "kv", "collections": ["pings"] },
+  "translations": { "namespaces": ["plugin.example"] },
+  "cleanup": { "data": "delete", "storage": "delete", "secrets": "delete" }
+}

@@ -59,6 +59,12 @@ const ADMIN_NAV: NavItem[] = [
   { id: 'admin-personen', icon: '👥', labelKey: 'nav.adminPeople', href: '/admin/personen' },
   { id: 'admin-einladungen', icon: '✉', labelKey: 'nav.adminInvites', href: '/admin/einladungen' },
   { id: 'admin-betrieb', icon: '❤', labelKey: 'nav.adminOps', href: '/admin/betrieb' },
+  {
+    id: 'admin-erweiterungen',
+    icon: '🧩',
+    labelKey: 'nav.adminPlugins',
+    href: '/admin/erweiterungen',
+  },
   { id: 'admin-audit', icon: '🛡', labelKey: 'nav.adminAudit', href: '/admin/audit' },
   {
     id: 'admin-einstellungen',
@@ -131,7 +137,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       .contributions()
       .then((r) => {
         if (cancelled) return;
-        setPluginNav(r.plugins.flatMap((p) => p.nav.map((item) => ({ pluginId: p.pluginId, item }))));
+        setPluginNav(
+          r.plugins.flatMap((p) => p.nav.map((item) => ({ pluginId: p.pluginId, item }))),
+        );
       })
       .catch(() => {
         /* Ohne Plugins bleibt die Navigation unverändert */
@@ -362,7 +370,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               <div className="mobile-menu-label">{t('common.theme')}</div>
               <div className="seg" role="group" aria-label={t('common.theme')}>
                 {(['light', 'dark', 'gray'] as Theme[]).map((tName) => (
-                  <button key={tName} aria-pressed={theme === tName} onClick={() => setTheme(tName)}>
+                  <button
+                    key={tName}
+                    aria-pressed={theme === tName}
+                    onClick={() => setTheme(tName)}
+                  >
                     {themeLabel[tName]}
                   </button>
                 ))}
@@ -421,11 +433,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </main>
       </div>
 
-      <div
-        className="scrim"
-        aria-hidden="true"
-        onClick={closeMenu}
-      />
+      <div className="scrim" aria-hidden="true" onClick={closeMenu} />
     </>
   );
 }
