@@ -81,6 +81,24 @@ export class DashboardService {
       }
     }
 
+    // Eindeutige Nachweise (Aufgaben) des Moduls mit Titel/Maximalpunkten – Basis
+    // für die Punkte-Summen je Lernende:r und den CSV-Export (FA-90).
+    const uniqueEvidenceIds = [...new Set(allEvidenceIds)];
+    const evidenceMeta = uniqueEvidenceIds.length
+      ? await this.prisma.competenceEvidence.findMany({
+          where: { id: { in: uniqueEvidenceIds } },
+          orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+          select: { id: true, title: true, maxPoints: true },
+        })
+      : [];
+    const evidences = evidenceMeta.map((e) => ({
+      id: e.id,
+      title: e.title,
+      maxPoints: e.maxPoints != null ? Number(e.maxPoints) : null,
+    }));
+    // Maximal erreichbare Punkte des gesamten Moduls (über alle Nachweise).
+    const moduleMaxPoints = evidences.reduce((sum, e) => sum + (e.maxPoints ?? 0), 0);
+
     const enrollmentIds = enrollments.map((e) => e.id);
     // Letzte Einreichung je (evidence, enrollment): wir holen alle und reduzieren.
     const subs =
@@ -136,6 +154,19 @@ export class DashboardService {
         if (best === 'GRADED') gradedFields += 1;
         if (best === 'SUBMITTED') openCount += 1;
       }
+      // Erreichte Punkte je Nachweis (nur bewertete) + Summe über das Modul.
+      let earnedPoints = 0;
+      const evidencePoints: Record<string, number | null> = {};
+      for (const evId of uniqueEvidenceIds) {
+        const s = latest.get(`${en.id}|${evId}`);
+        if (s && s.status === 'GRADED' && s.evaluation?.points != null) {
+          const p = Number(s.evaluation.points);
+          evidencePoints[evId] = p;
+          earnedPoints += p;
+        } else {
+          evidencePoints[evId] = null;
+        }
+      }
       const totalFields = fieldIds.length || 1;
       return {
         enrollmentId: en.id,
@@ -144,6 +175,8 @@ export class DashboardService {
         gradedFields,
         toGradeCount: openCount,
         progress: Math.round((gradedFields / totalFields) * 100),
+        earnedPoints,
+        evidencePoints,
       };
     });
 
@@ -176,6 +209,8 @@ export class DashboardService {
       toGrade,
       graded,
       avgProgress,
+      maxPoints: moduleMaxPoints,
+      evidences,
       bands: bandsRaw.map((b) => ({
         id: b.id,
         code: b.code,

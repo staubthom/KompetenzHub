@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AppShell from '../../components/AppShell';
 import EvidenceSubmitPanel from '../../components/EvidenceSubmitPanel';
 import { useToast } from '../../components/ToastProvider';
@@ -29,6 +29,15 @@ function chipIcon(status?: string): string {
     default:
       return '📎';
   }
+}
+
+/** Kurzes Abgabedatum (TT.MM.JJ) für die Chip-Anzeige. */
+function shortDate(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, {
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit',
+  });
 }
 
 export default function LernendeMatrixPage() {
@@ -156,6 +165,26 @@ export default function LernendeMatrixPage() {
   const bands: Band[] = matrix?.matrix?.bands ?? [];
   const hasClasses = enrollments && enrollments.length > 0;
 
+  // Punkte-Zusammenfassung des Moduls: bereits korrigierte vs. total mögliche
+  // Punkte. Nachweise können mehreren Feldern zugeordnet sein → nach ID entdoppeln.
+  const pointsSummary = useMemo(() => {
+    const seen = new Set<string>();
+    let total = 0;
+    let earned = 0;
+    for (const band of bands) {
+      for (const field of band.fields) {
+        for (const e of field.evidences ?? []) {
+          if (seen.has(e.evidence.id)) continue;
+          seen.add(e.evidence.id);
+          if (e.evidence.maxPoints) total += Number(e.evidence.maxPoints);
+          const sub = e.evidence.submissions?.[0];
+          if (sub?.status === 'GRADED' && sub.points != null) earned += Number(sub.points);
+        }
+      }
+    }
+    return { total, earned, hasPoints: total > 0 };
+  }, [bands]);
+
   return (
     <AppShell>
       <div className="breadcrumb">
@@ -204,6 +233,11 @@ export default function LernendeMatrixPage() {
                 ? `${t('common.module')} ${matrix.module.number} · ${localized(matrix.module.title, locale)}`
                 : t('nav.matrix')}
             </h2>
+            {pointsSummary.hasPoints && (
+              <span className="badge b-published" title={t('mx.pointsSummaryHint')}>
+                ✓ {pointsSummary.earned} / {pointsSummary.total} {t('common.points')}
+              </span>
+            )}
           </div>
           {bands.length === 0 ? (
             <div className="empty">
@@ -251,6 +285,12 @@ export default function LernendeMatrixPage() {
                               >
                                 {evidences.map((e) => {
                                   const st = e.evidence.submissions?.[0]?.status;
+                                  const maxPoints = e.evidence.maxPoints
+                                    ? Number(e.evidence.maxPoints)
+                                    : null;
+                                  const due = e.evidence.dueAt;
+                                  const overdue =
+                                    !!due && new Date(due) < new Date() && st !== 'GRADED';
                                   return (
                                     <button
                                       key={e.evidence.id}
@@ -261,6 +301,20 @@ export default function LernendeMatrixPage() {
                                       }}
                                     >
                                       {chipIcon(st)} {localized(e.evidence.title, locale)}
+                                      {(maxPoints != null || due) && (
+                                        <span className="chip-meta">
+                                          {maxPoints != null && (
+                                            <span className="chip-meta-pts">
+                                              {maxPoints} {t('common.points')}
+                                            </span>
+                                          )}
+                                          {due && (
+                                            <span className={overdue ? 'overdue' : undefined}>
+                                              📅 {shortDate(due)}
+                                            </span>
+                                          )}
+                                        </span>
+                                      )}
                                     </button>
                                   );
                                 })}

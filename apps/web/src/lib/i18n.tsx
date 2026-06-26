@@ -96,6 +96,9 @@ const de: Record<string, string> = {
   'dash.noFields': 'Für das zugeordnete Modul gibt es noch keine Kompetenzfelder.',
   'dash.colLearner': 'Lernende:r',
   'dash.colProgress': 'Fortschritt',
+  'dash.csvExport': 'CSV-Export',
+  'dash.csvEarned': 'Erreicht gesamt',
+  'dash.csvDone': 'CSV exportiert.',
   // Module & Matrizen
   'mod.title': 'Module & Matrizen',
   'mod.subtitle': 'Kompetenzraster verwalten',
@@ -118,6 +121,7 @@ const de: Record<string, string> = {
   // Matrix (Lernende)
   'mx.title': 'Meine Matrix',
   'mx.subtitle': 'Deine Kompetenzbänder pro Modulanlass',
+  'mx.pointsSummaryHint': 'Bereits von der Lehrperson korrigierte Punkte / mögliche Punkte im Modul',
   'mx.band': 'Band',
   'mx.noMatrix': 'Für dieses Modul wurde noch keine Matrix erfasst.',
   'mx.joinTitle': 'Modulanlass beitreten',
@@ -188,6 +192,10 @@ const de: Record<string, string> = {
   'bw.colEvidence': 'Nachweis',
   'bw.colClass': 'Modulanlass',
   'bw.colSubmitted': 'Eingereicht',
+  'bw.late': 'verspätet',
+  'bw.lateBanner': 'Verspätet eingereicht',
+  'bw.lateSubmittedAt': 'Eingereicht am',
+  'bw.lateDueWas': 'Frist war',
   'bw.submittedEvidence': 'Eingereichter Nachweis',
   'bw.noText': 'Kein Textinhalt – siehe Datei/Link.',
   'bw.expertTalk': 'Fachgespräch / Präsentation – mündliche Leistung, bitte direkt bewerten.',
@@ -274,6 +282,7 @@ const de: Record<string, string> = {
   'sub.statusRejected': 'Zurückgewiesen – bitte überarbeiten',
   'sub.statusOpen': 'Offen',
   'sub.downloadAttachment': 'Anhang herunterladen',
+  'sub.dueBy': 'Abgabe bis',
   'sub.expertTalkTitle': 'Fachgespräch / Präsentation',
   'sub.aiUnavailable':
     'Die KI-Übung ist aktuell nicht verfügbar (keine KI freigeschaltet). Bereite dich eigenständig auf das Fachgespräch vor.',

@@ -158,8 +158,27 @@ export default function EvidenceSubmitPanel({
     }
   }
 
+  const maxPoints = ev.maxPoints ? Number(ev.maxPoints) : null;
+
   return (
     <>
+      {/* Eckdaten: erreichbare Punkte und Abgabefrist */}
+      {(maxPoints != null || ev.dueAt) && (
+        <div className="evidence-facts">
+          {maxPoints != null && (
+            <span className="fact-pts">
+              🏅 {maxPoints} {t('common.points')}
+            </span>
+          )}
+          {ev.dueAt && (
+            <span className={`fact-due${ev.isOverdue ? ' overdue' : ''}`}>
+              📅 {t('sub.dueBy')}: {new Date(ev.dueAt).toLocaleString()}
+              {ev.isOverdue ? ` · ${t('status.EXPIRED')}` : ''}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Status der letzten Einreichung (FA-53) */}
       {sub && (
         <div className={`sub-status sub-${sub.status.toLowerCase()}`}>
