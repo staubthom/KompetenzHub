@@ -20,6 +20,7 @@ import { MatrixIoModule } from './matrix-io/matrix-io.module';
 import { ClassArchiveModule } from './class-archive/class-archive.module';
 import { AdminModule } from './admin/admin.module';
 import { BrandingModule } from './branding/branding.module';
+import { PluginsCoreModule } from './plugins/plugins.module';
 
 @Module({
   imports: [
@@ -45,6 +46,9 @@ import { BrandingModule } from './branding/branding.module';
     LearningPathsModule,
     MatrixIoModule,
     ClassArchiveModule,
+    // Bewusst zuletzt: Kern-Routen behalten Vorrang beim Routing-Matching,
+    // bevor der spätere Plugin-Dispatcher greift (siehe planung/Planung_Plugin.md §20).
+    PluginsCoreModule,
   ],
   controllers: [HealthController],
   providers: [

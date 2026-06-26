@@ -254,6 +254,35 @@ export const dashboard = {
   progress: (classId: string) => apiFetch<ClassProgress>(`/classes/${classId}/progress`),
 };
 
+// ── Plugin-Plattform (P3 Frontend-Extension-Points) ─────────────────
+export interface PluginNavItem {
+  id: string;
+  labelKey: string;
+  icon: string;
+  href: string;
+  roles: string[];
+}
+export interface PluginContribution {
+  pluginId: string;
+  nav: PluginNavItem[];
+  pages: { route: string; component: string; roles: string[] }[];
+  widgets: { slot: string; component: string; roles: string[] }[];
+}
+
+export const pluginsApi = {
+  /** UI-Beiträge der für den aktuellen User aktiven Plugins. */
+  contributions: () => apiFetch<{ plugins: PluginContribution[] }>('/plugins/contributions'),
+};
+
+/** Ruft einen Endpunkt eines Plugins auf (/plugins/<id><path>); nutzt Auth/Fehlerbehandlung. */
+export function pluginFetch<T = unknown>(
+  pluginId: string,
+  path: string,
+  options: RequestInit = {},
+): Promise<T> {
+  return apiFetch<T>(`/plugins/${pluginId}${path}`, options);
+}
+
 // KI-Konfiguration je Lehrperson (FA-34)
 export const ai = {
   getConfig: () => apiFetch<AiConfig>('/ai/config'),

@@ -27,8 +27,15 @@ import {
   initials,
   type SessionUser,
 } from '../lib/session';
-import { logout as apiLogout, updatePreferences, branding } from '../lib/api';
+import {
+  logout as apiLogout,
+  updatePreferences,
+  branding,
+  pluginsApi,
+  type PluginNavItem,
+} from '../lib/api';
 import { useI18n, normalizeLocale, LOCALES, LOCALE_LABEL, type Locale } from '../lib/i18n';
+import { pluginT } from '../plugins/registry';
 
 type Theme = 'light' | 'dark' | 'gray';
 
@@ -84,6 +91,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [ready, setReady] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [pluginNav, setPluginNav] = useState<{ pluginId: string; item: PluginNavItem }[]>([]);
 
   // Session prüfen – ohne Login zur Login-Seite; Sprache & Theme aus dem Konto anwenden.
   useEffect(() => {
@@ -115,6 +123,23 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       })
       .catch(() => {});
   }, [router, setLocale]);
+
+  // Nav-Beiträge aktiver Plugins laden (rollen-/aktivierungsgefiltert vom Server).
+  useEffect(() => {
+    let cancelled = false;
+    void pluginsApi
+      .contributions()
+      .then((r) => {
+        if (cancelled) return;
+        setPluginNav(r.plugins.flatMap((p) => p.nav.map((item) => ({ pluginId: p.pluginId, item }))));
+      })
+      .catch(() => {
+        /* Ohne Plugins bleibt die Navigation unverändert */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Klick ausserhalb schliesst das Nutzer-Menü
   useEffect(() => {
@@ -282,6 +307,39 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 </Link>
               );
             })}
+
+            {pluginNav.length > 0 && (
+              <>
+                <div
+                  className="kh-muted"
+                  style={{
+                    padding: '12px 12px 4px',
+                    fontSize: 11,
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  {t('nav.extensions')}
+                </div>
+                {pluginNav.map(({ pluginId, item }) => {
+                  const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                  return (
+                    <Link
+                      key={`${pluginId}-${item.id}`}
+                      href={item.href}
+                      className={active ? 'active' : ''}
+                      aria-current={active ? 'page' : undefined}
+                      onClick={closeMenu}
+                    >
+                      <span className="ic" aria-hidden="true">
+                        {item.icon}
+                      </span>{' '}
+                      {pluginT(pluginId, locale, item.labelKey, item.labelKey)}
+                    </Link>
+                  );
+                })}
+              </>
+            )}
           </nav>
           <div className="mobile-menu-tools">
             <div className="mobile-menu-group">
