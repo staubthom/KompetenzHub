@@ -40,6 +40,8 @@ export class JwtAuthGuard implements CanActivate {
       tenantId: payload.tid,
       roles: payload.roles,
       locale: payload.locale,
+      ip: req.ip ?? req.socket?.remoteAddress ?? undefined,
+      userAgent: req.headers['user-agent']?.slice(0, 400),
     };
     // Für Param-Decorator @CurrentUser und Controller verfügbar machen
     (req as Request & { user?: RequestContext }).user = ctx;

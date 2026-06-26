@@ -11,6 +11,10 @@ export interface RequestContext {
   tenantId: string;
   roles: Role[];
   locale: string;
+  /** Client-IP der Anfrage (fürs Audit-Log). */
+  ip?: string;
+  /** User-Agent der Anfrage (fürs Audit-Log). */
+  userAgent?: string;
 }
 
 export const requestContextStore = new AsyncLocalStorage<RequestContext>();

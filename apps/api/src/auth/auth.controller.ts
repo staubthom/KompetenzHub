@@ -97,6 +97,11 @@ class UpdateMeDto {
   @IsString()
   @MaxLength(20)
   theme?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  displayName?: string;
 }
 
 @Controller('auth')

@@ -70,10 +70,11 @@ export async function logout(): Promise<void> {
   }
 }
 
-/** FA-10: Sprache/Anzeigemodus speichern (überlebt Logout); aktualisiert die Session. */
+/** FA-10: Sprache/Anzeigemodus/Anzeigename speichern (überlebt Logout); aktualisiert die Session. */
 export async function updatePreferences(prefs: {
   locale?: string;
   theme?: string;
+  displayName?: string;
 }): Promise<SessionUser> {
   const user = await apiFetch<SessionUser>('/auth/me', {
     method: 'PATCH',
@@ -1030,6 +1031,8 @@ export interface AuditEntry {
   action: string;
   detail: Record<string, unknown>;
   createdAt: string;
+  ip: string | null;
+  userAgent: string | null;
   user: { id: string; displayName: string; email: string } | null;
 }
 

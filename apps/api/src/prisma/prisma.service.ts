@@ -1,6 +1,6 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { Prisma, PrismaClient } from '@prisma/client';
-import { getCurrentTenantId } from '../common/request-context';
+import { getCurrentTenantId, getRequestContext } from '../common/request-context';
 
 /**
  * Modelle mit `tenantId`-Spalte, die automatisch gescoped werden.
@@ -16,6 +16,28 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   constructor() {
     super();
     this.registerTenantScope();
+    this.registerAuditEnrichment();
+  }
+
+  /**
+   * Reichert jeden AuditLog-Eintrag zentral um IP und User-Agent aus dem Request-
+   * Kontext an (sofern nicht explizit gesetzt). So müssen die einzelnen Audit-
+   * Schreibstellen nichts davon wissen, und neue kommen automatisch dazu.
+   */
+  private registerAuditEnrichment(): void {
+    this.$use(async (params, next) => {
+      if (params.model === 'AuditLog' && params.action === 'create') {
+        const ctx = getRequestContext();
+        if (ctx) {
+          params.args = params.args ?? {};
+          const data = (params.args.data ?? {}) as Record<string, unknown>;
+          if (data.ip == null && ctx.ip) data.ip = ctx.ip;
+          if (data.userAgent == null && ctx.userAgent) data.userAgent = ctx.userAgent;
+          params.args.data = data;
+        }
+      }
+      return next(params);
+    });
   }
 
   async onModuleInit(): Promise<void> {

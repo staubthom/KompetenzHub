@@ -171,14 +171,19 @@ export class AuthService {
   async updatePreferences(
     userId: string,
     tenantId: string,
-    prefs: { locale?: string; theme?: string },
+    prefs: { locale?: string; theme?: string; displayName?: string },
   ): Promise<AuthResult['user'] | null> {
-    const data: { locale?: Locale; theme?: string } = {};
+    const data: { locale?: Locale; theme?: string; displayName?: string } = {};
     if (prefs.locale && ['de', 'fr', 'it', 'en'].includes(prefs.locale)) {
       data.locale = prefs.locale as Locale;
     }
     if (prefs.theme && ['light', 'dark', 'gray'].includes(prefs.theme)) {
       data.theme = prefs.theme;
+    }
+    // Anzeigename selbst pflegen (FA): nicht-leer, getrimmt, max. 120 Zeichen.
+    if (prefs.displayName !== undefined) {
+      const name = prefs.displayName.trim().slice(0, 120);
+      if (name) data.displayName = name;
     }
     if (Object.keys(data).length > 0) {
       await this.prisma.user.update({ where: { id: userId }, data });

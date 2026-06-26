@@ -68,9 +68,15 @@ const ADMIN_NAV: NavItem[] = [
   { id: 'admin-audit', icon: '🛡', labelKey: 'nav.adminAudit', href: '/admin/audit' },
   {
     id: 'admin-einstellungen',
-    icon: '⚙',
+    icon: '🏫',
     labelKey: 'nav.adminSettings',
     href: '/admin/einstellungen',
+  },
+  {
+    id: 'admin-konto',
+    icon: '⚙',
+    labelKey: 'nav.einstellungen',
+    href: '/admin/konto',
   },
 ];
 
@@ -129,6 +135,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       })
       .catch(() => {});
   }, [router, setLocale]);
+
+  // Anzeigename änderbar in den Einstellungen → Kopfzeile (u-info) sofort aktualisieren.
+  useEffect(() => {
+    const onUserUpdated = () => setUser(getUser());
+    window.addEventListener('kh:user-updated', onUserUpdated);
+    return () => window.removeEventListener('kh:user-updated', onUserUpdated);
+  }, []);
 
   // Nav-Beiträge aktiver Plugins laden (rollen-/aktivierungsgefiltert vom Server).
   useEffect(() => {
@@ -196,11 +209,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     : teacher
       ? t('header.roleTeacher')
       : t('header.roleStudent');
-  const settingsHref = admin
-    ? '/admin/einstellungen'
-    : teacher
-      ? '/lehrer/ki'
-      : '/lernende/einstellungen';
+  const settingsHref = admin ? '/admin/konto' : teacher ? '/lehrer/ki' : '/lernende/einstellungen';
   const themeLabel: Record<Theme, string> = {
     light: t('theme.light'),
     dark: t('theme.dark'),
