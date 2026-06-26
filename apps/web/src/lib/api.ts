@@ -122,7 +122,14 @@ export const actionGoals = {
 
 // Matrix / Bands (FA-03)
 export const matrix = {
-  get: (moduleId: string) => apiFetch<MatrixResponse>(`/modules/${moduleId}/matrix`),
+  /**
+   * Matrix eines Moduls. Lehrpersonen/Admins können mit `enrollmentId` die Sicht
+   * einer bestimmten lernenden Person laden (Einreichungs-Status & Punkte je Nachweis).
+   */
+  get: (moduleId: string, enrollmentId?: string) =>
+    apiFetch<MatrixResponse>(
+      `/modules/${moduleId}/matrix${enrollmentId ? `?enrollmentId=${encodeURIComponent(enrollmentId)}` : ''}`,
+    ),
   createBand: (
     matrixId: string,
     data: { code: string; description?: { de: string }; actionGoalIds?: string[] },
@@ -694,8 +701,8 @@ export interface FieldEvidence {
   maxPoints: string | null;
   config: EvidenceConfig;
   _count?: { submissions: number };
-  /** Letzte Einreichung des/der aufrufenden Lernenden (für Chip-Status & Punkte). */
-  submissions?: { status: string; points: string | null }[];
+  /** Letzte Einreichung der betrachteten Person (für Chip-Status, Punkte & Nachbewerten). */
+  submissions?: { id: string; status: string; points: string | null }[];
 }
 
 export interface Descriptor {

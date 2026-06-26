@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import AppShell from '../../../components/AppShell';
 import TrashIcon from '../../../components/TrashIcon';
+import StudentMatrixViewer from '../../../components/StudentMatrixViewer';
 import { useToast } from '../../../components/ToastProvider';
 import { useI18n, localized } from '../../../lib/i18n';
 import {
@@ -27,6 +28,10 @@ export default function KlassenPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [coTeachers, setCoTeachers] = useState<CoTeacher[]>([]);
   const [coEmail, setCoEmail] = useState('');
+  // Schüler-Matrix-Drilldown (Bewerten/Nachbewerten aus der Mitgliederliste).
+  const [matrixView, setMatrixView] = useState<{ enrollmentId: string; displayName: string } | null>(
+    null,
+  );
 
   const [creating, setCreating] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -520,8 +525,20 @@ export default function KlassenPage() {
                       </span>
                     </td>
                     <td>
-                      {detail.status === 'ACTIVE' && (
-                        <div className="row-actions">
+                      <div className="row-actions">
+                        {detail.module && (
+                          <button
+                            className="btn-icon"
+                            title={t('cl.viewMatrix')}
+                            aria-label={`${t('cl.viewMatrix')} – ${m.displayName}`}
+                            onClick={() =>
+                              setMatrixView({ enrollmentId: m.id, displayName: m.displayName })
+                            }
+                          >
+                            ▦
+                          </button>
+                        )}
+                        {detail.status === 'ACTIVE' && (
                           <button
                             className="btn-icon"
                             title={t('common.delete')}
@@ -531,8 +548,8 @@ export default function KlassenPage() {
                           >
                             <TrashIcon />
                           </button>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -613,6 +630,16 @@ export default function KlassenPage() {
             )}
           </div>
         </div>
+      )}
+
+      {/* Schüler-Matrix-Drilldown: Bewerten/Nachbewerten direkt aus der Mitgliederliste */}
+      {matrixView && detail?.module && (
+        <StudentMatrixViewer
+          enrollmentId={matrixView.enrollmentId}
+          moduleId={detail.module.id}
+          displayName={matrixView.displayName}
+          onClose={() => setMatrixView(null)}
+        />
       )}
     </AppShell>
   );
