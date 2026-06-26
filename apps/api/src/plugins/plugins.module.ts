@@ -6,6 +6,7 @@ import { PluginActivationService } from './plugin-activation.service';
 import { PluginDataService } from './plugin-data.service';
 import { PluginSecretService } from './plugin-secret.service';
 import { PluginStorageService } from './plugin-storage.service';
+import { PluginCoreService } from './plugin-core.service';
 import { PluginPermissionResolver } from './plugin-permission-resolver.service';
 import { PluginContextFactory } from './plugin-context.factory';
 import { PluginLifecycleService } from './plugin-lifecycle.service';
@@ -30,6 +31,7 @@ import { PluginAdminController } from './plugin-admin.controller';
     PluginDataService,
     PluginSecretService,
     PluginStorageService,
+    PluginCoreService,
     PluginPermissionResolver,
     PluginContextFactory,
     PluginLifecycleService,

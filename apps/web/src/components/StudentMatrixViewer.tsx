@@ -4,7 +4,13 @@ import { useCallback, useEffect, useState } from 'react';
 import SubmissionGrader from './SubmissionGrader';
 import { useToast } from './ToastProvider';
 import { useI18n, localized } from '../lib/i18n';
-import { matrix as matrixApi, type MatrixResponse, type Band, type CompetenceField } from '../lib/api';
+import {
+  matrix as matrixApi,
+  type MatrixResponse,
+  type Band,
+  type CompetenceField,
+} from '../lib/api';
+import { usePluginTabs } from '../plugins/usePluginTabs';
 
 const LEVELS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'] as const;
 
@@ -42,6 +48,15 @@ export default function StudentMatrixViewer({
   const { t, locale } = useI18n();
   const [matrix, setMatrix] = useState<MatrixResponse | null>(null);
   const [gradingSubId, setGradingSubId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>('matrix');
+
+  // Plugin-Tabs (z. B. "Notizen") für diese lernende Person.
+  const pluginTabs = usePluginTabs('teacher.studentMatrix.tabs', {
+    enrollmentId,
+    moduleId,
+    displayName,
+  });
+  const activePluginTab = pluginTabs.find((tb) => tb.id === activeTab);
 
   const chipStatusLabel = (status?: string) => (status ? t(`chip.${status}`) : t('chip.OPEN'));
 
@@ -86,7 +101,36 @@ export default function StudentMatrixViewer({
           </button>
         </div>
         <div className="modal-body">
-          {gradingSubId ? (
+          {/* Tab-Leiste: Kern-Tab "Matrix" + zusätzliche Plugin-Tabs (Tab-Slot) */}
+          {pluginTabs.length > 0 && !gradingSubId && (
+            <div
+              className="seg"
+              role="group"
+              aria-label={t('cl.viewMatrix')}
+              style={{ marginBottom: 14 }}
+            >
+              <button aria-pressed={activeTab === 'matrix'} onClick={() => setActiveTab('matrix')}>
+                ▦ {t('cl.viewMatrix')}
+              </button>
+              {pluginTabs.map((tb) => (
+                <button
+                  key={tb.id}
+                  aria-pressed={activeTab === tb.id}
+                  onClick={() => {
+                    setGradingSubId(null);
+                    setActiveTab(tb.id);
+                  }}
+                >
+                  {tb.icon ? `${tb.icon} ` : ''}
+                  {tb.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {activePluginTab && !gradingSubId ? (
+            activePluginTab.render()
+          ) : gradingSubId ? (
             <SubmissionGrader
               id={gradingSubId}
               backLabel={t('cl.viewMatrix')}
@@ -138,7 +182,10 @@ export default function StudentMatrixViewer({
                               <span className="descriptor-empty">—</span>
                             )}
                             {evidences.length > 0 && (
-                              <div className="field-evidence" style={{ borderTop: 'none', padding: '8px 0 0' }}>
+                              <div
+                                className="field-evidence"
+                                style={{ borderTop: 'none', padding: '8px 0 0' }}
+                              >
                                 {evidences.map((e) => {
                                   const sub = e.evidence.submissions?.[0];
                                   const st = sub?.status;

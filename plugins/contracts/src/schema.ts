@@ -5,8 +5,14 @@
 import { z } from 'zod';
 import { MANIFEST_SCHEMA_VERSION, PLUGIN_API_VERSION, type PluginManifest } from './manifest';
 
-/** Erlaubte Widget-Slots des Kerns. Nur diese dürfen Plugins bespielen. */
+/** Erlaubte Widget-Slots des Kerns (UI-Karten/Infoboxen). Nur diese dürfen Plugins bespielen. */
 export const KNOWN_WIDGET_SLOTS = ['teacher.dashboard', 'learner.matrix.header'] as const;
+
+/** Erlaubte Aktions-Slots des Kerns (Buttons in Zeilen/Toolbars). */
+export const KNOWN_ACTION_SLOTS = ['teacher.classMember.actions'] as const;
+
+/** Erlaubte Tab-Slots des Kerns (zusätzliche Tabs auf bestehenden Seiten). */
+export const KNOWN_TAB_SLOTS = ['teacher.studentMatrix.tabs'] as const;
 
 const PLUGIN_ID_RE = /^[a-z][a-z0-9-]{2,40}$/;
 const SEMVER_RE = /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)*$/;
@@ -41,6 +47,22 @@ const widgetSchema = z.object({
   roles: z.array(roleEnum).nonempty(),
 });
 
+const actionSchema = z.object({
+  slot: z.string().min(1),
+  component: z.string().min(1),
+  labelKey: z.string().min(1),
+  icon: z.string().optional(),
+  roles: z.array(roleEnum).nonempty(),
+});
+
+const tabSchema = z.object({
+  slot: z.string().min(1),
+  component: z.string().min(1),
+  labelKey: z.string().min(1),
+  icon: z.string().optional(),
+  roles: z.array(roleEnum).nonempty(),
+});
+
 /** Struktur-Schema (Form & Typen). Querbezüge prüft `semanticErrors`. */
 export const manifestSchema = z.object({
   schemaVersion: z.literal(MANIFEST_SCHEMA_VERSION),
@@ -65,6 +87,8 @@ export const manifestSchema = z.object({
     nav: z.array(navSchema).optional(),
     pages: z.array(pageSchema).optional(),
     widgets: z.array(widgetSchema).optional(),
+    actions: z.array(actionSchema).optional(),
+    tabs: z.array(tabSchema).optional(),
     adminPages: z.array(pageSchema).optional(),
   }),
   data: z
@@ -130,6 +154,20 @@ export function semanticErrors(m: PluginManifest): string[] {
   for (const w of m.contributions.widgets ?? []) {
     if (!knownSlots.has(w.slot)) {
       errors.push(`widget slot "${w.slot}" ist kein bekannter Kern-Slot.`);
+    }
+  }
+
+  const knownActionSlots = new Set<string>(KNOWN_ACTION_SLOTS);
+  for (const a of m.contributions.actions ?? []) {
+    if (!knownActionSlots.has(a.slot)) {
+      errors.push(`action slot "${a.slot}" ist kein bekannter Kern-Aktions-Slot.`);
+    }
+  }
+
+  const knownTabSlots = new Set<string>(KNOWN_TAB_SLOTS);
+  for (const tab of m.contributions.tabs ?? []) {
+    if (!knownTabSlots.has(tab.slot)) {
+      errors.push(`tab slot "${tab.slot}" ist kein bekannter Kern-Tab-Slot.`);
     }
   }
 

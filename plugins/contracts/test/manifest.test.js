@@ -90,6 +90,59 @@ test('lehnt unbekannten Widget-Slot ab', () => {
   assert.ok(res.errors.some((e) => e.includes('kein bekannter Kern-Slot')));
 });
 
+test('akzeptiert gültige action- und tab-Beiträge', () => {
+  const m = base();
+  m.contributions.actions = [
+    {
+      slot: 'teacher.classMember.actions',
+      component: 'MemoButton',
+      labelKey: 'plugin.attendance.action',
+      icon: '📝',
+      roles: ['TEACHER'],
+    },
+  ];
+  m.contributions.tabs = [
+    {
+      slot: 'teacher.studentMatrix.tabs',
+      component: 'MemoTab',
+      labelKey: 'plugin.attendance.tab',
+      roles: ['TEACHER'],
+    },
+  ];
+  const res = validateManifest(m);
+  assert.equal(res.ok, true, res.errors.join('; '));
+});
+
+test('lehnt unbekannten Action-Slot ab', () => {
+  const m = base();
+  m.contributions.actions = [
+    {
+      slot: 'core.secret.row',
+      component: 'X',
+      labelKey: 'plugin.attendance.a',
+      roles: ['TEACHER'],
+    },
+  ];
+  const res = validateManifest(m);
+  assert.equal(res.ok, false);
+  assert.ok(res.errors.some((e) => e.includes('kein bekannter Kern-Aktions-Slot')));
+});
+
+test('lehnt unbekannten Tab-Slot ab', () => {
+  const m = base();
+  m.contributions.tabs = [
+    {
+      slot: 'core.secret.tab',
+      component: 'X',
+      labelKey: 'plugin.attendance.t',
+      roles: ['TEACHER'],
+    },
+  ];
+  const res = validateManifest(m);
+  assert.equal(res.ok, false);
+  assert.ok(res.errors.some((e) => e.includes('kein bekannter Kern-Tab-Slot')));
+});
+
 test('lehnt translations-Namespace ausserhalb plugin.<id> ab', () => {
   const m = base();
   m.translations.namespaces = ['core.common'];

@@ -11,6 +11,17 @@ export interface PluginFetchInit {
   query?: Record<string, string>;
 }
 
+/**
+ * Kontext eines Einhäng-Slots (Action/Tab/Widget). Wird vom Kern gefüllt, wenn eine
+ * Plugin-Komponente in einen Slot gerendert wird – z. B. die Zeilen-ID einer Tabelle.
+ * Für Aktions-/Tab-Slots am Lernenden enthält `context` u. a. `enrollmentId`,
+ * `moduleId`, `classId`, `displayName`.
+ */
+export interface PluginSlotContext {
+  name: string;
+  context: Record<string, unknown>;
+}
+
 export interface PluginWebContext {
   pluginId: string;
   locale: string;
@@ -19,4 +30,6 @@ export interface PluginWebContext {
   apiFetch<T = unknown>(path: string, init?: PluginFetchInit): Promise<T>;
   /** Übersetzt einen plugin.<id>.<key>-Schlüssel (Fallback: fallback ?? key). */
   t(key: string, fallback?: string): string;
+  /** Nur in Action-/Tab-/Widget-Slots gesetzt: der vom Kern übergebene Slot-Kontext. */
+  slot?: PluginSlotContext;
 }

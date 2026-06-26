@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import AppShell from '../../../components/AppShell';
 import TrashIcon from '../../../components/TrashIcon';
 import StudentMatrixViewer from '../../../components/StudentMatrixViewer';
+import PluginActionSlot from '../../../components/PluginActionSlot';
 import { useToast } from '../../../components/ToastProvider';
 import { useI18n, localized } from '../../../lib/i18n';
 import {
@@ -29,9 +30,10 @@ export default function KlassenPage() {
   const [coTeachers, setCoTeachers] = useState<CoTeacher[]>([]);
   const [coEmail, setCoEmail] = useState('');
   // Schüler-Matrix-Drilldown (Bewerten/Nachbewerten aus der Mitgliederliste).
-  const [matrixView, setMatrixView] = useState<{ enrollmentId: string; displayName: string } | null>(
-    null,
-  );
+  const [matrixView, setMatrixView] = useState<{
+    enrollmentId: string;
+    displayName: string;
+  } | null>(null);
 
   const [creating, setCreating] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -526,6 +528,16 @@ export default function KlassenPage() {
                     </td>
                     <td>
                       <div className="row-actions">
+                        {/* Plugin-Aktions-Slot: erhält die Zeilen-ID (enrollmentId) */}
+                        <PluginActionSlot
+                          name="teacher.classMember.actions"
+                          context={{
+                            enrollmentId: m.id,
+                            moduleId: detail.module?.id,
+                            classId: detail.id,
+                            displayName: m.displayName,
+                          }}
+                        />
                         {detail.module && (
                           <button
                             className="btn-icon"

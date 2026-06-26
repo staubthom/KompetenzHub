@@ -16,6 +16,8 @@ export default defineConfig([
         "**/.next/**",
         "**/*.config.js",
         "**/mockups/**",
+        // Generierte Plugin-Registry (aus den Manifesten, siehe scripts/generate-plugin-registry.mjs)
+        "apps/web/src/plugins/registry.generated.ts",
     ]),
 
     // 2. BASIS-KONFIGURATION (Gilt für das GESAMTE Projekt: API & Web)

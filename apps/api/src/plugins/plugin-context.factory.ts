@@ -8,6 +8,8 @@ import { PluginRegistryService } from './plugin-registry.service';
 import { PluginDataService } from './plugin-data.service';
 import { PluginSecretService } from './plugin-secret.service';
 import { PluginStorageService } from './plugin-storage.service';
+import { PluginActivationService } from './plugin-activation.service';
+import { PluginCoreService } from './plugin-core.service';
 
 /**
  * Baut den gescopten ServerContext, den ein Plugin-Handler erhält (§7.2). Alle
@@ -24,10 +26,19 @@ export class PluginContextFactory {
     private readonly secrets: PluginSecretService,
     private readonly storage: PluginStorageService,
     private readonly prisma: PrismaService,
+    private readonly activation: PluginActivationService,
+    private readonly coreFacade: PluginCoreService,
   ) {}
 
-  build(pluginId: string, user: RequestContext): ServerContext {
+  /**
+   * Baut den ServerContext. Async, weil die tenant-spezifische Plugin-Konfiguration
+   * (vom Schuladmin gesetzt) geladen wird; sie steht dem Plugin als `ctx.config` zur
+   * Verfügung – read-only.
+   */
+  async build(pluginId: string, user: RequestContext): Promise<ServerContext> {
     const tenantId = user.tenantId;
+    const activation = await this.activation.get(pluginId, tenantId);
+    const config = (activation?.config ?? {}) as Record<string, unknown>;
     return {
       pluginId,
       tenant: { id: tenantId },
@@ -38,6 +49,8 @@ export class PluginContextFactory {
       http: this.makeHttp(pluginId),
       logger: this.makeLogger(pluginId),
       audit: (event, detail) => this.audit(pluginId, tenantId, user.userId, event, detail),
+      config,
+      core: this.coreFacade.scoped(user),
     };
   }
 

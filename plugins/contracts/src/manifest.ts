@@ -47,6 +47,37 @@ export interface WidgetContribution {
   roles: PluginRole[];
 }
 
+/**
+ * Aktions-Button, der in einen Aktions-Slot des Kerns eingehängt wird (z. B. in
+ * eine Tabellenzeile oder Toolbar). Der Kern übergibt der Komponente den
+ * Zeilen-/Seitenkontext (z. B. enrollmentId) über `ctx.slot.context`.
+ */
+export interface ActionContribution {
+  /** Deklarierter Aktions-Slot, z. B. "teacher.classMember.actions". */
+  slot: string;
+  /** Name der im Web-Bundle registrierten Komponente (rendert den Button). */
+  component: string;
+  /** i18n-Schlüssel (plugin.<id>.*) für Tooltip/Beschriftung des Buttons. */
+  labelKey: string;
+  /** Optionales Icon/Emoji für den Button. */
+  icon?: string;
+  roles: PluginRole[];
+}
+
+/**
+ * Zusätzlicher Tab in einem Tab-Slot des Kerns. Der Tab-Inhalt kommt komplett vom
+ * Plugin; der Kern rendert nur die Tab-Leiste (Label/Icon) und übergibt den Kontext.
+ */
+export interface TabContribution {
+  /** Deklarierter Tab-Slot, z. B. "teacher.studentMatrix.tabs". */
+  slot: string;
+  component: string;
+  /** i18n-Schlüssel (plugin.<id>.*) für die Tab-Beschriftung. */
+  labelKey: string;
+  icon?: string;
+  roles: PluginRole[];
+}
+
 export interface PluginManifest {
   schemaVersion: typeof MANIFEST_SCHEMA_VERSION;
   /** Global eindeutig, unveränderlich. Regex: ^[a-z][a-z0-9-]{2,40}$ */
@@ -71,6 +102,8 @@ export interface PluginManifest {
     nav?: NavContribution[];
     pages?: PageContribution[];
     widgets?: WidgetContribution[];
+    actions?: ActionContribution[];
+    tabs?: TabContribution[];
     adminPages?: PageContribution[];
   };
 

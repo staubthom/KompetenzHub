@@ -33,6 +33,46 @@ export interface PluginLogger {
   error(message: string, detail?: Record<string, unknown>): void;
 }
 
+/** Beziehung der aufrufenden Lehrperson zu einem Modulanlass (für ACL-Entscheide). */
+export type TeacherRelation = 'owner' | 'coTeacher' | 'admin' | 'none';
+
+/** Ein Modul, das die aufrufende Lehrperson unterrichtet (Kern-Lesefassade). */
+export interface CoreModuleRef {
+  moduleId: string;
+  number: string;
+  /** i18n-Titel {de,fr,it,en}. */
+  title: Record<string, string>;
+}
+
+/** Eine lernende Person im Kontext eines Modulanlasses (Kern-Lesefassade). */
+export interface ClassMemberRef {
+  enrollmentId: string;
+  classId: string;
+  moduleId: string | null;
+  displayName: string;
+  /** Status des Modulanlasses ("ACTIVE" | "ARCHIVED"). */
+  classStatus: string;
+  /** Beziehung der aufrufenden Person; `none` = kein Zugriff. */
+  teacherRelation: TeacherRelation;
+  /** true, wenn die aufrufende Person die Klasse besitzt/co-leitet oder Admin ist. */
+  teacherHasAccess: boolean;
+}
+
+/**
+ * Schreibgeschützte, hart abgesicherte Lesefassade auf Kern-Stammdaten (§ Hooks).
+ * Damit kann ein Plugin kontextbezogene Berechtigungen prüfen, OHNE die Kern-DB zu
+ * kennen. Jede Methode setzt die Berechtigungen der aufrufenden Person (Tenant +
+ * Besitz/Co-Leitung) selbst durch; Lernende erhalten nie fremde Datensätze.
+ */
+export interface CoreContext {
+  /** Auflösung einer Einschreibung (Zeilen-ID) inkl. Zugriffsbeziehung. null = unbekannt/kein Zugriff. */
+  getClassMember(enrollmentId: string): Promise<ClassMemberRef | null>;
+  /** Mitglieder eines Moduls aus Klassen, auf die die aufrufende Person Zugriff hat. */
+  listModuleMembers(moduleId: string): Promise<ClassMemberRef[]>;
+  /** Module, die die aufrufende Lehrperson unterrichtet (besitzt/co-leitet); Admin: alle. */
+  listMyModules(): Promise<CoreModuleRef[]>;
+}
+
 export interface ServerContext {
   pluginId: string;
   tenant: { id: string };
@@ -44,4 +84,8 @@ export interface ServerContext {
   logger: PluginLogger;
   /** Schreibt ein fachliches Plugin-Ereignis in das zentrale Audit-Log. */
   audit(event: string, detail?: Record<string, unknown>): Promise<void>;
+  /** Vom Schuladmin gesetzte, tenant-spezifische Plugin-Konfiguration (read-only). */
+  config: Record<string, unknown>;
+  /** Schreibgeschützte Lesefassade auf Kern-Stammdaten für kontextbezogene ACLs. */
+  core: CoreContext;
 }

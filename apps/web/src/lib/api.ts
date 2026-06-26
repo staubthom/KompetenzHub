@@ -269,11 +269,22 @@ export interface PluginNavItem {
   href: string;
   roles: string[];
 }
+export interface PluginSlotComponent {
+  slot: string;
+  component: string;
+  labelKey: string;
+  icon?: string;
+  roles: string[];
+}
 export interface PluginContribution {
   pluginId: string;
   nav: PluginNavItem[];
   pages: { route: string; component: string; roles: string[] }[];
   widgets: { slot: string; component: string; roles: string[] }[];
+  /** Aktions-Buttons in Zeilen/Toolbars (Slot erhält Zeilenkontext). */
+  actions: PluginSlotComponent[];
+  /** Zusätzliche Tabs auf bestehenden Seiten. */
+  tabs: PluginSlotComponent[];
 }
 
 export const pluginsApi = {

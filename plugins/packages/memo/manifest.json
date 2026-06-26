@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "pluginId": "memo",
+  "displayName": "Dossier- & Memo-Assistent",
+  "version": "0.1.0",
+  "publisher": { "name": "KompetenzHub Core", "url": "https://potenzialentwickler.ch" },
+  "license": "AGPL-3.0-or-later",
+  "description": {
+    "de": "Private, kontextbezogene Notizen der Lehrperson je Lernende:r und Modul (To-Dos, Absenzen, pädagogische Beobachtungen).",
+    "fr": "Notes privées et contextuelles de l'enseignant·e par apprenant·e et module.",
+    "it": "Note private e contestuali del/della docente per studente e modulo.",
+    "en": "Private, context-bound teacher notes per learner and module."
+  },
+  "core": { "minVersion": "0.0.0", "apiVersion": 1 },
+  "capabilities": ["plugin:memo:read", "plugin:memo:write"],
+  "contributions": {
+    "apiRoutes": [
+      {
+        "method": "GET",
+        "path": "/notes",
+        "capability": "plugin:memo:read",
+        "roles": ["TEACHER"]
+      },
+      {
+        "method": "POST",
+        "path": "/notes",
+        "capability": "plugin:memo:write",
+        "roles": ["TEACHER"]
+      },
+      {
+        "method": "PATCH",
+        "path": "/notes/:id",
+        "capability": "plugin:memo:write",
+        "roles": ["TEACHER"]
+      },
+      {
+        "method": "DELETE",
+        "path": "/notes/:id",
+        "capability": "plugin:memo:write",
+        "roles": ["TEACHER"]
+      },
+      {
+        "method": "GET",
+        "path": "/summary",
+        "capability": "plugin:memo:read",
+        "roles": ["TEACHER"]
+      },
+      {
+        "method": "GET",
+        "path": "/modules",
+        "capability": "plugin:memo:read",
+        "roles": ["TEACHER"]
+      }
+    ],
+    "nav": [
+      {
+        "id": "memo",
+        "labelKey": "plugin.memo.nav",
+        "icon": "📝",
+        "href": "/plugins/memo",
+        "roles": ["TEACHER"]
+      }
+    ],
+    "pages": [{ "route": "/", "component": "MemoOverviewPage", "roles": ["TEACHER"] }],
+    "widgets": [
+      { "slot": "teacher.dashboard", "component": "MemoDashboardWidget", "roles": ["TEACHER"] }
+    ],
+    "actions": [
+      {
+        "slot": "teacher.classMember.actions",
+        "component": "MemoButton",
+        "labelKey": "plugin.memo.action",
+        "icon": "📝",
+        "roles": ["TEACHER"]
+      }
+    ],
+    "tabs": [
+      {
+        "slot": "teacher.studentMatrix.tabs",
+        "component": "MemoTab",
+        "labelKey": "plugin.memo.tab",
+        "icon": "📝",
+        "roles": ["TEACHER"]
+      }
+    ]
+  },
+  "data": { "mode": "kv", "collections": ["notes"] },
+  "translations": { "namespaces": ["plugin.memo"] },
+  "audit": { "events": ["note.create", "note.update", "note.delete"] },
+  "cleanup": { "data": "delete", "storage": "keep", "secrets": "delete" }
+}

@@ -1,5 +1,6 @@
-import { All, Controller, Get, NotFoundException, Param, Req } from '@nestjs/common';
+import { All, Controller, Get, HttpException, NotFoundException, Param, Req } from '@nestjs/common';
 import type { Request } from 'express';
+import { isPluginHttpError } from '@kompetenzhub/plugin-sdk';
 import { CurrentUser } from '../auth/decorators';
 import type { RequestContext } from '../common/request-context';
 import { PluginRegistryService } from './plugin-registry.service';
@@ -35,6 +36,8 @@ export class PluginDispatcherController {
       nav: unknown[];
       pages: unknown[];
       widgets: unknown[];
+      actions: unknown[];
+      tabs: unknown[];
     }> = [];
 
     for (const manifest of this.registry.getAll()) {
@@ -45,6 +48,8 @@ export class PluginDispatcherController {
         nav: (c.nav ?? []).filter((n) => inRole(n.roles)),
         pages: (c.pages ?? []).filter((p) => inRole(p.roles)),
         widgets: (c.widgets ?? []).filter((w) => inRole(w.roles)),
+        actions: (c.actions ?? []).filter((a) => inRole(a.roles)),
+        tabs: (c.tabs ?? []).filter((tab) => inRole(tab.roles)),
       });
     }
     return { plugins: out };
@@ -79,11 +84,17 @@ export class PluginDispatcherController {
     const handler = server.routes[`${match.route.method} ${match.route.path}`];
     if (!handler) throw new NotFoundException('Handler nicht implementiert.');
 
-    const ctx = this.contextFactory.build(pluginId, user);
-    return handler(ctx, {
-      params: match.params,
-      query: req.query as Record<string, string | string[] | undefined>,
-      body: req.body,
-    });
+    const ctx = await this.contextFactory.build(pluginId, user);
+    try {
+      return await handler(ctx, {
+        params: match.params,
+        query: req.query as Record<string, string | string[] | undefined>,
+        body: req.body,
+      });
+    } catch (e) {
+      // Plugins signalisieren HTTP-Status über PluginHttpError; sonst 500.
+      if (isPluginHttpError(e)) throw new HttpException(e.message, e.status);
+      throw e;
+    }
   }
 }
