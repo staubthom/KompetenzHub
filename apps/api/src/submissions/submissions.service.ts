@@ -63,7 +63,7 @@ export class SubmissionsService {
         status: true,
         submittedAt: true,
         points: true,
-        evidence: { select: { id: true, title: true, maxPoints: true } },
+        evidence: { select: { id: true, title: true, maxPoints: true, dueAt: true } },
         enrollment: {
           select: {
             id: true,
@@ -82,7 +82,9 @@ export class SubmissionsService {
     const sub = await this.prisma.submission.findFirst({
       where: { id, evidence: { tenantId } },
       include: {
-        evidence: { select: { id: true, title: true, instructions: true, maxPoints: true } },
+        evidence: {
+          select: { id: true, title: true, instructions: true, maxPoints: true, dueAt: true },
+        },
         enrollment: {
           select: {
             userId: true,

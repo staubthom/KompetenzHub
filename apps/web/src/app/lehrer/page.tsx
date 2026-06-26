@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AppShell from '../../components/AppShell';
 import { useToast } from '../../components/ToastProvider';
-import { useI18n } from '../../lib/i18n';
+import { useI18n, localized } from '../../lib/i18n';
 import { classes, dashboard, type ClassSummary, type ClassProgress } from '../../lib/api';
 
 const LEVEL_SHORT: Record<string, string> = {
@@ -17,7 +17,7 @@ const LEVEL_SHORT: Record<string, string> = {
 export default function LehrerDashboardPage() {
   const router = useRouter();
   const toast = useToast();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [list, setList] = useState<ClassSummary[] | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [progress, setProgress] = useState<ClassProgress | null>(null);
@@ -53,6 +53,44 @@ export default function LehrerDashboardPage() {
 
   const fields =
     progress?.bands.flatMap((b) => b.fields.map((f) => ({ ...f, band: b.code }))) ?? [];
+
+  /** Heatmap als CSV exportieren: erreichte Punkte je Aufgabe und Lernende:r. */
+  function exportCsv() {
+    if (!progress) return;
+    const sep = ';';
+    const esc = (v: string | number) => {
+      const s = String(v);
+      return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const evs = progress.evidences;
+    const header = [
+      t('dash.colLearner'),
+      ...evs.map((e) => {
+        const title = localized(e.title, locale) || '—';
+        return e.maxPoints != null ? `${title} (max. ${e.maxPoints})` : title;
+      }),
+      `${t('dash.csvEarned')} (max. ${progress.maxPoints})`,
+    ];
+    const rows = progress.students.map((st) => [
+      st.displayName,
+      ...evs.map((e) => {
+        const p = st.evidencePoints[e.id];
+        return p == null ? '' : p;
+      }),
+      st.earnedPoints,
+    ]);
+    const csv = [header, ...rows].map((r) => r.map(esc).join(sep)).join('\r\n');
+    // BOM für korrekte Umlaut-Darstellung in Excel
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const modNr = progress.module ? `-modul-${progress.module.number}` : '';
+    a.download = `heatmap-${progress.class.name}${modNr}.csv`.replace(/[^\w.-]+/g, '_');
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(t('dash.csvDone'));
+  }
 
   return (
     <AppShell>
@@ -144,6 +182,11 @@ export default function LehrerDashboardPage() {
           <div className="panel">
             <div className="panel-head">
               <h2>{t('dash.heatmap')}</h2>
+              {progress.studentCount > 0 && fields.length > 0 && (
+                <button className="btn sm" onClick={exportCsv}>
+                  ⬇ {t('dash.csvExport')}
+                </button>
+              )}
             </div>
             <div className="legend">
               <span>
@@ -234,6 +277,12 @@ export default function LehrerDashboardPage() {
                           </div>
                           <span className="kh-muted" style={{ fontSize: 12 }}>
                             {st.progress}%
+                            {progress.maxPoints > 0 && (
+                              <span className="hm-points">
+                                {' '}
+                                · {st.earnedPoints} / {progress.maxPoints} {t('common.points')}
+                              </span>
+                            )}
                           </span>
                         </td>
                       </tr>

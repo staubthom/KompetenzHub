@@ -20,6 +20,12 @@ const STATUS_BADGE: Record<string, string> = {
 };
 const LEVELS = ['NOT_MET', 'BEGINNER', 'INTERMEDIATE', 'ADVANCED'];
 
+/** Wurde nach Ablauf der Frist eingereicht? */
+function isLate(submittedAt: string | null, dueAt: string | null): boolean {
+  if (!submittedAt || !dueAt) return false;
+  return new Date(submittedAt) > new Date(dueAt);
+}
+
 export default function BewertenPage() {
   const { t, locale } = useI18n();
   const [list, setList] = useState<SubmissionListItem[] | null>(null);
@@ -133,8 +139,11 @@ export default function BewertenPage() {
                   <td>{s.enrollment.displayName}</td>
                   <td>{localized(s.evidence.title, locale)}</td>
                   <td className="kh-muted">{s.enrollment.class?.name ?? '—'}</td>
-                  <td className="kh-muted">
+                  <td className={isLate(s.submittedAt, s.evidence.dueAt) ? 'late-cell' : 'kh-muted'}>
                     {s.submittedAt ? new Date(s.submittedAt).toLocaleString() : '—'}
+                    {isLate(s.submittedAt, s.evidence.dueAt) && (
+                      <span className="late-tag"> · {t('bw.late')}</span>
+                    )}
                   </td>
                   <td>
                     <span className={`badge ${STATUS_BADGE[s.status] ?? 'b-archived'}`}>
@@ -291,6 +300,19 @@ function BewertenDetail({ id, onBack }: { id: string; onBack: () => void }) {
           ← {t('common.back')}
         </button>
       </div>
+
+      {/* Verspätete Einreichung deutlich hervorheben (FA) */}
+      {isLate(sub.submittedAt, sub.evidence.dueAt) && (
+        <div className="late-banner">
+          ⚠ {t('bw.lateBanner')}
+          <div className="late-banner-detail">
+            {t('bw.lateSubmittedAt')}: {new Date(sub.submittedAt!).toLocaleString()}
+            {sub.evidence.dueAt && (
+              <> · {t('bw.lateDueWas')}: {new Date(sub.evidence.dueAt).toLocaleString()}</>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="grid2">
         {/* Links: Einreichung */}

@@ -1255,6 +1255,55 @@ a {
 .evidence-chip-btn:hover {
   filter: brightness(0.96);
 }
+/* Zusatzinfos im Chip (Punkte / Abgabedatum) */
+.chip-meta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+.chip-meta .overdue {
+  font-weight: 700;
+}
+/* Eckdaten (Punkte/Frist) im Abgabe-Dialog */
+.evidence-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-bottom: 14px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.evidence-facts .fact-pts {
+  color: var(--brand-primary);
+}
+/* Verspätete Einreichung (Lehrer-Bewertung) */
+.late-cell {
+  color: var(--st-rejected);
+  font-weight: 600;
+}
+.late-tag {
+  font-weight: 700;
+}
+.late-banner {
+  margin-bottom: 16px;
+  padding: 16px 20px;
+  border: 2px solid var(--st-rejected);
+  border-radius: 10px;
+  background: var(--st-rejected-bg);
+  color: var(--st-rejected);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+.late-banner-detail {
+  margin-top: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
 /* Chip-Farbe je Einreichungsstatus (Lernenden-Matrix) */
 .chip-submitted {
   background: var(--st-submitted-bg);
@@ -1450,6 +1499,9 @@ button.hm-cell {
 .hm-progress-bar {
   height: 100%;
   background: var(--st-graded);
+}
+.hm-points {
+  white-space: nowrap;
 }
 
 /* Status der Einreichung (Lernenden-Sicht, FA-53) */

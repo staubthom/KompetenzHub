@@ -632,8 +632,8 @@ export interface FieldEvidence {
   maxPoints: string | null;
   config: EvidenceConfig;
   _count?: { submissions: number };
-  /** Letzte Einreichung des/der aufrufenden Lernenden (für Chip-Status). */
-  submissions?: { status: string }[];
+  /** Letzte Einreichung des/der aufrufenden Lernenden (für Chip-Status & Punkte). */
+  submissions?: { status: string; points: string | null }[];
 }
 
 export interface Descriptor {
@@ -779,7 +779,12 @@ export interface SubmissionListItem {
   status: string;
   submittedAt: string | null;
   points: string | null;
-  evidence: { id: string; title: Record<string, string>; maxPoints: string | null };
+  evidence: {
+    id: string;
+    title: Record<string, string>;
+    maxPoints: string | null;
+    dueAt: string | null;
+  };
   enrollment: { id: string; displayName: string; class: { id: string; name: string } | null };
 }
 
@@ -808,6 +813,16 @@ export interface ProgressStudent {
   gradedFields: number;
   toGradeCount: number;
   progress: number;
+  /** Summe der bewerteten Punkte über das ganze Modul. */
+  earnedPoints: number;
+  /** Erreichte Punkte je Nachweis (null = noch nicht bewertet). */
+  evidencePoints: Record<string, number | null>;
+}
+
+export interface ProgressEvidence {
+  id: string;
+  title: Record<string, string>;
+  maxPoints: number | null;
 }
 export interface ProgressField {
   id: string;
@@ -822,6 +837,10 @@ export interface ClassProgress {
   toGrade: number;
   graded: number;
   avgProgress: number;
+  /** Maximal erreichbare Punkte des gesamten Moduls. */
+  maxPoints: number;
+  /** Eindeutige Nachweise (Aufgaben) des Moduls – für CSV-Export. */
+  evidences: ProgressEvidence[];
   bands: {
     id: string;
     code: string;
@@ -853,6 +872,7 @@ export interface SubmissionDetail {
     title: Record<string, string>;
     instructions: Record<string, string>;
     maxPoints: string | null;
+    dueAt: string | null;
   };
   enrollment: { displayName: string; class: { id: string; name: string } | null };
   evaluation: {
