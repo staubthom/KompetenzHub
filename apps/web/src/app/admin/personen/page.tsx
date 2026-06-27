@@ -26,6 +26,7 @@ export default function AdminPeoplePage() {
   const [query, setQuery] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('name');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const [activeRole, setActiveRole] = useState<Role>('LEARNER');
 
   const load = useCallback(async () => {
     try {
@@ -269,8 +270,6 @@ export default function AdminPeoplePage() {
     );
   }
 
-  const totalShown = grouped.ADMIN.length + grouped.TEACHER.length + grouped.LEARNER.length;
-
   return (
     <AppShell>
       <div className="breadcrumb">
@@ -303,14 +302,30 @@ export default function AdminPeoplePage() {
           </div>
         </div>
       ) : (
-        SECTIONS.map((role) => (
-          <div className="panel" key={role}>
+        <>
+          {/* Register: pro Rolle ein Tab – spart Scrollen bei grossen Listen */}
+          <div className="seg" role="tablist" aria-label={t('admin.peopleTitle')}>
+            {SECTIONS.map((role) => (
+              <button
+                key={role}
+                role="tab"
+                aria-selected={activeRole === role}
+                aria-pressed={activeRole === role}
+                onClick={() => setActiveRole(role)}
+              >
+                {sectionTitle(role)} ({grouped[role].length})
+              </button>
+            ))}
+          </div>
+
+          <div className="panel" style={{ marginTop: 12 }}>
             <div className="panel-head">
               <h2>
-                {sectionTitle(role)} <span className="kh-muted">({grouped[role].length})</span>
+                {sectionTitle(activeRole)}{' '}
+                <span className="kh-muted">({grouped[activeRole].length})</span>
               </h2>
             </div>
-            {grouped[role].length === 0 ? (
+            {grouped[activeRole].length === 0 ? (
               <div className="empty">
                 <p>{query.trim() ? t('admin.noMatches') : t('admin.sectionEmpty')}</p>
               </div>
@@ -327,18 +342,12 @@ export default function AdminPeoplePage() {
                       <th>{t('admin.colActions')}</th>
                     </tr>
                   </thead>
-                  <tbody>{grouped[role].map(renderRow)}</tbody>
+                  <tbody>{grouped[activeRole].map(renderRow)}</tbody>
                 </table>
               </div>
             )}
           </div>
-        ))
-      )}
-
-      {users && users.length > 0 && totalShown === 0 && (
-        <p className="kh-muted" style={{ textAlign: 'center' }}>
-          {t('admin.noMatches')}
-        </p>
+        </>
       )}
     </AppShell>
   );

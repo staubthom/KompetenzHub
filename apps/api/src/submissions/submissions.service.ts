@@ -69,12 +69,20 @@ export class SubmissionsService {
             id: true,
             displayName: true,
             class: { select: { id: true, name: true } },
+            user: { select: { displayName: true } },
           },
         },
       },
       orderBy: { submittedAt: 'desc' },
     });
-    return subs;
+    // Aktueller Anzeigename der Person hat Vorrang vor dem Beitritts-Schnappschuss.
+    return subs.map((s) => ({
+      ...s,
+      enrollment: {
+        ...s.enrollment,
+        displayName: s.enrollment.user?.displayName ?? s.enrollment.displayName,
+      },
+    }));
   }
 
   /** Detail einer Einreichung inkl. Download-Link, Bewertung & Historie. */
@@ -89,6 +97,7 @@ export class SubmissionsService {
           select: {
             userId: true,
             displayName: true,
+            user: { select: { displayName: true } },
             class: {
               select: {
                 id: true,
@@ -134,7 +143,12 @@ export class SubmissionsService {
       })),
     );
 
-    return { ...sub, fileUrl, files };
+    // Aktueller Anzeigename der Person hat Vorrang vor dem Beitritts-Schnappschuss.
+    const enrollment = {
+      ...sub.enrollment,
+      displayName: sub.enrollment.user?.displayName ?? sub.enrollment.displayName,
+    };
+    return { ...sub, enrollment, fileUrl, files };
   }
 
   /** Bewerten (FA-60): Punkte/Level/Feedback, Status → graded, Historie. */

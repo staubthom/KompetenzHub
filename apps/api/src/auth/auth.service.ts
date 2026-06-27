@@ -103,8 +103,10 @@ export class AuthService {
         },
       },
       update: {
+        // displayName wird bewusst NICHT überschrieben: der/die Nutzer:in kann den
+        // Anzeigenamen selbst in den Einstellungen pflegen (sonst würde er bei jedem
+        // Login durch den Namen des Identity-Providers zurückgesetzt).
         email: profile.email,
-        displayName: profile.displayName,
         avatarUrl: profile.avatarUrl,
       },
       create: {
@@ -187,6 +189,15 @@ export class AuthService {
     }
     if (Object.keys(data).length > 0) {
       await this.prisma.user.update({ where: { id: userId }, data });
+      // Den denormalisierten Anzeigenamen-Schnappschuss der Einschreibungen mitziehen,
+      // damit Lehrpersonen (Heatmap, Mitgliederliste, Bewerten) überall den aktuellen
+      // Namen sehen – auch in Stellen, die den Schnappschuss direkt lesen/exportieren.
+      if (data.displayName) {
+        await this.prisma.enrollment.updateMany({
+          where: { userId },
+          data: { displayName: data.displayName },
+        });
+      }
     }
     return this.me(userId, tenantId);
   }

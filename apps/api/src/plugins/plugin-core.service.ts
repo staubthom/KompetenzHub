@@ -72,6 +72,7 @@ export class PluginCoreService {
       select: {
         id: true,
         displayName: true,
+        user: { select: { displayName: true } },
         class: {
           select: {
             id: true,
@@ -89,7 +90,7 @@ export class PluginCoreService {
       enrollmentId: e.id,
       classId: e.class.id,
       moduleId: e.class.moduleId,
-      displayName: e.displayName,
+      displayName: e.user?.displayName ?? e.displayName,
       classStatus: e.class.status,
       teacherRelation: relation,
       teacherHasAccess: relation !== 'none',
@@ -116,6 +117,7 @@ export class PluginCoreService {
       select: {
         id: true,
         displayName: true,
+        user: { select: { displayName: true } },
         class: {
           select: {
             id: true,
@@ -134,7 +136,7 @@ export class PluginCoreService {
         enrollmentId: e.id,
         classId: e.class.id,
         moduleId: e.class.moduleId,
-        displayName: e.displayName,
+        displayName: e.user?.displayName ?? e.displayName,
         classStatus: e.class.status,
         teacherRelation: relation,
         teacherHasAccess: relation !== 'none',

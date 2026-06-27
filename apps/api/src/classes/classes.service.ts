@@ -236,7 +236,7 @@ export class ClassesService {
 
   async listMembers(id: string, tenantId: string, userId: string, roles: Role[]) {
     await this.assertAccess(id, tenantId, userId, roles);
-    return this.prisma.enrollment.findMany({
+    const members = await this.prisma.enrollment.findMany({
       where: { classId: id },
       select: {
         id: true,
@@ -248,6 +248,8 @@ export class ClassesService {
       },
       orderBy: { joinedAt: 'asc' },
     });
+    // Aktueller Anzeigename der Person hat Vorrang vor dem Beitritts-Schnappschuss.
+    return members.map((m) => ({ ...m, displayName: m.user?.displayName ?? m.displayName }));
   }
 
   async removeMember(

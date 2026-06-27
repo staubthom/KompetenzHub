@@ -35,7 +35,9 @@ export class DashboardService {
 
     const enrollments = await this.prisma.enrollment.findMany({
       where: { classId, status: EnrollmentStatus.ACTIVE },
-      select: { id: true, displayName: true },
+      // Aktueller Anzeigename der Person (user.displayName) hat Vorrang vor dem beim
+      // Beitritt gespeicherten Schnappschuss (enrollment.displayName).
+      select: { id: true, displayName: true, user: { select: { displayName: true } } },
       orderBy: { displayName: 'asc' },
     });
 
@@ -170,7 +172,7 @@ export class DashboardService {
       const totalFields = fieldIds.length || 1;
       return {
         enrollmentId: en.id,
-        displayName: en.displayName,
+        displayName: en.user?.displayName ?? en.displayName,
         cells,
         gradedFields,
         toGradeCount: openCount,
