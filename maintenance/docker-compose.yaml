@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  # Deine normale Applikation
+
+  # Deine Wartungsseite
+  wartungsseite:
+    build: .
+    container_name: wartung_app
+    ports:
+      - "3000:80" # Wartungsbetrieb: Port 3000 von aussen geht intern auf Port 80
+    restart: unless-stopped
