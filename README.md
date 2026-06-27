@@ -24,7 +24,9 @@
 15. [Datenschutz](#15-datenschutz)
 16. [Fehlerbehebung (FAQ)](#16-fehlerbehebung-faq)
 17. [Glossar](#17-glossar)
-18. [Lizenz](#18-Lizenz)
+18. [Lizenz](#18-lizenz)
+19. [Plugins aktivierenz](#19-plugins-aktivieren)
+20. [Plugins selbst entwickeln](#20-plugins-selbst-entwickeln)
 
 ---
 
@@ -732,6 +734,20 @@ Details findest du in der Datei [LICENSE](LICENSE).
 **Wichtig (AGPL §13 – Netzwerk-Nutzung):** Wird eine **modifizierte Version über ein Netzwerk** betrieben, muss den Nutzer:innen der **Quellcode** zugänglich gemacht werden. In der App ist dafür ein „Quellcode"-Link im Seitenmenü hinterlegt; beim Self-Hosting einer angepassten Variante diesen auf das eigene Repository setzen.
 
 Wenn du Funktionen erweiterst oder Fehler behebst, freuen wir uns über einen Pull Request hier im Haupt-Repository!
+
+---
+## 19 Plugins aktivieren
+KompetenzHub ist so entwickelt, dass die Community selber Plugins erstellen kann. Diese müssen aber bereits im Build Prozess vorhanden sein. Im AnminPanel können diese Plugins aktiviert und deaktiviert werden. 
+> 📷 _Screenshot: Aktivierung der Plugins._
+>
+> ![Screenshot: Backup-Schaltfläche auf der Betriebs-Seite](docs/Images/27-06-2026_14-26-51.png)
+Hier ist ersichtlich was als Plugin alles möglich ist. Das Memo Plugin dient als Schulungsplugin für Lehrersonen die gerne selber Plugins entwickeln wollen. 
+> 📷 _Screenshot: Aktivierung der Plugins._
+>
+> ![Screenshot: Backup-Schaltfläche auf der Betriebs-Seite](docs/Images/27-06-2026_14-35-07.png)
+
+## 20 Plugins selbst entwickeln
+Es ist an Lehrpersonen freigestellt, selbst Plugins für die Software zu erstellen. Genaue Anleitung findest du [hier](docs/pluginanleitung.md). |
 
 ---
 
