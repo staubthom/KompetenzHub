@@ -747,7 +747,7 @@ Hier ist ersichtlich was als Plugin alles möglich ist. Das Memo Plugin dient al
 > ![Screenshot: Backup-Schaltfläche auf der Betriebs-Seite](docs/Images/27-06-2026_14-35-07.png)
 
 ## 20 Plugins selbst entwickeln
-Es ist an Lehrpersonen freigestellt, selbst Plugins für die Software zu erstellen. Genaue Anleitung findest du [hier](docs/pluginanleitung.md). |
+Es ist an Lehrpersonen freigestellt, selbst Plugins für die Software zu erstellen. Genaue Anleitung findest du [hier](docs/pluginanleitung.md). 
 
 ---
 

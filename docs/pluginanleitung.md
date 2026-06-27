@@ -2,6 +2,10 @@
 
 > **Zielgruppe:** Lehrpersonen, Kern-Entwickler und Drittanbieter, die neue Funktionen als isolierte, updatefähige Module beisteuern möchten.
 > **Das Kern-Prinzip:** Ein Plugin greift **NIE** in den Core (Kern) ein. Es läuft vollständig isoliert über deklarierte Verträge.
+> Als durchgehendes Beispiel dient das mitgelieferte Plugin **`memo`**
+> („Dossier- & Memo-Assistent“) unter `plugins/packages/memo/`. Jeder Abschnitt verweist
+> auf die entsprechende Stelle dieses Plugins.
+
 
 ---
 
@@ -17,6 +21,13 @@ Du editierst **keine** einzige Datei in `apps/api` oder `apps/web`. Jede Interak
 2. Das **Server-Modul** (`server/index.ts`) – Backend-Logik gegen eine strikt gescopte API.
 3. **Web-Komponenten** (`web/*.tsx`) – Benutzeroberfläche, die über feste Erweiterungspunkte (Slots) injiziert wird.
 
+Der Core stellt dafür feste **Erweiterungspunkte** bereit (Menü, Seiten, Widgets,
+Aktions-Buttons, Tabs) und eine **gescopte Laufzeit-API**. Mehr kann (und soll) ein Plugin
+nicht. Das hält Schul-Daten sicher und Plugins updatefähig.
+
+> **Wenn dir ein Erweiterungspunkt fehlt:** Dann ist das eine Core-Aufgabe (neuer Slot /
+> neue `ctx.core`-Methode). Plugins können solche Punkte nicht selbst schaffen. Liste sie
+> separat auf – sie müssen einmalig im Core ergänzt werden.
 ---
 
 ## 2. Dateistruktur eines Plugins
@@ -32,7 +43,7 @@ plugins/packages/<deinPlugin>/
 │   └── index.ts           # Backend-Logik via definePlugin({ routes })
 ├── web/
 │   ├── <Component>.tsx    # UI-Komponenten (Namen müssen exakt dem Manifest entsprechen)
-│   
+│   └── …
 └── i18n/
     ├── de.json            # Flache Übersetzungsdateien (Namespace: plugin.<id>.*)
     ├── fr.json
@@ -56,90 +67,78 @@ Das Manifest ist die Vertrauensbasis des Plugins. Es wird beim Build und beim Sy
 * **`storage.prefixes`**: Falls genutzt, müssen sie mit `plugins/<pluginId>/` starten.
 * **Komponenten-Mapping**: Der Wert des Feldes `"component"` im Manifest muss **exakt buchstabengetreu** dem Dateinamen unter `web/<Component>.tsx` entsprechen.
 
-### 3.2 Vollständiges Referenz-Manifest
+### 3.2 Beispiel (gekürzt aus `memo`)
 
-```json
+```jsonc
 {
   "schemaVersion": 1,
-  "pluginId": "attendance",
-  "displayName": "Anwesenheit",
+  "pluginId": "memo",
+  "displayName": "Dossier- & Memo-Assistent",
   "version": "0.1.0",
-  "publisher": { 
-    "name": "KompetenzHub Core", 
-    "url": "https://potenzialentwickler.ch" 
-  },
+  "publisher": { "name": "…", "url": "…" },
   "license": "AGPL-3.0-or-later",
-  "description": { 
-    "de": "Anwesenheit pro Sitzung erfassen und auswerten.",
-    "fr": "Enregistrer et évaluer la présence par session."
-  },
-  "core": { 
-    "minVersion": "0.1.0", 
-    "apiVersion": 1 
-  },
-  "capabilities": [
-    "plugin:attendance:view", 
-    "plugin:attendance:manage"
-  ],
+  "description": { "de": "…", "fr": "…", "it": "…", "en": "…" },
+  "core": { "minVersion": "0.0.0", "apiVersion": 1 },
+  "capabilities": ["plugin:memo:read", "plugin:memo:write"],
   "contributions": {
     "apiRoutes": [
-      { 
-        "method": "GET", 
-        "path": "/sessions", 
-        "capability": "plugin:attendance:view", 
-        "roles": ["TEACHER"] 
+      { "method": "GET", "path": "/notes", "capability": "plugin:memo:read", "roles": ["TEACHER"] },
+      {
+        "method": "POST",
+        "path": "/notes",
+        "capability": "plugin:memo:write",
+        "roles": ["TEACHER"],
       },
-      { 
-        "method": "POST", 
-        "path": "/sessions", 
-        "capability": "plugin:attendance:manage", 
-        "roles": ["TEACHER"] 
+      {
+        "method": "PATCH",
+        "path": "/notes/:id",
+        "capability": "plugin:memo:write",
+        "roles": ["TEACHER"],
       },
-      { 
-        "method": "POST", 
-        "path": "/sessions/:id/marks", 
-        "capability": "plugin:attendance:manage", 
-        "roles": ["TEACHER"] 
-      }
+      {
+        "method": "DELETE",
+        "path": "/notes/:id",
+        "capability": "plugin:memo:write",
+        "roles": ["TEACHER"],
+      },
     ],
     "nav": [
-      { 
-        "id": "attendance", 
-        "labelKey": "plugin.attendance.nav", 
-        "icon": "🗓", 
-        "href": "/plugins/attendance", 
-        "roles": ["TEACHER"] 
-      }
+      {
+        "id": "memo",
+        "labelKey": "plugin.memo.nav",
+        "icon": "📝",
+        "href": "/plugins/memo",
+        "roles": ["TEACHER"],
+      },
     ],
-    "pages": [
-      { 
-        "route": "/", 
-        "component": "AttendancePage", 
-        "roles": ["TEACHER"] 
-      }
-    ],
+    "pages": [{ "route": "/", "component": "MemoOverviewPage", "roles": ["TEACHER"] }],
     "widgets": [
-      { 
-        "slot": "teacher.dashboard", 
-        "component": "TodayWidget", 
-        "roles": ["TEACHER"] 
-      }
-    ]
+      { "slot": "teacher.dashboard", "component": "MemoDashboardWidget", "roles": ["TEACHER"] },
+    ],
+    "actions": [
+      {
+        "slot": "teacher.classMember.actions",
+        "component": "MemoButton",
+        "labelKey": "plugin.memo.action",
+        "icon": "📝",
+        "roles": ["TEACHER"],
+      },
+    ],
+    "tabs": [
+      {
+        "slot": "teacher.studentMatrix.tabs",
+        "component": "MemoTab",
+        "labelKey": "plugin.memo.tab",
+        "icon": "📝",
+        "roles": ["TEACHER"],
+      },
+    ],
   },
-  "data": { 
-    "mode": "kv", 
-    "collections": ["sessions", "marks"] 
-  },
-  "translations": { 
-    "namespaces": ["plugin.attendance"] 
-  },
-  "cleanup": { 
-    "data": "delete", 
-    "storage": "delete", 
-    "secrets": "delete" 
-  }
+  "data": { "mode": "kv", "collections": ["notes"] },
+  "translations": { "namespaces": ["plugin.memo"] },
+  "audit": { "events": ["note.create", "note.update", "note.delete"] },
+  "cleanup": { "data": "delete", "storage": "keep", "secrets": "delete" },
 }
-
 ```
 
 ---
@@ -148,12 +147,28 @@ Das Manifest ist die Vertrauensbasis des Plugins. Es wird beim Build und beim Sy
 
 Plugins können ihre UI nur an Orten einhängen, die der Core explizit freigibt. Folgende Tabellen- und Slot-Namen sind in der `KNOWN_*`-Allowlist fest verankert:
 
-| Slot-Schlüssel | Typ | Beschreibung / Kontext-Übergabe |
-| --- | --- | --- |
-| `teacher.dashboard` | Widget | Haupt-Dashboard der Lehrpersonen. |
-| `learner.matrix.header` | Widget | Kopfzeile der Lernenden-Matrix. |
-| `teacher.classMember.actions` | Action | Tabellenzeile der Mitgliederliste. Kontext: `enrollmentId`, `moduleId`, `classId`, `displayName`. |
-| `teacher.studentMatrix.tabs` | Tab | Zusätzlicher Reiter in der Schüler-Matrix. Kontext: `enrollmentId`, `moduleId`, `displayName`. |
+| Punkt                | Manifest-Schlüssel        | Wo es erscheint                                         | Beispiel im `memo`                  |
+| -------------------- | ------------------------- | ------------------------------------------------------- | ----------------------------------- |
+| **Menüeintrag**      | `contributions.nav`       | Linke Navigation (rollenabhängig)                       | „Memos“ → Übersichtsseite           |
+| **Eigene Seite**     | `contributions.pages`     | Unter `/plugins/<id>/…`                                 | `MemoOverviewPage`                  |
+| **Widget / Infobox** | `contributions.widgets`   | In einen Karten-Slot (z. B. Dashboard)                  | „Offene To-Dos“-Karte               |
+| **Aktions-Button**   | `contributions.actions`   | In eine Tabellenzeile/Toolbar; erhält die **Zeilen-ID** | 📝-Button je Lernende:r             |
+| **Tab**              | `contributions.tabs`      | Zusätzlicher Tab auf einer Seite mit Tab-Leiste         | „Notizen“-Tab in der Schüler-Matrix |
+| **API-Endpunkte**    | `contributions.apiRoutes` | Backend unter `/plugins/<id>/…`                         | `/notes`, `/summary`, `/modules`    |
+
+**Bekannte Slot-Namen** (nur diese sind erlaubt – siehe
+`plugins/contracts/src/schema.ts`):
+
+- Widget-Slots (`KNOWN_WIDGET_SLOTS`): `teacher.dashboard`, `learner.matrix.header`
+- Aktions-Slots (`KNOWN_ACTION_SLOTS`): `teacher.classMember.actions`
+  _(Zeile in der Mitgliederliste eines Modulanlasses; Kontext: `enrollmentId`,
+  `moduleId`, `classId`, `displayName`)_
+- Tab-Slots (`KNOWN_TAB_SLOTS`): `teacher.studentMatrix.tabs`
+  _(in der Schüler-Matrix-Ansicht; Kontext: `enrollmentId`, `moduleId`, `displayName`)_
+
+> Slots passieren **nicht** automatisch überall – der Core muss den Slot an der
+> jeweiligen Stelle platziert haben. Die obige Liste ist die **vollständige** aktuell
+> verfügbare Menge. Neue Slots = Core-Änderung können aber gemacht werden. 
 
 ---
 
@@ -192,6 +207,9 @@ export default definePlugin({
 });
 
 ```
+Wichtig zu component: Der String ("MemoButton" usw.) ist der Name, unter dem du die Komponente im Web-Registry registrierst. Er muss exakt übereinstimmen.
+
+roles ist die grobe Sichtbarkeits-/Zugriffsstufe (welche Kernrolle den Beitrag sieht bzw. die Route aufrufen darf). Feinere Berechtigungen (z. B. „nur Lehrperson DIESES Modulanlasses“) prüfst du selbst im Server-Handler über ctx.core.
 
 ### 5.2 Die gescopte Kontext-API (`ctx`)
 
@@ -209,105 +227,163 @@ Plugins haben keinen direkten Zugriff auf den globalen `PrismaClient` oder den `
 | `ctx.audit(event, detail)` | Schreibt einen manipulationssicheren Eintrag in das zentrale Audit-Log der Schule. |
 | `ctx.core` | **Schreibgeschützte Lesefassade** auf die Stammdaten des Kerns zwecks Berechtigungsprüfung. |
 
----
 
-## 6. Sicherheit & Zugriffskontrolle (ACL)
+### 5.3 Datenhaltung: der Key-Value (KV) Store 
 
-Die Sicherheit beruht auf einem zweistufigen System. Das **Rollen-Gate** des Cores blockiert unberechtigte Rollen (z. B. Schüler) vorab anhand der Manifest-Definition. Die **feingranulare Berechtigung** liegt in der Verantwortung des Plugin-Entwicklers.
-
-### Strikte Kontext-Prüfung über `ctx.core`
-
-Dass ein User die Rolle `TEACHER` besitzt, bedeutet nicht, dass er berechtigt ist, die Daten *jedes* Lernenden einzusehen. Jede Route, die eine personenbezogene ID (`enrollmentId`) verarbeitet, muss zwingend folgendes Muster implementieren:
+Pilot-Stand: **`data.mode: "kv"`**. Du speicherst JSON-Dokumente pro `collection` unter
+einem `key` (z. B. einer UUID). `(pluginId, tenantId)` setzt **immer der Core** – ein
+Plugin kann weder aus seinem Tenant noch aus seinem Namespace ausbrechen.
 
 ```ts
-'POST /sessions/:id/marks': async (ctx, req) => {
-  const enrollmentId = req.body.enrollmentId;
+await ctx.data.put('notes', note.id, note); // anlegen/überschreiben
+const one = await ctx.data.get('notes', id); // ein Dokument oder null
+const all = await ctx.data.list('notes'); // [{ key, data }]
+await ctx.data.delete('notes', id);
+```
 
-  // 1. Hole die Kern-Daten inklusive des serverseitig berechneten Beziehungsstatus
-  const member = await ctx.core.getClassMember(enrollmentId);
+> Eigene Tabellen (`data.mode: "schema"`) sind **noch nicht** verfügbar (geplant). Für
+> grosse Datenmengen oder komplexe Queries ist das eine Core-Erweiterung.
 
-  // 2. Sicherheits-Guard abfragen: Hat diese Lehrperson administrativen Zugriff auf diesen Lernenden?
-  if (!member || !member.teacherHasAccess) {
-    throw forbidden('Sie sind nicht die Lehrperson dieses Modulanlasses.');
-  }
+---
 
-  // 3. Optionale Auswertung feingranularer Admin-Konfigurationen (ctx.config)
-  const coTeacherAccess = ctx.config.coTeacherAccess ?? 'write';
-  if (member.teacherRelation === 'coTeacher' && coTeacherAccess === 'none') {
-    throw forbidden('Co-Lehrpersonen haben für diesen Tenant keine Schreibrechte.');
-  }
+## 6. Sicherheit & Berechtigungen (Pflichtlektüre)
 
-  // Datenverarbeitung
-  await ctx.data.put('marks', `${req.params.id}:${enrollmentId}`, { present: req.body.present });
-  return { success: true };
-}
+### 6.1 Rollen-Gate (grob, durch den Core)
 
+`apiRoutes[].roles` entscheidet, **wer die Route überhaupt aufrufen darf**. Beispiel
+`memo`: alle Routen sind `["TEACHER"]`. **Lernende erreichen die Endpunkte damit gar
+nicht** – der Core blockt sie vor deinem Handler (404/403). So gelangen private Daten nie
+in den Browser eines Lernenden.
+
+### 6.2 Aktivierung & Capability (durch den Core)
+
+Eine Route ist nur erreichbar, wenn (a) das Plugin im Tenant **aktiviert** ist und (b) die
+Route ein im Manifest **deklariertes Capability** trägt. Sonst: 404 (nicht enumerierbar).
+
+### 6.3 Mandantentrennung (automatisch)
+
+KV-Daten, Secrets und Storage sind **immer** auf den aufrufenden Tenant gescopt. Du musst
+nichts tun – aber du darfst dich auch nicht darauf verlassen, dass „nur ein Tenant“
+existiert.
+
+### 6.4 **Kontext-ACL über `ctx.core`** (deine Verantwortung)
+
+Das Rollen-Gate sagt „ist Lehrperson“ – nicht „ist Lehrperson **dieses** Modulanlasses“.
+Diese feine Prüfung machst du mit der Kern-Lesefassade:
+
+```ts
+// Auflösung einer Zeilen-ID (enrollmentId) inkl. Beziehung der aufrufenden Person:
+const member = await ctx.core.getClassMember(enrollmentId);
+// member: { enrollmentId, classId, moduleId, displayName, classStatus,
+//           teacherRelation: 'owner'|'coTeacher'|'admin'|'none', teacherHasAccess }
+if (!member || !member.teacherHasAccess) throw forbidden();
+
+// Alle (zugreifbaren!) Mitglieder eines Moduls – bereits ACL-gefiltert:
+const members = await ctx.core.listModuleMembers(moduleId);
+
+// Module der aufrufenden Lehrperson (für Auswahl-Dropdowns):
+const myModules = await ctx.core.listMyModules();
+```
+
+`ctx.core` setzt die Berechtigung der aufrufenden Person **serverseitig** durch –
+Plugin-Eingaben können sie nicht aushebeln. **Muster:** Jede Route, die mit einer
+`enrollmentId` arbeitet, ruft zuerst `getClassMember` und prüft `teacherHasAccess`.
+
+### 6.5 Konfigurierbare Feinrechte über `ctx.config`
+
+Der Schuladmin kann pro Tenant eine JSON-Konfiguration setzen (Admin-UI → Erweiterungen →
+Konfigurieren). Sie steht als `ctx.config` bereit. `memo` nutzt z. B.
+`config.coTeacherAccess` (`"write" | "read" | "none"`), um Co-Leitungen Lese-/Schreibrechte
+zu geben:
+
+```ts
+const access = ctx.config.coTeacherAccess ?? 'write';
+if (member.teacherRelation === 'coTeacher' && access === 'none') throw forbidden();
 ```
 
 ---
 
-## 7. Frontend-Entwicklung (`web/*.tsx`)
+## 7. Web: deine UI (`web/*.tsx`)
 
-Das Frontend wird in React/Next.js geschrieben. Jede Komponente erhält exakt eine Prop namens `ctx` (Typ: `PluginWebContext`).
+### 7.1 Komponentenvertrag
 
-### 7.1 Datenfluss und i18n im UI
-
-UI-Komponenten kommunizieren **niemals** direkt mit den Endpunkten des Kerns. Sie nutzen ausschliesslich die gekapselte Fetch-Methode des Kontextes.
+Jede Plugin-Komponente erhält **genau eine** Prop: `ctx: PluginWebContext`
+(`plugins/contracts/src/web-context.ts`).
 
 ```tsx
 import type { PluginWebContext } from '@kompetenzhub/plugin-contracts';
-import { useState, useEffect } from 'react';
 
-export default function TodayWidget({ ctx }: { ctx: PluginWebContext }) {
-  const [sessions, setSessions] = useState([]);
-  
-  // Extraktion des Slot-Kontextes bei Tab- oder Action-Injektionen (falls vorhanden)
-  const enrollmentId = ctx.slot?.context?.enrollmentId;
-
-  useEffect(() => {
-    // Ruft automatisch /api/v1/plugins/<pluginId>/sessions auf
-    ctx.apiFetch('/sessions')
-      .then(res => res.json())
-      .then(data => setSessions(data));
-  }, [ctx]);
-
-  return (
-    <div className="card p-4 bg-white shadow rounded">
-      <h3 className="text-lg font-bold">
-        {/* Übersetzung über den flachen JSON-Namespace */}
-        {ctx.t('plugin.attendance.title', 'Heutige Sitzungen')}
-      </h3>
-      <p>Benutzer-Sprache: {ctx.locale}</p>
-      <div className="mt-2">
-        Anzahl Sitzungen: {sessions.length}
-      </div>
-    </div>
-  );
+export default function MyWidget({ ctx }: { ctx: PluginWebContext }) {
+  // ctx.apiFetch(path, init)  → ruft NUR Endpunkte DEINES Plugins (/plugins/<id><path>)
+  // ctx.t(key, fallback)      → Plugin-Übersetzung (plugin.<id>.*)
+  // ctx.user                  → { id, roles }
+  // ctx.locale                → 'de' | 'fr' | 'it' | 'en'
+  // ctx.slot?.context         → Slot-Kontext (nur in action/tab/widget-Slots), z. B. enrollmentId
+  return <div className="card">…</div>;
 }
-
 ```
 
-### 7.2 Automatischer Next.js Code-Generator (Codegen)
+**Datenfluss:** UI ruft `ctx.apiFetch('/notes', { query: { enrollmentId } })` → das geht an
+deinen Server-Handler `GET /notes`. Du redest **nie** mit Core-Endpunkten.
 
-Damit neue Plugins die Bundle-Grösse und Performance der Core-App nicht negativ beeinflussen, dürfen Web-Komponenten nicht statisch importiert werden. Die Plattform nutzt einen automatischen Build-Generator.
+### 7.2 Slot-Kontext nutzen (Zeilen-ID!)
 
-Der Generator (`scripts/generate-plugin-registry.mjs`) scannt alle Manifeste und erzeugt zur Build-Zeit asynchrone Dynamic Imports (`next/dynamic`):
+Aktions- und Tab-Komponenten bekommen den Kontext der Stelle, an der sie hängen:
 
-```ts
-// VOM SYSTEM GENERIERT - NICHT MANUELL EDITIEREN
-import dynamic from 'next/dynamic';
-
-export const pluginWebRegistry = {
-  attendance: {
-    pages: {
-      '/': dynamic(() => import('@plugins/attendance/web/AttendancePage'), { ssr: true })
-    }
-  }
-};
-
+```tsx
+const enrollmentId = String(ctx.slot?.context.enrollmentId ?? '');
+const name = String(ctx.slot?.context.displayName ?? '');
 ```
 
-**Regel:** Bearbeite niemals die Dateien `registry.generated.ts` oder `next.config.mjs`. Erstelle einfach deine Datei in `web/` gemäss dem Namen im Manifest und starte den Dev-Server neu.
+So weiss der 📝-Button, **für welche:n Lernende:n** er Notizen anzeigt – ohne eigenes
+Routing. Genau das meint „Der Extension Point übergibt dem Plugin-Button die ID der Zeile“.
+
+### 7.3 Registrierung im Web-Registry — **automatisch (Codegen)**
+
+Damit der Core deine Komponenten findet, müssen sie zur Build-Zeit aufgezählt werden
+(Next.js/Turbopack braucht statische Import-Pfade). Das passiert **automatisch**: ein
+Generator liest die Manifeste und erzeugt die Registrierung. **Du editierst weder
+`registry.ts` noch `next.config.mjs`.**
+
+Erzeugt werden (nicht von Hand bearbeiten):
+
+- `apps/web/src/plugins/registry.generated.ts` – `pluginWebRegistry` (Seiten/Widgets/
+  Komponenten/Übersetzungen aller Plugins),
+- `apps/web/src/plugins/transpile-packages.generated.json` – die `transpilePackages`-Liste,
+  die `next.config.mjs` einliest.
+
+Der Generator (`scripts/generate-plugin-registry.mjs`) läuft automatisch über
+`predev`/`prebuild`/`pretypecheck` von `apps/web`. Manuell:
+
+```bash
+npm run generate:plugins --workspace apps/web
+```
+
+**Verbindliche Konvention, damit das funktioniert:** Der `component`-Name im Manifest
+**entspricht exakt dem Dateinamen** unter `web/<Component>.tsx`. Beispiele aus `memo`:
+`"MemoButton"` → `web/MemoButton.tsx`, `"MemoOverviewPage"` → `web/MemoOverviewPage.tsx`.
+Fehlt eine referenzierte Datei, **bricht der Generator mit Fehler ab** (Tippfehler werden
+sofort erkannt). Übersetzungen kommen aus `i18n/<locale>.json` (de/fr/it/en), sofern
+vorhanden.
+
+**Was der Generator aus dem Manifest ableitet:**
+
+| Manifest | Registry |
+|---|---|
+| `pages[].route` + `.component` | `pages[route] = <Komponente>` |
+| `widgets[].slot` + `.component` | `widgets[slot] = [<Komponente>, …]` |
+| `actions[].component`, `tabs[].component` | `components[name] = <Komponente>` |
+| `translations` + `i18n/*.json` | `translations[locale]` |
+
+> Ergebnis: **Neues Plugin anlegen → `npm install` (einmal, fürs Workspace-Linking) →
+> fertig.** Keine Hand-Edits an Core-Dateien. Die generierten Dateien sind von ESLint/
+> Prettier ausgenommen und werden bei jedem Build neu erzeugt.
+
+### 7.4 Übersetzungen
+
+`i18n/<locale>.json` enthält **flache** Schlüssel `plugin.<id>.<key>`. Im Code:
+`ctx.t('plugin.memo.add', 'Hinzufügen')` (zweites Argument = Fallback). Fehlt eine Sprache,
+greift automatisch Deutsch, sonst der Fallback.
 
 ---
 
