@@ -141,7 +141,9 @@ services:
     # ── Anwendung (nur mit Profil "maintenance", z. B. `docker compose -f docker-compose_dev.yaml --profile  maintenance up -d --build`) ──     
   wartungsseite:
     profiles: ['maintenance']
-    build: .
+    build:
+      context: .         
+      dockerfile: maintenance/Dockerfile
     container_name: wartung_app
     ports:
       - "3000:80" # Wartungsbetrieb: Port 3000 von aussen geht intern auf Port 80
