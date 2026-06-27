@@ -132,7 +132,9 @@ export default function BewertenPage() {
                   <td>{s.enrollment.displayName}</td>
                   <td>{localized(s.evidence.title, locale)}</td>
                   <td className="kh-muted">{s.enrollment.class?.name ?? '—'}</td>
-                  <td className={isLate(s.submittedAt, s.evidence.dueAt) ? 'late-cell' : 'kh-muted'}>
+                  <td
+                    className={isLate(s.submittedAt, s.evidence.dueAt) ? 'late-cell' : 'kh-muted'}
+                  >
                     {s.submittedAt ? new Date(s.submittedAt).toLocaleString() : '—'}
                     {isLate(s.submittedAt, s.evidence.dueAt) && (
                       <span className="late-tag"> · {t('bw.late')}</span>

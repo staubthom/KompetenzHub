@@ -131,13 +131,11 @@ async function main(): Promise<void> {
     });
   }
 
-   
   console.log(`Seed abgeschlossen: Tenant "${tenant.name}", Modul ${module293.number}.`);
 }
 
 main()
   .catch((e) => {
-     
     console.error(e);
     process.exit(1);
   })

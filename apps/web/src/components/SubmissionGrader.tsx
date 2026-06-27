@@ -271,7 +271,10 @@ export default function SubmissionGrader({
             <div className="panel-head">
               <h2>{t('bw.aiAssist')}</h2>
             </div>
-            <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div
+              className="panel-body"
+              style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+            >
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button
                   className="btn sm"
@@ -308,7 +311,9 @@ export default function SubmissionGrader({
                         {t('bw.aiLevel')}: {t(`level.${assessment.suggestedLevel}`)}
                       </div>
                     )}
-                    {assessment.feedback && <div style={{ marginTop: 6 }}>{assessment.feedback}</div>}
+                    {assessment.feedback && (
+                      <div style={{ marginTop: 6 }}>{assessment.feedback}</div>
+                    )}
                     {assessment.reasoning.length > 0 && (
                       <ul style={{ margin: '6px 0 0', paddingLeft: 18 }}>
                         {assessment.reasoning.map((r, i) => (
@@ -345,7 +350,10 @@ export default function SubmissionGrader({
                 {t(`status.${sub.status}`)}
               </span>
             </div>
-            <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div
+              className="panel-body"
+              style={{ display: 'flex', flexDirection: 'column', gap: 14 }}
+            >
               <label className="fld">
                 <span className="field-label">
                   {t('bw.pointsAchieved')}
@@ -413,7 +421,10 @@ export default function SubmissionGrader({
             <div className="panel-head">
               <h2>{t('bw.reject')}</h2>
             </div>
-            <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div
+              className="panel-body"
+              style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
+            >
               <textarea
                 className="text-input"
                 rows={3}

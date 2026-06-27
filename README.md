@@ -45,15 +45,16 @@ Zusätzlich bietet KompetenzHub **Lernpfade** (empfohlene Reihenfolge), **KI-Unt
 Die Oberfläche ist vollständig **mehrsprachig** (Deutsch, Französisch, Italienisch, Englisch).
 
 ### Demoseite 🌐
+
 [Demo! Keine persönlichen Daten hochladen ⚠️](https://demo.kompetenzhub.ch/)
-Hier gibt es eine Demo welche immer zur vollen Stunde zurückgesetzt wird. 
+Hier gibt es eine Demo welche immer zur vollen Stunde zurückgesetzt wird.
 
 ---
 
 ## 2. Für wen ist die Software?
 
-| Zielgruppe                    | Nutzen                                                                                                                                      |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Zielgruppe                       | Nutzen                                                                                                                                      |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Lehrpersonen 👩‍🏫**              | Eigene Kompetenzraster erstellen, Nachweise definieren, Einreichungen bewerten, Lernfortschritt im Blick behalten, KI als Assistenz nutzen. |
 | **Lernende 👩‍🎓**                  | Übersicht über alle zu erbringenden Nachweise, einfache Einreichung, transparentes Feedback, Üben mit KI.                                   |
 | **Schulleitung / Schuladmin 🦸🏻** | Zentrale Steuerung: wer darf sich als Lehrperson anmelden, Branding (Logo/Farbe), Sprache, Betrieb/Auslastung, Backups.                     |
@@ -171,7 +172,7 @@ Im Modul-Editor zunächst **Handlungsziele** anlegen (Code + Beschreibung). Sie 
 >
 > ![Screenshot: Nachweis-Konfiguration mit Einreichungsarten](docs/Images/Pasted%20image%2020260623120435.png)
 
-### 6.3 Lernpfade 
+### 6.3 Lernpfade
 
 Im Modul können Sie unter **„Lernpfade"** eine **empfohlene Reihenfolge** der Kompetenzfelder definieren (Felder links hinzufügen, rechts in Reihenfolge bringen). Ein Pfad lässt sich **aktiv** schalten; Lernende sehen dann eine Zeitachse statt der reinen Matrix.
 
@@ -417,8 +418,9 @@ KompetenzHub ist ein **Monorepo** mit zwei Anwendungen:
 - ca. 2 GB freier Arbeitsspeicher für die Dienste
 - Betriebssystem: Linux, macOS oder Windows
 
-### 10.3 Schnellstart 
-#### Zum Ausprobieren in Docker nicht als Produktivumgebung gedacht! 
+### 10.3 Schnellstart
+
+#### Zum Ausprobieren in Docker nicht als Produktivumgebung gedacht!
 
 ```bash
 # 1) Repository holen
@@ -432,8 +434,8 @@ cp .env.example-dev .env
 docker compose -f docker-compose_dev.yaml --profile  app up -d --build
 
 ```
-Im Ordner Vorlagen finden Sie ein Demomodul zum Importieren
 
+Im Ordner Vorlagen finden Sie ein Demomodul zum Importieren
 
 #### Für lokale Entwicklung
 
@@ -736,18 +738,22 @@ Details findest du in der Datei [LICENSE](LICENSE).
 Wenn du Funktionen erweiterst oder Fehler behebst, freuen wir uns über einen Pull Request hier im Haupt-Repository!
 
 ---
+
 ## 19 Plugins aktivieren
-KompetenzHub ist so entwickelt, dass die Community selber Plugins erstellen kann. Diese müssen aber bereits im Build Prozess vorhanden sein. Im AnminPanel können diese Plugins aktiviert und deaktiviert werden. 
+
+KompetenzHub ist so entwickelt, dass die Community selber Plugins erstellen kann. Diese müssen aber bereits im Build Prozess vorhanden sein. Im AnminPanel können diese Plugins aktiviert und deaktiviert werden.
+
 > 📷 _Screenshot: Aktivierung der Plugins._
 >
 > ![Screenshot: Backup-Schaltfläche auf der Betriebs-Seite](docs/Images/27-06-2026_14-26-51.png)
-Hier ist ersichtlich was als Plugin alles möglich ist. Das Memo Plugin dient als Schulungsplugin für Lehrersonen die gerne selber Plugins entwickeln wollen. 
+> Hier ist ersichtlich was als Plugin alles möglich ist. Das Memo Plugin dient als Schulungsplugin für Lehrersonen die gerne selber Plugins entwickeln wollen.
 > 📷 _Screenshot: Aktivierung der Plugins._
 >
 > ![Screenshot: Backup-Schaltfläche auf der Betriebs-Seite](docs/Images/27-06-2026_14-35-07.png)
 
 ## 20 Plugins selbst entwickeln
-Es ist an Lehrpersonen freigestellt, selbst Plugins für die Software zu erstellen. Genaue Anleitung findest du [hier](docs/pluginanleitung.md). 
+
+Es ist an Lehrpersonen freigestellt, selbst Plugins für die Software zu erstellen. Genaue Anleitung findest du [hier](docs/pluginanleitung.md).
 
 ---
 

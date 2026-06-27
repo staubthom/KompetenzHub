@@ -660,7 +660,7 @@ export default function ModuleDetailPage({ params }: { params: Promise<{ id: str
                         <div className="desc-editor">
                           <textarea
                             // Fokus folgt dem gerade geöffneten Deskriptor-Editor (a11y-konform)
-                             
+
                             autoFocus
                             rows={3}
                             value={editingDesc.text}

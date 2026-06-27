@@ -16,13 +16,22 @@ async function req(method, path, body, token) {
     body: body ? JSON.stringify(body) : undefined,
   });
   let json;
-  try { json = await res.json(); } catch { json = null; }
+  try {
+    json = await res.json();
+  } catch {
+    json = null;
+  }
   return { status: res.status, body: json };
 }
 
 function check(label, cond, info = '') {
-  if (cond) { console.log(`  OK   ${label}`); ok++; }
-  else { console.log(`  FAIL ${label}${info ? ' – ' + info : ''}`); fail++; }
+  if (cond) {
+    console.log(`  OK   ${label}`);
+    ok++;
+  } else {
+    console.log(`  FAIL ${label}${info ? ' – ' + info : ''}`);
+    fail++;
+  }
 }
 
 // ── Logins ────────────────────────────────────────────────────────
@@ -36,7 +45,12 @@ check('Login LEARNER', !!student);
 
 // ── Modul für die Zuordnung ───────────────────────────────────────
 const modNum = `CLS${Date.now()}`;
-const mod = await req('POST', '/modules', { number: modNum, title: { de: 'Klassen-Testmodul' } }, teacher);
+const mod = await req(
+  'POST',
+  '/modules',
+  { number: modNum, title: { de: 'Klassen-Testmodul' } },
+  teacher,
+);
 const moduleId = mod.body?.id;
 check('Modul angelegt', !!moduleId);
 
@@ -54,7 +68,12 @@ check('Klasse in Liste', Array.isArray(list.body) && list.body.some((c) => c.id 
 const detail = await req('GET', `/classes/${classId}`, null, teacher);
 check('GET /classes/:id → 200', detail.status === 200);
 
-const patch = await req('PATCH', `/classes/${classId}`, { name: 'INF-Test-2', status: 'ACTIVE' }, teacher);
+const patch = await req(
+  'PATCH',
+  `/classes/${classId}`,
+  { name: 'INF-Test-2', status: 'ACTIVE' },
+  teacher,
+);
 check('PATCH /classes/:id → 200', patch.status === 200 && patch.body?.name === 'INF-Test-2');
 
 // Student darf Klassenliste nicht sehen (RBAC)

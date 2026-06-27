@@ -44,7 +44,13 @@ const SESSIONS = [
     role: 'ADMIN',
     email: 'a11y-admin@demo.ch',
     label: 'Schuladmin',
-    screens: ['/admin', '/admin/personen', '/admin/einladungen', '/admin/betrieb', '/admin/einstellungen'],
+    screens: [
+      '/admin',
+      '/admin/personen',
+      '/admin/einladungen',
+      '/admin/betrieb',
+      '/admin/einstellungen',
+    ],
   },
 ];
 

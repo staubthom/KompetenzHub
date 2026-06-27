@@ -36,8 +36,6 @@ Wenn ihr bald Demo-, Test- oder Pilotumgebungen habt, ist jetzt der beste letzte
 Wenn später Plugin-Systeme geplant sind, ist eine saubere Baseline heute besonders hilfreich, weil künftige Plugin-Migrationen ohnehin komplexer werden.
 Falls du willst, sollte der nächste Schritt nicht sofort der Squash sein, sondern zuerst ein kurzer Nachweis, dass keine bestehende Umgebung auf der aktuellen Kette hängt.
 
-
-
 Ich ziehe noch die paar operativen Stellen heran, damit die Befehle exakt zu eurem Prisma- und Docker-Setup passen und nicht generisch bleiben.
 
 Read [](file:///c%3A/Entwicklung/KompetenzHub/apps/api/Dockerfile)
@@ -137,6 +135,7 @@ Get-ChildItem .\prisma\migrations
 ```
 
 Erwartet:
+
 - `20260625_baseline`
 - migration_lock.toml
 

@@ -35,11 +35,20 @@ function check(label, cond, info = '') {
 }
 
 // ── Setup: zwei Lehrpersonen + eine lernende Person ───────────────
-const ta = await req('POST', '/auth/dev-login', { email: `iso-teacherA-${Date.now()}@demo.ch`, role: 'TEACHER' });
+const ta = await req('POST', '/auth/dev-login', {
+  email: `iso-teacherA-${Date.now()}@demo.ch`,
+  role: 'TEACHER',
+});
 const teacherA = ta.body?.token;
-const tb = await req('POST', '/auth/dev-login', { email: `iso-teacherB-${Date.now()}@demo.ch`, role: 'TEACHER' });
+const tb = await req('POST', '/auth/dev-login', {
+  email: `iso-teacherB-${Date.now()}@demo.ch`,
+  role: 'TEACHER',
+});
 const teacherB = tb.body?.token;
-const st = await req('POST', '/auth/dev-login', { email: `iso-student-${Date.now()}@demo.ch`, role: 'LEARNER' });
+const st = await req('POST', '/auth/dev-login', {
+  email: `iso-student-${Date.now()}@demo.ch`,
+  role: 'LEARNER',
+});
 const student = st.body?.token;
 check('Logins', !!teacherA && !!teacherB && !!student);
 
@@ -49,14 +58,40 @@ const aMod = await req('POST', '/modules', { number: aNum, title: { de: 'A-Modul
 const aModuleId = aMod.body?.id;
 const aDetail = await req('GET', `/modules/${aModuleId}`, null, teacherA);
 const aMatrixId = aDetail.body?.matrix?.id;
-const aHz = await req('POST', `/modules/${aModuleId}/action-goals`, { code: '1', text: { de: 'HZ' } }, teacherA);
-const aBand = await req('POST', `/matrices/${aMatrixId}/bands`, { code: 'A1', actionGoalIds: [aHz.body.id] }, teacherA);
+const aHz = await req(
+  'POST',
+  `/modules/${aModuleId}/action-goals`,
+  { code: '1', text: { de: 'HZ' } },
+  teacherA,
+);
+const aBand = await req(
+  'POST',
+  `/matrices/${aMatrixId}/bands`,
+  { code: 'A1', actionGoalIds: [aHz.body.id] },
+  teacherA,
+);
 const aField = aBand.body?.fields?.[0]?.id;
 const aClass = await req('POST', '/classes', { name: 'A-Anlass', moduleId: aModuleId }, teacherA);
 const aCode = await req('POST', `/classes/${aClass.body.id}/join-code`, {}, teacherA);
 await req('POST', '/classes/join', { code: aCode.body?.code }, student);
-const aEv = await req('POST', '/evidence', { moduleId: aModuleId, title: { de: 'A-Nachweis' }, isVisible: true, maxPoints: 10, fieldIds: [aField] }, teacherA);
-const aSub = await req('POST', `/evidence/${aEv.body.id}/submissions`, { text: 'Meine Abgabe' }, student);
+const aEv = await req(
+  'POST',
+  '/evidence',
+  {
+    moduleId: aModuleId,
+    title: { de: 'A-Nachweis' },
+    isVisible: true,
+    maxPoints: 10,
+    fieldIds: [aField],
+  },
+  teacherA,
+);
+const aSub = await req(
+  'POST',
+  `/evidence/${aEv.body.id}/submissions`,
+  { text: 'Meine Abgabe' },
+  student,
+);
 const aSubmissionId = aSub.body?.submissionId;
 
 // Lehrperson B: eigenes Modul
@@ -71,7 +106,10 @@ const bIds = (bModules.body ?? []).map((m) => m.id);
 check('B sieht A-Modul NICHT', !bIds.includes(aModuleId));
 check('B sieht eigenes Modul', bIds.includes(bModuleId));
 const aModules = await req('GET', '/modules', null, teacherA);
-check('A sieht eigenes Modul', (aModules.body ?? []).some((m) => m.id === aModuleId));
+check(
+  'A sieht eigenes Modul',
+  (aModules.body ?? []).some((m) => m.id === aModuleId),
+);
 
 // B darf A-Modul nicht öffnen/bearbeiten/löschen/exportieren
 const bOpenA = await req('GET', `/modules/${aModuleId}`, null, teacherB);
@@ -85,26 +123,49 @@ check('B kann A-Matrix nicht exportieren → 404', bExportA.status === 404);
 
 // ── Einreichungs-Sichtbarkeit ─────────────────────────────────────
 const bQueue = await req('GET', '/submissions', null, teacherB);
-check('B sieht A-Einreichung NICHT in der Queue',
-  Array.isArray(bQueue.body) && !bQueue.body.some((x) => x.id === aSubmissionId));
+check(
+  'B sieht A-Einreichung NICHT in der Queue',
+  Array.isArray(bQueue.body) && !bQueue.body.some((x) => x.id === aSubmissionId),
+);
 const aQueue = await req('GET', '/submissions', null, teacherA);
-check('A sieht eigene Einreichung in der Queue',
-  Array.isArray(aQueue.body) && aQueue.body.some((x) => x.id === aSubmissionId));
+check(
+  'A sieht eigene Einreichung in der Queue',
+  Array.isArray(aQueue.body) && aQueue.body.some((x) => x.id === aSubmissionId),
+);
 
 // B darf A-Einreichung nicht im Detail/Verlauf sehen und nicht bewerten/zurückweisen
 const bDetail = await req('GET', `/submissions/${aSubmissionId}`, null, teacherB);
-check('B kann A-Einreichung nicht öffnen → 403', bDetail.status === 403, `status=${bDetail.status}`);
+check(
+  'B kann A-Einreichung nicht öffnen → 403',
+  bDetail.status === 403,
+  `status=${bDetail.status}`,
+);
 const bHist = await req('GET', `/submissions/${aSubmissionId}/history`, null, teacherB);
 check('B kann A-Verlauf nicht sehen → 403', bHist.status === 403);
-const bGrade = await req('POST', `/submissions/${aSubmissionId}/evaluation`, { points: 10 }, teacherB);
+const bGrade = await req(
+  'POST',
+  `/submissions/${aSubmissionId}/evaluation`,
+  { points: 10 },
+  teacherB,
+);
 check('B kann A-Einreichung nicht bewerten → 403', bGrade.status === 403);
-const bReject = await req('POST', `/submissions/${aSubmissionId}/reject`, { reason: 'nö' }, teacherB);
+const bReject = await req(
+  'POST',
+  `/submissions/${aSubmissionId}/reject`,
+  { reason: 'nö' },
+  teacherB,
+);
 check('B kann A-Einreichung nicht zurückweisen → 403', bReject.status === 403);
 
 // A darf die eigene Einreichung sehen und bewerten
 const aDetailSub = await req('GET', `/submissions/${aSubmissionId}`, null, teacherA);
 check('A kann eigene Einreichung öffnen → 200', aDetailSub.status === 200);
-const aGrade = await req('POST', `/submissions/${aSubmissionId}/evaluation`, { points: 8 }, teacherA);
+const aGrade = await req(
+  'POST',
+  `/submissions/${aSubmissionId}/evaluation`,
+  { points: 8 },
+  teacherA,
+);
 check('A kann eigene Einreichung bewerten', aGrade.status === 200 || aGrade.status === 201);
 
 // ── Aufräumen ─────────────────────────────────────────────────────

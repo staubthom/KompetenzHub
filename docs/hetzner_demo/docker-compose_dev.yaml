@@ -112,7 +112,7 @@ services:
     depends_on:
       api: { condition: service_healthy }
     environment:
-      NODE_ENV: development     
+      NODE_ENV: development
       PORT: 3000
     ports:
       - '${WEB_PORT:-3000}:3000'

@@ -6,7 +6,6 @@
 > („Dossier- & Memo-Assistent“) unter `plugins/packages/memo/`. Jeder Abschnitt verweist
 > auf die entsprechende Stelle dieses Plugins.
 
-
 ---
 
 ## 1. Architektur & Das wichtigste Prinzip
@@ -28,11 +27,12 @@ nicht. Das hält Schul-Daten sicher und Plugins updatefähig.
 > **Wenn dir ein Erweiterungspunkt fehlt:** Dann ist das eine Core-Aufgabe (neuer Slot /
 > neue `ctx.core`-Methode). Plugins können solche Punkte nicht selbst schaffen. Liste sie
 > separat auf – sie müssen einmalig im Core ergänzt werden.
+
 ---
 
 ## 2. Dateistruktur eines Plugins
 
-Jedes Plugin muss exakt der folgenden Struktur entsprechen. Unvollständige oder falsch benannte Strukturen werden vom System-Validator abgewiesen. Eine Vorlage gibt es unter /plugins/packages/_example
+Jedes Plugin muss exakt der folgenden Struktur entsprechen. Unvollständige oder falsch benannte Strukturen werden vom System-Validator abgewiesen. Eine Vorlage gibt es unter /plugins/packages/\_example
 
 ```
 plugins/packages/<deinPlugin>/
@@ -60,12 +60,12 @@ Das Manifest ist die Vertrauensbasis des Plugins. Es wird beim Build und beim Sy
 
 ### 3.1 Harte Namens- und Validierungsregeln
 
-* **`pluginId`**: Muss der Regex `^[a-z][a-z0-9-]{2,40}$` entsprechen. Sie ist global eindeutig und unveränderlich.
-* **`capabilities`**: Jedes deklarierte Recht muss dem Format `plugin:<pluginId>:<scope>` folgen (z. B. `plugin:attendance:manage`).
-* **`nav[].href`**: Muss zwingend unter `/plugins/<pluginId>` liegen.
-* **`translations.namespaces`**: Müssen exakt mit `plugin.<pluginId>` beginnen.
-* **`storage.prefixes`**: Falls genutzt, müssen sie mit `plugins/<pluginId>/` starten.
-* **Komponenten-Mapping**: Der Wert des Feldes `"component"` im Manifest muss **exakt buchstabengetreu** dem Dateinamen unter `web/<Component>.tsx` entsprechen.
+- **`pluginId`**: Muss der Regex `^[a-z][a-z0-9-]{2,40}$` entsprechen. Sie ist global eindeutig und unveränderlich.
+- **`capabilities`**: Jedes deklarierte Recht muss dem Format `plugin:<pluginId>:<scope>` folgen (z. B. `plugin:attendance:manage`).
+- **`nav[].href`**: Muss zwingend unter `/plugins/<pluginId>` liegen.
+- **`translations.namespaces`**: Müssen exakt mit `plugin.<pluginId>` beginnen.
+- **`storage.prefixes`**: Falls genutzt, müssen sie mit `plugins/<pluginId>/` starten.
+- **Komponenten-Mapping**: Der Wert des Feldes `"component"` im Manifest muss **exakt buchstabengetreu** dem Dateinamen unter `web/<Component>.tsx` entsprechen.
 
 ### 3.2 Beispiel (gekürzt aus `memo`)
 
@@ -168,7 +168,7 @@ Plugins können ihre UI nur an Orten einhängen, die der Core explizit freigibt.
 
 > Slots passieren **nicht** automatisch überall – der Core muss den Slot an der
 > jeweiligen Stelle platziert haben. Die obige Liste ist die **vollständige** aktuell
-> verfügbare Menge. Neue Slots = Core-Änderung können aber gemacht werden. 
+> verfügbare Menge. Neue Slots = Core-Änderung können aber gemacht werden.
 
 ---
 
@@ -189,24 +189,24 @@ export default definePlugin({
       // Zugriff auf Query-Parameter: req.query
       const classId = req.query.classId ? String(req.query.classId) : null;
       if (!classId) throw badRequest('Missing classId');
-      
+
       const sessions = await ctx.data.list('sessions');
       return sessions; // Automatische JSON-Serialisierung (200 OK)
     },
-    
+
     'POST /sessions': async (ctx, req) => {
       const { date, classId } = req.body;
       const newSession = { id: crypto.randomUUID(), date, classId };
-      
+
       await ctx.data.put('sessions', newSession.id, newSession);
       await ctx.audit('session.created', { id: newSession.id });
-      
-      return newSession;
-    }
-  }
-});
 
+      return newSession;
+    },
+  },
+});
 ```
+
 Wichtig zu component: Der String ("MemoButton" usw.) ist der Name, unter dem du die Komponente im Web-Registry registrierst. Er muss exakt übereinstimmen.
 
 roles ist die grobe Sichtbarkeits-/Zugriffsstufe (welche Kernrolle den Beitrag sieht bzw. die Route aufrufen darf). Feinere Berechtigungen (z. B. „nur Lehrperson DIESES Modulanlasses“) prüfst du selbst im Server-Handler über ctx.core.
@@ -215,20 +215,19 @@ roles ist die grobe Sichtbarkeits-/Zugriffsstufe (welche Kernrolle den Beitrag s
 
 Plugins haben keinen direkten Zugriff auf den globalen `PrismaClient` oder den `S3Service`. Alle Aktionen laufen über den gescopten `ServerContext` (`ctx`), welcher die Mandantentrennung (Tenant Isolation) automatisch auf Datenbankebene erzwingt.
 
-| Methode / Eigenschaft | Beschreibung |
-| --- | --- |
-| `ctx.pluginId` | Die ID deines Plugins (schreibgeschützt). |
-| `ctx.tenant.id` | Die ID des ausführenden Schul-Mandanten (fälschungssicher). |
-| `ctx.user` | Enthält `{ id, roles, locale }` des angemeldeten Benutzers. |
-| `ctx.data` | Zugriff auf den Key-Value-Store: `get`, `list`, `put`, `delete` (limitiert auf `collections`). |
-| `ctx.secrets.get(key)` | Liefert den entschlüsselten Wert eines im Manifest deklarierten Secrets. |
-| `ctx.storage` | Gescopter S3-Dateizugriff, hart limitiert auf das Verzeichnis `plugins/<id>/<tenantId>/`. |
-| `ctx.http(url, init)` | Ein gekapseltes `fetch`. Erlaubt Verbindungen **nur** zu Zielen in `integrations.outboundHosts`. |
-| `ctx.audit(event, detail)` | Schreibt einen manipulationssicheren Eintrag in das zentrale Audit-Log der Schule. |
-| `ctx.core` | **Schreibgeschützte Lesefassade** auf die Stammdaten des Kerns zwecks Berechtigungsprüfung. |
+| Methode / Eigenschaft      | Beschreibung                                                                                     |
+| -------------------------- | ------------------------------------------------------------------------------------------------ |
+| `ctx.pluginId`             | Die ID deines Plugins (schreibgeschützt).                                                        |
+| `ctx.tenant.id`            | Die ID des ausführenden Schul-Mandanten (fälschungssicher).                                      |
+| `ctx.user`                 | Enthält `{ id, roles, locale }` des angemeldeten Benutzers.                                      |
+| `ctx.data`                 | Zugriff auf den Key-Value-Store: `get`, `list`, `put`, `delete` (limitiert auf `collections`).   |
+| `ctx.secrets.get(key)`     | Liefert den entschlüsselten Wert eines im Manifest deklarierten Secrets.                         |
+| `ctx.storage`              | Gescopter S3-Dateizugriff, hart limitiert auf das Verzeichnis `plugins/<id>/<tenantId>/`.        |
+| `ctx.http(url, init)`      | Ein gekapseltes `fetch`. Erlaubt Verbindungen **nur** zu Zielen in `integrations.outboundHosts`. |
+| `ctx.audit(event, detail)` | Schreibt einen manipulationssicheren Eintrag in das zentrale Audit-Log der Schule.               |
+| `ctx.core`                 | **Schreibgeschützte Lesefassade** auf die Stammdaten des Kerns zwecks Berechtigungsprüfung.      |
 
-
-### 5.3 Datenhaltung: der Key-Value (KV) Store 
+### 5.3 Datenhaltung: der Key-Value (KV) Store
 
 Pilot-Stand: **`data.mode: "kv"`**. Du speicherst JSON-Dokumente pro `collection` unter
 einem `key` (z. B. einer UUID). `(pluginId, tenantId)` setzt **immer der Core** – ein
@@ -368,12 +367,12 @@ vorhanden.
 
 **Was der Generator aus dem Manifest ableitet:**
 
-| Manifest | Registry |
-|---|---|
-| `pages[].route` + `.component` | `pages[route] = <Komponente>` |
-| `widgets[].slot` + `.component` | `widgets[slot] = [<Komponente>, …]` |
-| `actions[].component`, `tabs[].component` | `components[name] = <Komponente>` |
-| `translations` + `i18n/*.json` | `translations[locale]` |
+| Manifest                                  | Registry                            |
+| ----------------------------------------- | ----------------------------------- |
+| `pages[].route` + `.component`            | `pages[route] = <Komponente>`       |
+| `widgets[].slot` + `.component`           | `widgets[slot] = [<Komponente>, …]` |
+| `actions[].component`, `tabs[].component` | `components[name] = <Komponente>`   |
+| `translations` + `i18n/*.json`            | `translations[locale]`              |
 
 > Ergebnis: **Neues Plugin anlegen → `npm install` (einmal, fürs Workspace-Linking) →
 > fertig.** Keine Hand-Edits an Core-Dateien. Die generierten Dateien sind von ESLint/
@@ -397,9 +396,9 @@ Der `PluginLifecycleService` führt bei einer Deinstallation folgende Schritte a
 2. Löschen aller Einträge in der Tabelle `PluginSecret` für diesen Tenant.
 3. Vollständiges Löschen des S3-Ordner-Prefixes `plugins/<pluginId>/<tenantId>/`.
 4. Verarbeitung der `PluginRecord`-Tabelle (KV-Daten):
-* Bei `"data": "delete"`: Radikales `deleteMany` auf der DB.
-* Bei `"data": "archive"`: Export der Daten als JSON-Archiv nach S3, anschliessend Löschung aus der operativen Tabelle.
 
+- Bei `"data": "delete"`: Radikales `deleteMany` auf der DB.
+- Bei `"data": "archive"`: Export der Daten als JSON-Archiv nach S3, anschliessend Löschung aus der operativen Tabelle.
 
 5. **Nachweis-Verifikation:** Das System zählt alle verbliebenen Records mit deiner `pluginId`. Ist die Summe ungleich Null, schlägt die Deinstallation fehl (`plugin.uninstall.incomplete`).
 
@@ -431,10 +430,10 @@ npm run lint
 
 Vor dem Erstellen eines Pull Requests müssen alle Punkte dieser Checkliste mit **Ja** beantwortet werden können:
 
-* [ ] Erfüllt die `pluginId` die Namenskonvention (`^[a-z][a-z0-9-]{2,40}$`)?
-* [ ] Werden alle API-Routen durch ein deklariertes `capability` geschützt und sind die Rollen passend eingeschränkt?
-* [ ] Wird auf jeder Backend-Route, die IDs verarbeitet, die Autorisierung mittels `ctx.core.getClassMember` oder `listModuleMembers` validiert?
-* [ ] Stimmen die Gehäuse- und Dateinamen der UI-Komponenten exakt mit den `"component"`-Strings im Manifest überein?
-* [ ] Sind flache i18n-Dateien vorhanden und beginnen alle Schlüssel mit `plugin.<pluginId>.`?
-* [ ] Wurden Core-Dateien in `apps/api` oder `apps/web` modifiziert? (Sollte **Nein** sein!)
-* [ ] Läuft `npm run typecheck` ohne Fehler durch?
+- [ ] Erfüllt die `pluginId` die Namenskonvention (`^[a-z][a-z0-9-]{2,40}$`)?
+- [ ] Werden alle API-Routen durch ein deklariertes `capability` geschützt und sind die Rollen passend eingeschränkt?
+- [ ] Wird auf jeder Backend-Route, die IDs verarbeitet, die Autorisierung mittels `ctx.core.getClassMember` oder `listModuleMembers` validiert?
+- [ ] Stimmen die Gehäuse- und Dateinamen der UI-Komponenten exakt mit den `"component"`-Strings im Manifest überein?
+- [ ] Sind flache i18n-Dateien vorhanden und beginnen alle Schlüssel mit `plugin.<pluginId>.`?
+- [ ] Wurden Core-Dateien in `apps/api` oder `apps/web` modifiziert? (Sollte **Nein** sein!)
+- [ ] Läuft `npm run typecheck` ohne Fehler durch?

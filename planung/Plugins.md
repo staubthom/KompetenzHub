@@ -53,32 +53,32 @@ Das Manifest ist der formale Installationsvertrag zwischen Plugin und Plattform.
 
 Empfohlene Felder:
 
-Feld	Zweck
-schemaVersion	Version des Manifest-Formats
-pluginId	Eindeutige technische Kennung, global stabil
-displayName	Anzeigename des Plugins
-version	Plugin-Version
-publisher	Technischer und rechtlicher Herausgeber
-signature	Signatur oder Verweis auf Signaturmaterial
-description	Kurzbeschreibung
-license	Lizenz des Plugins
-support	Kontakt, Dokumentation, Support-URL
-kompetenzHub	Minimale und maximale kompatible Kernversion
-capabilities	Angeforderte Rechte, etwa UI-Slots, Storage, Webhooks, Jobs
-dependencies	Abhängigkeiten zu Kernfunktionen oder anderen Plugins
-routes	Deklarierte API- und UI-Routen
-navigation	Gewünschte Navigationsbeiträge
-adminPages	Beiträge für Admin-Oberflächen
-widgets	Dashboard- oder Kontext-Widgets
-database	Angabe, ob eigene Tabellen, Seeds oder Migrationen enthalten sind
-storage	Verwendete Bucket- oder Prefix-Namensräume
-integrations	Externe Systeme, Webhooks, Outbound-Ziele
-backgroundJobs	Geplante Jobs, Trigger und Intervalle
-secrets	Benötigte Geheimnisse oder Tokens
-lifecycle	Install-, Upgrade-, Disable- und Uninstall-Hooks
-cleanup	Deklaration aller Ressourcen, die beim Uninstall entfernt werden müssen
-translations	Vorhandene Sprachpakete
-audit	Welche Ereignisse das Plugin protokollieren muss
+Feld Zweck
+schemaVersion Version des Manifest-Formats
+pluginId Eindeutige technische Kennung, global stabil
+displayName Anzeigename des Plugins
+version Plugin-Version
+publisher Technischer und rechtlicher Herausgeber
+signature Signatur oder Verweis auf Signaturmaterial
+description Kurzbeschreibung
+license Lizenz des Plugins
+support Kontakt, Dokumentation, Support-URL
+kompetenzHub Minimale und maximale kompatible Kernversion
+capabilities Angeforderte Rechte, etwa UI-Slots, Storage, Webhooks, Jobs
+dependencies Abhängigkeiten zu Kernfunktionen oder anderen Plugins
+routes Deklarierte API- und UI-Routen
+navigation Gewünschte Navigationsbeiträge
+adminPages Beiträge für Admin-Oberflächen
+widgets Dashboard- oder Kontext-Widgets
+database Angabe, ob eigene Tabellen, Seeds oder Migrationen enthalten sind
+storage Verwendete Bucket- oder Prefix-Namensräume
+integrations Externe Systeme, Webhooks, Outbound-Ziele
+backgroundJobs Geplante Jobs, Trigger und Intervalle
+secrets Benötigte Geheimnisse oder Tokens
+lifecycle Install-, Upgrade-, Disable- und Uninstall-Hooks
+cleanup Deklaration aller Ressourcen, die beim Uninstall entfernt werden müssen
+translations Vorhandene Sprachpakete
+audit Welche Ereignisse das Plugin protokollieren muss
 Zusätzliche Regeln:
 
 Plugin-IDs müssen global eindeutig und unveränderlich sein.
@@ -91,28 +91,28 @@ Die Plattform sollte globale Installation und tenantbezogene Aktivierung sauber 
 
 Empfohlene Kernmodelle:
 
-Modell	Zweck
-PluginPackage	Technisches Paket im Dateisystem oder Artefakt-Store, inklusive Prüfsumme und Signaturstatus
-PluginCatalogEntry	Registrierter Eintrag eines Plugins mit Metadaten, Publisher und Kompatibilität
-PluginInstallation	Global auf der Instanz installierte Plugin-Version
-PluginTenantActivation	Aktivierungsstatus eines Plugins pro Tenant
-PluginSecret	Tenantbezogene oder globale Secrets für ein Plugin
-PluginMigration	Historie ausgeführter Plugin-Migrationen
-PluginResourceOwnership	Liste aller Ressourcen, die einem Plugin gehören
-PluginEventLog	Audit- und Lifecycle-Ereignisse
-PluginHealthState	Aktueller technischer Gesundheitszustand eines Plugins
-PluginDependencyState	Erfüllung von Abhängigkeiten zu Kern oder anderen Plugins
+Modell Zweck
+PluginPackage Technisches Paket im Dateisystem oder Artefakt-Store, inklusive Prüfsumme und Signaturstatus
+PluginCatalogEntry Registrierter Eintrag eines Plugins mit Metadaten, Publisher und Kompatibilität
+PluginInstallation Global auf der Instanz installierte Plugin-Version
+PluginTenantActivation Aktivierungsstatus eines Plugins pro Tenant
+PluginSecret Tenantbezogene oder globale Secrets für ein Plugin
+PluginMigration Historie ausgeführter Plugin-Migrationen
+PluginResourceOwnership Liste aller Ressourcen, die einem Plugin gehören
+PluginEventLog Audit- und Lifecycle-Ereignisse
+PluginHealthState Aktueller technischer Gesundheitszustand eines Plugins
+PluginDependencyState Erfüllung von Abhängigkeiten zu Kern oder anderen Plugins
 Empfohlene Inhalte pro Modell:
 
-Modell	Wichtige Felder
-PluginInstallation	pluginId, installedVersion, packageHash, publisher, signatureStatus, installStatus, installedAt, installedBy
-PluginTenantActivation	pluginId, tenantId, enabled, enabledVersion, configVersion, status, lastError, enabledAt, disabledAt
-PluginSecret	pluginId, tenantId optional, key, secretRef, rotationState
-PluginMigration	pluginId, version, migrationKey, executedAt, result, rollbackSupported
-PluginResourceOwnership	pluginId, tenantId optional, resourceType, resourceKey, state, cleanupPolicy
-PluginEventLog	pluginId, tenantId optional, eventType, severity, payloadRef, createdAt
-PluginHealthState	pluginId, tenantId optional, state, lastCheckAt, message
-PluginDependencyState	pluginId, dependencyType, dependencyKey, satisfied, checkedAt
+Modell Wichtige Felder
+PluginInstallation pluginId, installedVersion, packageHash, publisher, signatureStatus, installStatus, installedAt, installedBy
+PluginTenantActivation pluginId, tenantId, enabled, enabledVersion, configVersion, status, lastError, enabledAt, disabledAt
+PluginSecret pluginId, tenantId optional, key, secretRef, rotationState
+PluginMigration pluginId, version, migrationKey, executedAt, result, rollbackSupported
+PluginResourceOwnership pluginId, tenantId optional, resourceType, resourceKey, state, cleanupPolicy
+PluginEventLog pluginId, tenantId optional, eventType, severity, payloadRef, createdAt
+PluginHealthState pluginId, tenantId optional, state, lastCheckAt, message
+PluginDependencyState pluginId, dependencyType, dependencyKey, satisfied, checkedAt
 Datenregeln:
 
 Ein Plugin darf nur eigene Tabellen verwalten.
@@ -172,37 +172,37 @@ Erfolg nur dann markieren, wenn keine aktive Ressource mehr verbleibt
 Uninstall-Definition ohne Spuren
 Sauber deinstalliert bedeutet:
 
-Bereich	Erwartung
-UI	Keine Navigation, keine Widgets, keine Admin-Seiten mehr
-API	Keine aktiven Routen oder Hook-Registrierungen mehr
-Jobs	Keine laufenden Jobs, Trigger, Scheduler oder Worker mehr
-Webhooks	Keine aktiven Endpunkte, Abonnements oder Retry-Warteschlangen mehr
-Secrets	Keine aktiven Secrets oder Tokens mehr
-Storage	Keine verbleibenden Objekte im Plugin-Namespace mehr
-Daten	Entweder vollständig gelöscht oder bewusst archiviert
-Audit	Uninstall protokolliert, aber ohne betriebliche Nebenwirkungen
-Kern	Keine defekten Referenzen oder Konflikte mit späteren Neuinstallationen
+Bereich Erwartung
+UI Keine Navigation, keine Widgets, keine Admin-Seiten mehr
+API Keine aktiven Routen oder Hook-Registrierungen mehr
+Jobs Keine laufenden Jobs, Trigger, Scheduler oder Worker mehr
+Webhooks Keine aktiven Endpunkte, Abonnements oder Retry-Warteschlangen mehr
+Secrets Keine aktiven Secrets oder Tokens mehr
+Storage Keine verbleibenden Objekte im Plugin-Namespace mehr
+Daten Entweder vollständig gelöscht oder bewusst archiviert
+Audit Uninstall protokolliert, aber ohne betriebliche Nebenwirkungen
+Kern Keine defekten Referenzen oder Konflikte mit späteren Neuinstallationen
 Wichtige Klarstellung:
 Vollständig spurlose Deinstallation im Sinne von keinerlei Historie ist nicht sinnvoll. Audit-Einträge über Installation, Aktivierung und Entfernung sollten erhalten bleiben. Spurlos bedeutet hier: keine aktive technische oder fachliche Rückwirkung im laufenden System.
 
 Empfohlene Plugin-Ordnerstruktur für dieses Monorepo
 Empfohlenes Zielbild:
 
-Pfad	Zweck
-Plugins.md	Architektur- und Betriebsdokumentation
-plugins/registry	Zentrale Plugin-Registry, Validatoren, Loader, Signaturprüfung
-plugins/sdk	Öffentliches SDK für Plugin-Autoren
-plugins/contracts	Gemeinsame Typen für Manifest, Capabilities, Lifecycle und Slots
-plugins/templates	Vorlagen für neue Plugins
-plugins/packages	Lokale Plugin-Pakete während Entwicklung oder kuratierte First-Party-Plugins
-plugins/packages/plugin-id	Einzelnes Plugin-Paket
-plugins/packages/plugin-id/manifest	Manifest-Datei des Plugins
-plugins/packages/plugin-id/server	Backend-Teil des Plugins
-plugins/packages/plugin-id/web	Frontend-Beiträge des Plugins
-plugins/packages/plugin-id/migrations	Plugin-spezifische Migrationen
-plugins/packages/plugin-id/translations	Sprachdateien
-plugins/packages/plugin-id/assets	Statische Assets
-plugins/packages/plugin-id/tests	Contract-, Lifecycle- und Cleanup-Tests
+Pfad Zweck
+Plugins.md Architektur- und Betriebsdokumentation
+plugins/registry Zentrale Plugin-Registry, Validatoren, Loader, Signaturprüfung
+plugins/sdk Öffentliches SDK für Plugin-Autoren
+plugins/contracts Gemeinsame Typen für Manifest, Capabilities, Lifecycle und Slots
+plugins/templates Vorlagen für neue Plugins
+plugins/packages Lokale Plugin-Pakete während Entwicklung oder kuratierte First-Party-Plugins
+plugins/packages/plugin-id Einzelnes Plugin-Paket
+plugins/packages/plugin-id/manifest Manifest-Datei des Plugins
+plugins/packages/plugin-id/server Backend-Teil des Plugins
+plugins/packages/plugin-id/web Frontend-Beiträge des Plugins
+plugins/packages/plugin-id/migrations Plugin-spezifische Migrationen
+plugins/packages/plugin-id/translations Sprachdateien
+plugins/packages/plugin-id/assets Statische Assets
+plugins/packages/plugin-id/tests Contract-, Lifecycle- und Cleanup-Tests
 Strukturprinzipien:
 
 Kern und Plugins bleiben physisch getrennt.

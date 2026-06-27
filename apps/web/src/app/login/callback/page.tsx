@@ -18,7 +18,5 @@ export default async function CallbackPage() {
   const apiUser = (s?.apiUser as SessionUser | undefined) ?? null;
   const exchangeError = (s?.exchangeError as string | undefined) ?? null;
 
-  return (
-    <CallbackClient apiToken={apiToken} apiUser={apiUser} exchangeError={exchangeError} />
-  );
+  return <CallbackClient apiToken={apiToken} apiUser={apiUser} exchangeError={exchangeError} />;
 }

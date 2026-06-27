@@ -63,7 +63,10 @@ const saved = await req(
   teacher,
 );
 check('PUT /ai/config speichert', saved.status === 200);
-check('baseUrl normalisiert (kein Trailing-Slash)', saved.body?.baseUrl === 'https://example.invalid/v1');
+check(
+  'baseUrl normalisiert (kein Trailing-Slash)',
+  saved.body?.baseUrl === 'https://example.invalid/v1',
+);
 check('hasApiKey true nach Speichern', saved.body?.hasApiKey === true);
 check('Key wird maskiert zurückgegeben', saved.body?.apiKeyMask?.endsWith('3456') === true);
 check('Default: nicht für Lernende freigegeben', saved.body?.shareWithLearners === false);
@@ -77,7 +80,10 @@ check(
 const shared = await req('PUT', '/ai/config', { shareWithLearners: true }, teacher);
 check('shareWithLearners aktivierbar', shared.body?.shareWithLearners === true);
 const unshared = await req('PUT', '/ai/config', { shareWithLearners: false }, teacher);
-check('shareWithLearners deaktivierbar (Key bleibt)', unshared.body?.shareWithLearners === false && unshared.body?.hasApiKey === true);
+check(
+  'shareWithLearners deaktivierbar (Key bleibt)',
+  unshared.body?.shareWithLearners === false && unshared.body?.hasApiKey === true,
+);
 
 // ── Erneut lesen: Key bleibt maskiert ─────────────────────────────
 const re = await req('GET', '/ai/config', null, teacher);
@@ -86,7 +92,10 @@ check('Re-GET: kein Klartext-Key', JSON.stringify(re.body).includes('supersecret
 
 // ── Status (Feature-Gate) ─────────────────────────────────────────
 const st = await req('GET', '/ai/status', null, teacher);
-check('GET /ai/status configured+enabled', st.body?.configured === true && st.body?.enabled === true);
+check(
+  'GET /ai/status configured+enabled',
+  st.body?.configured === true && st.body?.enabled === true,
+);
 
 // ── Teil-Update: nur Modell ändern, Key beibehalten ───────────────
 const upd = await req('PUT', '/ai/config', { model: 'gpt-4o' }, teacher);
@@ -95,7 +104,10 @@ check('Teil-Update behält Key', upd.body?.model === 'gpt-4o' && upd.body?.hasAp
 // ── Verbindungstest gegen unerreichbaren Endpoint → ok:false (200) ─
 const test = await req('POST', '/ai/config/test', {}, teacher);
 check('POST /ai/config/test antwortet 200', test.status === 200);
-check('Test gegen Fake-Endpoint: ok=false', test.body?.ok === false && typeof test.body?.message === 'string');
+check(
+  'Test gegen Fake-Endpoint: ok=false',
+  test.body?.ok === false && typeof test.body?.message === 'string',
+);
 
 // ── Validierung ───────────────────────────────────────────────────
 const badProvider = await req('PUT', '/ai/config', { provider: 'hal9000' }, teacher);
@@ -113,7 +125,10 @@ check('Lernenden-Konfig ist getrennt (kein geteilter Key)', studentCfg.body?.has
 const cleared = await req('PUT', '/ai/config', { apiKey: '' }, teacher);
 check('API-Key entfernbar', cleared.body?.hasApiKey === false);
 const st2 = await req('GET', '/ai/status', null, teacher);
-check('Ohne Key: Feature-Gate deaktiviert', st2.body?.configured === false && st2.body?.enabled === false);
+check(
+  'Ohne Key: Feature-Gate deaktiviert',
+  st2.body?.configured === false && st2.body?.enabled === false,
+);
 
 console.log(`\nErgebnis: ${ok} OK, ${fail} FAIL`);
 if (fail > 0) process.exit(1);

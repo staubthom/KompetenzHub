@@ -54,27 +54,44 @@ check('Logins (ADMIN/TEACHER/LEARNER)', !!admin && !!teacher && !!learner);
 
 // ── RBAC der Admin-Endpunkte ──────────────────────────────────────
 const adminDenied = await req('GET', '/admin/plugins', null, teacher);
-check('RBAC: TEACHER → /admin/plugins = 403', adminDenied.status === 403, `status ${adminDenied.status}`);
+check(
+  'RBAC: TEACHER → /admin/plugins = 403',
+  adminDenied.status === 403,
+  `status ${adminDenied.status}`,
+);
 const adminAnon = await req('GET', '/admin/plugins', null, null);
 check('RBAC: ohne Token = 401', adminAnon.status === 401, `status ${adminAnon.status}`);
 
 // ── Discovery/Installation sichtbar ───────────────────────────────
 const list = await req('GET', '/admin/plugins', null, admin);
 const inst = list.body?.find?.((p) => p.pluginId === PLUGIN);
-check('Beispiel-Plugin ist installiert', list.status === 200 && !!inst && inst.installStatus === 'INSTALLED', JSON.stringify(inst));
+check(
+  'Beispiel-Plugin ist installiert',
+  list.status === 200 && !!inst && inst.installStatus === 'INSTALLED',
+  JSON.stringify(inst),
+);
 
 // ── Vor Aktivierung: Dispatcher 404, Contributions leer ───────────
 const pingBefore = await req('GET', `/plugins/${PLUGIN}/ping`, null, teacher);
-check('Vor Enable: /plugins/example/ping = 404', pingBefore.status === 404, `status ${pingBefore.status}`);
+check(
+  'Vor Enable: /plugins/example/ping = 404',
+  pingBefore.status === 404,
+  `status ${pingBefore.status}`,
+);
 const contribBefore = await req('GET', '/plugins/contributions', null, teacher);
 check(
   'Vor Enable: nicht in Contributions',
-  contribBefore.status === 200 && !contribBefore.body?.plugins?.some?.((p) => p.pluginId === PLUGIN),
+  contribBefore.status === 200 &&
+    !contribBefore.body?.plugins?.some?.((p) => p.pluginId === PLUGIN),
 );
 
 // ── Aktivieren (Admin) ────────────────────────────────────────────
 const enable = await req('POST', `/admin/plugins/${PLUGIN}/enable`, {}, admin);
-check('Enable (Admin)', enable.status === 200 && enable.body?.enabled === true, `status ${enable.status}`);
+check(
+  'Enable (Admin)',
+  enable.status === 200 && enable.body?.enabled === true,
+  `status ${enable.status}`,
+);
 
 // ── Nach Aktivierung: Dispatch + Contributions + Rollen ───────────
 const ping = await req('GET', `/plugins/${PLUGIN}/ping`, null, teacher);
@@ -84,13 +101,25 @@ check(
   JSON.stringify(ping.body),
 );
 const pingLearner = await req('GET', `/plugins/${PLUGIN}/ping`, null, learner);
-check('Dispatch: LERNENDE /ping = 200 (Route erlaubt alle Rollen)', pingLearner.status === 200, `status ${pingLearner.status}`);
+check(
+  'Dispatch: LERNENDE /ping = 200 (Route erlaubt alle Rollen)',
+  pingLearner.status === 200,
+  `status ${pingLearner.status}`,
+);
 const pingAnon = await req('GET', `/plugins/${PLUGIN}/ping`, null, null);
 check('Dispatch: ohne Token = 401', pingAnon.status === 401, `status ${pingAnon.status}`);
 const unknownRoute = await req('GET', `/plugins/${PLUGIN}/does-not-exist`, null, teacher);
-check('Dispatch: unbekannte Route = 404', unknownRoute.status === 404, `status ${unknownRoute.status}`);
+check(
+  'Dispatch: unbekannte Route = 404',
+  unknownRoute.status === 404,
+  `status ${unknownRoute.status}`,
+);
 const unknownPlugin = await req('GET', '/plugins/nope/ping', null, teacher);
-check('Dispatch: unbekanntes Plugin = 404', unknownPlugin.status === 404, `status ${unknownPlugin.status}`);
+check(
+  'Dispatch: unbekanntes Plugin = 404',
+  unknownPlugin.status === 404,
+  `status ${unknownPlugin.status}`,
+);
 
 const contrib = await req('GET', '/plugins/contributions', null, teacher);
 const ex = contrib.body?.plugins?.find?.((p) => p.pluginId === PLUGIN);
@@ -101,18 +130,39 @@ check(
 );
 
 // ── Konfiguration ─────────────────────────────────────────────────
-const cfg = await req('PATCH', `/admin/plugins/${PLUGIN}/config`, { config: { greeting: 'hi' } }, admin);
-check('Konfiguration gespeichert (configVersion↑)', cfg.status === 200 && cfg.body?.configVersion >= 1, `status ${cfg.status}`);
+const cfg = await req(
+  'PATCH',
+  `/admin/plugins/${PLUGIN}/config`,
+  { config: { greeting: 'hi' } },
+  admin,
+);
+check(
+  'Konfiguration gespeichert (configVersion↑)',
+  cfg.status === 200 && cfg.body?.configVersion >= 1,
+  `status ${cfg.status}`,
+);
 
 // ── Uninstall-Vorbedingung: muss deaktiviert sein ─────────────────
 const uninstallEnabled = await req('POST', `/admin/plugins/${PLUGIN}/uninstall`, {}, admin);
-check('Uninstall bei aktivem Plugin = 409', uninstallEnabled.status === 409, `status ${uninstallEnabled.status}`);
+check(
+  'Uninstall bei aktivem Plugin = 409',
+  uninstallEnabled.status === 409,
+  `status ${uninstallEnabled.status}`,
+);
 
 // ── Deaktivieren ──────────────────────────────────────────────────
 const disable = await req('POST', `/admin/plugins/${PLUGIN}/disable`, {}, admin);
-check('Disable (Admin)', disable.status === 200 && disable.body?.enabled === false, `status ${disable.status}`);
+check(
+  'Disable (Admin)',
+  disable.status === 200 && disable.body?.enabled === false,
+  `status ${disable.status}`,
+);
 const pingAfterDisable = await req('GET', `/plugins/${PLUGIN}/ping`, null, teacher);
-check('Nach Disable: /ping = 404', pingAfterDisable.status === 404, `status ${pingAfterDisable.status}`);
+check(
+  'Nach Disable: /ping = 404',
+  pingAfterDisable.status === 404,
+  `status ${pingAfterDisable.status}`,
+);
 
 // ── Uninstall mit Cleanup (der /ping-Aufruf hat 1 Datensatz erzeugt) ──
 const uninstall = await req('POST', `/admin/plugins/${PLUGIN}/uninstall`, {}, admin);

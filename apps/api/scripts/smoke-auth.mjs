@@ -34,8 +34,15 @@ async function main() {
 
   // 2) dev-login TEACHER
   const teacher = await devLogin('TEACHER', 'lehrer@demo.ch');
-  check('POST /auth/dev-login (TEACHER) -> 200/201', [200, 201].includes(teacher.status), `HTTP ${teacher.status}`);
-  check('Token vorhanden', typeof teacher.body.token === 'string' && teacher.body.token.length > 20);
+  check(
+    'POST /auth/dev-login (TEACHER) -> 200/201',
+    [200, 201].includes(teacher.status),
+    `HTTP ${teacher.status}`,
+  );
+  check(
+    'Token vorhanden',
+    typeof teacher.body.token === 'string' && teacher.body.token.length > 20,
+  );
   check('Rolle TEACHER im User', teacher.body.user?.roles?.includes('TEACHER'));
   const tToken = teacher.body.token;
 
@@ -61,7 +68,11 @@ async function main() {
       headers: { Authorization: `Bearer ${tToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ number: uniqueNumber, title: { de: 'Smoke-Test-Modul' } }),
     });
-    check('POST /modules (TEACHER) -> 200/201', [200, 201].includes(res.status), `HTTP ${res.status}`);
+    check(
+      'POST /modules (TEACHER) -> 200/201',
+      [200, 201].includes(res.status),
+      `HTTP ${res.status}`,
+    );
   }
 
   // 5b) POST /modules ohne number -> 400 (saubere Validierung statt 500)
@@ -76,12 +87,19 @@ async function main() {
 
   // 6) dev-login LEARNER und POST /modules -> 403 (kein Schreibrecht)
   const student = await devLogin('LEARNER', 'lernende@demo.ch');
-  check('POST /auth/dev-login (LEARNER) -> 200/201', [200, 201].includes(student.status), `HTTP ${student.status}`);
+  check(
+    'POST /auth/dev-login (LEARNER) -> 200/201',
+    [200, 201].includes(student.status),
+    `HTTP ${student.status}`,
+  );
 
   {
     const res = await fetch(`${BASE}/modules`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${student.body.token}`, 'Content-Type': 'application/json' },
+      headers: {
+        Authorization: `Bearer ${student.body.token}`,
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({ title: 'Darf-nicht' }),
     });
     check('POST /modules (STUDENT) -> 403', res.status === 403, `HTTP ${res.status}`);
@@ -89,7 +107,9 @@ async function main() {
 
   // 7) Ungültiger Token -> 401
   {
-    const res = await fetch(`${BASE}/auth/me`, { headers: { Authorization: 'Bearer kaputt.token.hier' } });
+    const res = await fetch(`${BASE}/auth/me`, {
+      headers: { Authorization: 'Bearer kaputt.token.hier' },
+    });
     check('GET /auth/me mit kaputtem Token -> 401', res.status === 401, `HTTP ${res.status}`);
   }
 

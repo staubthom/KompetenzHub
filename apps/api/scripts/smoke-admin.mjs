@@ -69,14 +69,25 @@ check('RBAC: ohne Token = 401', anon.status === 401, `status ${anon.status}`);
 
 // ── Übersicht ─────────────────────────────────────────────────────
 const overview = await req('GET', '/admin/overview', null, admin);
-check('Übersicht liefert Kennzahlen', overview.status === 200 && typeof overview.body?.teachers === 'number');
+check(
+  'Übersicht liefert Kennzahlen',
+  overview.status === 200 && typeof overview.body?.teachers === 'number',
+);
 
 // ── Einladung → Promotion beim ersten Login ───────────────────────
 const invitedEmail = `invited-${stamp}@schule.ch`;
-const inv = await req('POST', '/admin/invitations', { email: invitedEmail, role: 'TEACHER' }, admin);
+const inv = await req(
+  'POST',
+  '/admin/invitations',
+  { email: invitedEmail, role: 'TEACHER' },
+  admin,
+);
 check('Einladung erstellt', inv.status === 201 && inv.body?.status === 'PENDING');
 const invList = await req('GET', '/admin/invitations', null, admin);
-check('Einladung in Liste', invList.body?.some?.((i) => i.email === invitedEmail));
+check(
+  'Einladung in Liste',
+  invList.body?.some?.((i) => i.email === invitedEmail),
+);
 
 const invitedLogin = await exchange(invitedEmail);
 check(
@@ -85,7 +96,10 @@ check(
   JSON.stringify(invitedLogin.body?.user?.roles),
 );
 const invListAfter = await req('GET', '/admin/invitations', null, admin);
-check('Einladung nach Login eingelöst (weg)', !invListAfter.body?.some?.((i) => i.email === invitedEmail));
+check(
+  'Einladung nach Login eingelöst (weg)',
+  !invListAfter.body?.some?.((i) => i.email === invitedEmail),
+);
 
 // ── Nicht eingeladene Person → LERNENDE ───────────────────────────
 const learnerEmail = `walkin-${stamp}@schule.ch`;
@@ -106,20 +120,35 @@ check('Promotion LERNENDE → TEACHER', promote.status === 200 && promote.body?.
 const disable = await req('PATCH', `/admin/users/${learnerId}/status`, { active: false }, admin);
 check('Konto sperren', disable.status === 200 && disable.body?.status === 'DISABLED');
 const blocked = await exchange(learnerEmail);
-check('Gesperrtes Konto kann sich nicht anmelden', blocked.status === 401, `status ${blocked.status}`);
+check(
+  'Gesperrtes Konto kann sich nicht anmelden',
+  blocked.status === 401,
+  `status ${blocked.status}`,
+);
 const reenable = await req('PATCH', `/admin/users/${learnerId}/status`, { active: true }, admin);
 check('Konto entsperren', reenable.status === 200 && reenable.body?.status === 'ACTIVE');
 
 // ── Self-Schutz: Admin kann sich nicht selbst sperren ─────────────
 const adminId = adminLogin.body?.user?.id;
 const selfDisable = await req('PATCH', `/admin/users/${adminId}/status`, { active: false }, admin);
-check('Admin kann sich nicht selbst sperren', selfDisable.status === 400, `status ${selfDisable.status}`);
+check(
+  'Admin kann sich nicht selbst sperren',
+  selfDisable.status === 400,
+  `status ${selfDisable.status}`,
+);
 
 // ── Auth-Provider-Schalter ────────────────────────────────────────
 const off = await req('PATCH', '/admin/settings', { authProviders: { google: false } }, admin);
-check('Google-Provider deaktiviert', off.status === 200 && off.body?.authProviders?.google === false);
+check(
+  'Google-Provider deaktiviert',
+  off.status === 200 && off.body?.authProviders?.google === false,
+);
 const googleBlocked = await exchange(`g-${stamp}@schule.ch`, 'GOOGLE');
-check('Login über deaktivierten Provider abgewiesen', googleBlocked.status === 401, `status ${googleBlocked.status}`);
+check(
+  'Login über deaktivierten Provider abgewiesen',
+  googleBlocked.status === 401,
+  `status ${googleBlocked.status}`,
+);
 const msStillOk = await exchange(`m-${stamp}@schule.ch`, 'MICROSOFT');
 check('Aktiver Provider weiterhin möglich', msStillOk.status === 201 || msStillOk.status === 200);
 await req('PATCH', '/admin/settings', { authProviders: { google: true } }, admin); // zurücksetzen
@@ -129,41 +158,84 @@ const logoUrl = `http://localhost:9000/kompetenzhub/rte/smoke-logo-${stamp}.png`
 const setLogo = await req('PATCH', '/admin/settings', { logoUrl }, admin);
 check('Logo gesetzt', setLogo.status === 200 && setLogo.body?.logoUrl === logoUrl);
 const branding = await req('GET', '/branding', null, teacher);
-check('Branding für alle Rollen lesbar (Logo sichtbar)', branding.status === 200 && branding.body?.logoUrl === logoUrl);
+check(
+  'Branding für alle Rollen lesbar (Logo sichtbar)',
+  branding.status === 200 && branding.body?.logoUrl === logoUrl,
+);
 const clearLogo = await req('PATCH', '/admin/settings', { logoUrl: null }, admin);
 check('Logo entfernt', clearLogo.status === 200 && clearLogo.body?.logoUrl === null);
 
 // ── Akzentfarbe + Default-Sprache + Branding ──────────────────────
-const setColor = await req('PATCH', '/admin/settings', { primaryColor: '#0d9488', defaultLocale: 'fr' }, admin);
-check('Akzentfarbe + Default-Sprache gesetzt', setColor.status === 200 && setColor.body?.primaryColor === '#0d9488' && setColor.body?.defaultLocale === 'fr');
+const setColor = await req(
+  'PATCH',
+  '/admin/settings',
+  { primaryColor: '#0d9488', defaultLocale: 'fr' },
+  admin,
+);
+check(
+  'Akzentfarbe + Default-Sprache gesetzt',
+  setColor.status === 200 &&
+    setColor.body?.primaryColor === '#0d9488' &&
+    setColor.body?.defaultLocale === 'fr',
+);
 const badColor = await req('PATCH', '/admin/settings', { primaryColor: 'blau' }, admin);
 check('Ungültige Farbe abgewiesen', badColor.status === 400, `status ${badColor.status}`);
 const brand2 = await req('GET', '/branding', null, teacher);
 check('Akzentfarbe via /branding lesbar', brand2.body?.primaryColor === '#0d9488');
 // Default-Sprache greift bei neuem Login
 const newbie = await exchange(`fr-newbie-${stamp}@schule.ch`);
-check('Neues Konto erbt Default-Sprache (fr)', newbie.body?.user?.locale === 'fr', JSON.stringify(newbie.body?.user?.locale));
+check(
+  'Neues Konto erbt Default-Sprache (fr)',
+  newbie.body?.user?.locale === 'fr',
+  JSON.stringify(newbie.body?.user?.locale),
+);
 await req('PATCH', '/admin/settings', { defaultLocale: 'de' }, admin); // zurücksetzen
 
 // ── Person editieren (Anzeigename) ────────────────────────────────
-const ren = await req('PATCH', `/admin/users/${learnerId}`, { displayName: 'Umbenannt Test' }, admin);
+const ren = await req(
+  'PATCH',
+  `/admin/users/${learnerId}`,
+  { displayName: 'Umbenannt Test' },
+  admin,
+);
 check('Anzeigename geändert', ren.status === 200 && ren.body?.displayName === 'Umbenannt Test');
 
 // ── Betrieb / Auslastung / Audit ──────────────────────────────────
 const ops = await req('GET', '/admin/ops', null, admin);
-check('Betrieb: Health + Auslastung', ops.status === 200 && ['ok', 'degraded'].includes(ops.body?.health?.status) && typeof ops.body?.usage?.users === 'number');
+check(
+  'Betrieb: Health + Auslastung',
+  ops.status === 200 &&
+    ['ok', 'degraded'].includes(ops.body?.health?.status) &&
+    typeof ops.body?.usage?.users === 'number',
+);
 const audit = await req('GET', '/admin/audit?limit=10', null, admin);
-check('Audit-Log lesbar', audit.status === 200 && Array.isArray(audit.body) && audit.body.some((e) => e.action === 'auth.login'));
+check(
+  'Audit-Log lesbar',
+  audit.status === 200 &&
+    Array.isArray(audit.body) &&
+    audit.body.some((e) => e.action === 'auth.login'),
+);
 const opsDenied = await req('GET', '/admin/ops', null, teacher);
 check('RBAC: TEACHER → /admin/ops = 403', opsDenied.status === 403, `status ${opsDenied.status}`);
 
 // ── Backup-Export (ZIP) ───────────────────────────────────────────
-const backupRes = await fetch(`${BASE}/admin/backup`, { headers: { Authorization: `Bearer ${admin}` } });
+const backupRes = await fetch(`${BASE}/admin/backup`, {
+  headers: { Authorization: `Bearer ${admin}` },
+});
 const buf = Buffer.from(await backupRes.arrayBuffer());
-check('Backup-ZIP geliefert', backupRes.status === 200 && buf.length > 0 && buf.slice(0, 2).toString() === 'PK', `status ${backupRes.status}, ${buf.length}B`);
+check(
+  'Backup-ZIP geliefert',
+  backupRes.status === 200 && buf.length > 0 && buf.slice(0, 2).toString() === 'PK',
+  `status ${backupRes.status}, ${buf.length}B`,
+);
 
 // ── Einladung zurückziehen ────────────────────────────────────────
-const inv2 = await req('POST', '/admin/invitations', { email: `revoke-${stamp}@schule.ch`, role: 'TEACHER' }, admin);
+const inv2 = await req(
+  'POST',
+  '/admin/invitations',
+  { email: `revoke-${stamp}@schule.ch`, role: 'TEACHER' },
+  admin,
+);
 const rev = await req('DELETE', `/admin/invitations/${inv2.body?.id}`, null, admin);
 check('Einladung zurückziehen', rev.status === 204);
 

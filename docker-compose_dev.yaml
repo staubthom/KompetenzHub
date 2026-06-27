@@ -121,7 +121,7 @@ services:
     depends_on:
       api: { condition: service_healthy }
     environment:
-      NODE_ENV: development     
+      NODE_ENV: development
       PORT: 3000
       NEXT_PUBLIC_API_URL: ${API_PUBLIC_URL:-http://localhost:3001}
       API_INTERNAL_URL: http://api:3001
@@ -138,16 +138,16 @@ services:
     ports:
       - '${WEB_PORT:-3000}:3000'
 
-    # ── Anwendung (nur mit Profil "maintenance", z. B. `docker compose -f docker-compose_dev.yaml --profile  maintenance up -d --build`) ──     
+    # ── Anwendung (nur mit Profil "maintenance", z. B. `docker compose -f docker-compose_dev.yaml --profile  maintenance up -d --build`) ──
   wartungsseite:
     profiles: ['maintenance']
     build:
-      context: .         
+      context: .
       dockerfile: maintenance/Dockerfile
     container_name: wartung_app
     ports:
-      - "3000:80" # Wartungsbetrieb: Port 3000 von aussen geht intern auf Port 80
-    restart: unless-stopped  
+      - '3000:80' # Wartungsbetrieb: Port 3000 von aussen geht intern auf Port 80
+    restart: unless-stopped
 
 volumes:
   postgres-data:

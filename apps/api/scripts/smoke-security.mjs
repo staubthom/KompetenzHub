@@ -21,7 +21,10 @@ function check(label, cond, info = '') {
 
 // ── Sichere HTTP-Header (helmet) ──────────────────────────────────
 const h = await fetch(`${BASE}/health`);
-check('Header X-Content-Type-Options: nosniff', h.headers.get('x-content-type-options') === 'nosniff');
+check(
+  'Header X-Content-Type-Options: nosniff',
+  h.headers.get('x-content-type-options') === 'nosniff',
+);
 check(
   'Header X-Frame-Options oder CSP gesetzt',
   !!(h.headers.get('x-frame-options') || h.headers.get('content-security-policy')),

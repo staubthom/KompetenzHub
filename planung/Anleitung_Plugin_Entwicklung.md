@@ -220,7 +220,7 @@ Alles, was dein Backend darf, kommt aus `ctx` (`plugins/sdk/src/context.ts`). Du
 | `config`                                          | vom Schuladmin gesetzte, **tenant-spezifische** Konfiguration (read-only)       |
 | `core`                                            | **schreibgeschützte Lesefassade auf Kern-Stammdaten** (für ACLs)                |
 
-### 4.2 Datenhaltung: der Key-Value (KV) Store 
+### 4.2 Datenhaltung: der Key-Value (KV) Store
 
 Pilot-Stand: **`data.mode: "kv"`**. Du speicherst JSON-Dokumente pro `collection` unter
 einem `key` (z. B. einer UUID). `(pluginId, tenantId)` setzt **immer der Core** – ein
@@ -360,12 +360,12 @@ vorhanden.
 
 **Was der Generator aus dem Manifest ableitet:**
 
-| Manifest | Registry |
-|---|---|
-| `pages[].route` + `.component` | `pages[route] = <Komponente>` |
-| `widgets[].slot` + `.component` | `widgets[slot] = [<Komponente>, …]` |
-| `actions[].component`, `tabs[].component` | `components[name] = <Komponente>` |
-| `translations` + `i18n/*.json` | `translations[locale]` |
+| Manifest                                  | Registry                            |
+| ----------------------------------------- | ----------------------------------- |
+| `pages[].route` + `.component`            | `pages[route] = <Komponente>`       |
+| `widgets[].slot` + `.component`           | `widgets[slot] = [<Komponente>, …]` |
+| `actions[].component`, `tabs[].component` | `components[name] = <Komponente>`   |
+| `translations` + `i18n/*.json`            | `translations[locale]`              |
 
 > Ergebnis: **Neues Plugin anlegen → `npm install` (einmal, fürs Workspace-Linking) →
 > fertig.** Keine Hand-Edits an Core-Dateien. Die generierten Dateien sind von ESLint/

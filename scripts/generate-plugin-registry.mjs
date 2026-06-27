@@ -113,7 +113,9 @@ function dyn(packageName, component) {
 function renderPages(p) {
   const pages = p.contributions.pages ?? [];
   if (pages.length === 0) return '';
-  const entries = pages.map((pg) => `\n      ${jsonKey(pg.route)}: ${dyn(p.packageName, pg.component)},`);
+  const entries = pages.map(
+    (pg) => `\n      ${jsonKey(pg.route)}: ${dyn(p.packageName, pg.component)},`,
+  );
   return `${entries.join('')}\n    `;
 }
 
