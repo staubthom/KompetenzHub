@@ -6,12 +6,20 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/web/package.json ./apps/web/package.json
 COPY apps/api/package.json ./apps/api/package.json
+# Plugin-Workspaces: Manifeste (für npm ci), Quellcode (Transpile) und der
+# Registry-Codegen scannt sie; scripts/ enthält den Generator (prebuild).
+COPY plugins ./plugins
+COPY scripts ./scripts
 RUN npm ci
+
+# Verträge & SDK bauen → liefern Typen für Web-App und Plugin-Komponenten.
+RUN npm run build:packages
 
 COPY apps/web ./apps/web
 # NEXT_PUBLIC_* werden zur Build-Zeit ins Bundle gebacken (Browser-seitig).
 ARG NEXT_PUBLIC_API_URL=http://localhost:3001
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+# prebuild generiert die Plugin-Registry (aus plugins/ + scripts/), dann Next-Build.
 RUN npm run build --workspace apps/web
 
 # ---- Runtime-Stage (schlankes standalone-Bundle) ----
