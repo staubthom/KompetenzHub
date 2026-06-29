@@ -103,7 +103,7 @@ const gated = await req('POST', `/submissions/${submissionId}/ai-assessment`, {}
 check('Ohne KI-Konfiguration → 409', gated.status === 409, `status=${gated.status}`);
 
 // ── KI konfigurieren & aktivieren ─────────────────────────────────
-await req(
+const cfg = await req(
   'PUT',
   '/ai/config',
   {
@@ -114,6 +114,11 @@ await req(
     enabled: true,
   },
   teacher,
+);
+check(
+  'KI-Konfiguration gespeichert (API mit AI_STUB_MODE=1 starten!)',
+  cfg.status === 200 || cfg.status === 201,
+  `status=${cfg.status}`,
 );
 
 // ── FA-70: KI-Bewertungsvorschlag ─────────────────────────────────

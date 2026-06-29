@@ -6,7 +6,21 @@
  * Dev-Login umgeht das Gate (Entwicklung); das echte Gate wird über
  * /auth/exchange (IdP-Pfad) getestet.
  */
-const BASE = 'http://localhost:3001/api/v1';
+import { readFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// .env aus dem Repo-Root laden (NODE lädt .env nicht automatisch)
+try {
+  const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
+  const lines = readFileSync(resolve(root, '.env'), 'utf8').split('\n');
+  for (const line of lines) {
+    const m = line.match(/^\s*([^#][^=]*?)\s*=\s*(.*?)\s*$/);
+    if (m) process.env[m[1]] ??= m[2].replace(/^["']|["']$/g, '');
+  }
+} catch { /* keine .env vorhanden – Umgebungsvariablen gelten weiterhin */ }
+
+const BASE = process.env.API_BASE ?? 'http://localhost:3001/api/v1';
 
 let ok = 0;
 let fail = 0;
@@ -38,14 +52,25 @@ function check(label, cond, info = '') {
 }
 
 const stamp = Date.now();
-function exchange(email, provider = 'MICROSOFT', desiredRole) {
-  return req('POST', '/auth/exchange', {
-    provider,
-    externalId: `ext:${email}`,
-    email,
-    displayName: email.split('@')[0],
-    desiredRole,
+const EXCHANGE_SECRET = process.env.AUTH_EXCHANGE_SECRET ?? '';
+
+async function exchange(email, provider = 'MICROSOFT', desiredRole) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (EXCHANGE_SECRET) headers['x-auth-exchange'] = EXCHANGE_SECRET;
+  const res = await fetch(`${BASE}/auth/exchange`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      provider,
+      externalId: `ext:${email}`,
+      email,
+      displayName: email.split('@')[0],
+      desiredRole,
+    }),
   });
+  let json;
+  try { json = await res.json(); } catch { json = null; }
+  return { status: res.status, body: json };
 }
 
 // ── Bootstrap: Admin via Dev-Login (umgeht Gate) ──────────────────

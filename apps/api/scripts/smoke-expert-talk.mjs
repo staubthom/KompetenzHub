@@ -60,7 +60,7 @@ check(
 );
 
 // ── KI im Mandanten aktivieren + für Lernende freigeben ──────────
-await req(
+const cfg = await req(
   'PUT',
   '/ai/config',
   {
@@ -72,6 +72,11 @@ await req(
     shareWithLearners: true,
   },
   teacher,
+);
+check(
+  'KI-Konfiguration gespeichert (API mit AI_STUB_MODE=1 starten!)',
+  cfg.status === 200 || cfg.status === 201,
+  `status=${cfg.status}`,
 );
 
 // /available meldet nutzbare KI (freigegebene Lehrer-KI)
