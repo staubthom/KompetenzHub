@@ -6,9 +6,17 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { EnrollmentStatus, EvidenceType, Prisma, SubmissionStatus } from '@prisma/client';
+import {
+  AchievedLevel,
+  EnrollmentStatus,
+  EvidenceType,
+  Prisma,
+  Role,
+  SubmissionStatus,
+} from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { S3Service } from '../storage/s3.service';
+import { SubmissionsService } from '../submissions/submissions.service';
 
 interface UploadConfig {
   allowedFileTypes?: string[];
@@ -21,6 +29,12 @@ interface UploadConfig {
   allowPaste?: boolean;
   /** Einreichungsart Fachgespräch/Präsentation (FA-80): KI-Übung im Abgabe-Dialog. */
   allowExpertTalk?: boolean;
+  /**
+   * Einreichungsart „von Lehrperson angefügt": die lernende Person kann selbst
+   * nichts einreichen – die Lehrperson lädt im Kompetenzraster pro lernender
+   * Person eine Datei hoch und trägt Punkte ein (z. B. Scan eines Tests).
+   */
+  allowTeacherAttached?: boolean;
   /** Vom Lehrer angehängte Datei zum Download. */
   attachmentKey?: string;
   attachmentName?: string;
@@ -52,6 +66,7 @@ export class EvidenceService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly s3: S3Service,
+    private readonly submissions: SubmissionsService,
   ) {}
 
   // ── Lehrer-CRUD (FA-30/36/40) ─────────────────────────────────
@@ -235,9 +250,10 @@ export class EvidenceService {
     kind: 'file' | 'screenshot' = 'file',
   ) {
     const ev = await this.loadVisibleEvidence(id, tenantId);
+    const cfg = (ev.config ?? {}) as UploadConfig;
+    this.assertStudentMaySubmit(cfg);
     const enrollment = await this.resolveEnrollment(ev.moduleId, tenantId, userId);
     await this.assertCanSubmit(id, enrollment.id);
-    const cfg = (ev.config ?? {}) as UploadConfig;
     if (kind === 'screenshot') {
       if (cfg.allowScreenshot === false || cfg.allowScreenshot === undefined) {
         throw new BadRequestException('Screenshot ist nicht erlaubt.');
@@ -258,6 +274,7 @@ export class EvidenceService {
   /** Datei-Upload bestätigen → Einreichung anlegen. */
   async confirmUpload(id: string, tenantId: string, userId: string, key: string, fileName: string) {
     const ev = await this.loadVisibleEvidence(id, tenantId);
+    this.assertStudentMaySubmit((ev.config ?? {}) as UploadConfig);
     const enrollment = await this.resolveEnrollment(ev.moduleId, tenantId, userId);
     await this.assertCanSubmit(id, enrollment.id);
     const submission = await this.prisma.submission.create({
@@ -282,8 +299,9 @@ export class EvidenceService {
     payload: { text?: string; link?: string },
   ) {
     const ev = await this.loadVisibleEvidence(id, tenantId);
-    const enrollment = await this.resolveEnrollment(ev.moduleId, tenantId, userId);
     const cfg = (ev.config ?? {}) as UploadConfig;
+    this.assertStudentMaySubmit(cfg);
+    const enrollment = await this.resolveEnrollment(ev.moduleId, tenantId, userId);
 
     const text = payload.text?.trim();
     const link = payload.link?.trim();
@@ -320,8 +338,9 @@ export class EvidenceService {
     payload: { text?: string; link?: string; files?: SubmissionFile[] },
   ) {
     const ev = await this.loadVisibleEvidence(id, tenantId);
-    const enrollment = await this.resolveEnrollment(ev.moduleId, tenantId, userId);
     const cfg = (ev.config ?? {}) as UploadConfig;
+    this.assertStudentMaySubmit(cfg);
+    const enrollment = await this.resolveEnrollment(ev.moduleId, tenantId, userId);
 
     const text = payload.text?.trim();
     const link = payload.link?.trim();
@@ -363,6 +382,130 @@ export class EvidenceService {
     return { submissionId: submission.id, status: submission.status };
   }
 
+  // ── Einreichungsart „von Lehrperson angefügt" ─────────────────
+
+  /**
+   * Die Lehrperson fügt im Kompetenzraster pro lernender Person eine Datei an
+   * und trägt optional Punkte/Level/Feedback ein. Es wird eine Einreichung im
+   * Namen der lernenden Person angelegt bzw. aktualisiert (Status „eingereicht");
+   * sobald Punkte vergeben werden, wechselt der Status auf „bewertet". Nur für
+   * Lehrpersonen mit Zugriff auf den Modulanlass und nur bei Nachweisen vom Typ
+   * „von Lehrperson angefügt".
+   */
+  async teacherAttach(
+    evidenceId: string,
+    tenantId: string,
+    userId: string,
+    roles: Role[],
+    dto: {
+      enrollmentId: string;
+      fileKey?: string;
+      fileName?: string;
+      points?: number;
+      level?: AchievedLevel;
+      feedback?: string;
+    },
+  ) {
+    const ev = await this.prisma.competenceEvidence.findFirst({
+      where: { id: evidenceId, tenantId },
+    });
+    if (!ev) throw new NotFoundException('Nachweis nicht gefunden.');
+    const cfg = (ev.config ?? {}) as UploadConfig;
+    if (cfg.allowTeacherAttached !== true) {
+      throw new BadRequestException('Dieser Nachweis ist nicht vom Typ „von Lehrperson angefügt".');
+    }
+
+    // Zugriff auf den Modulanlass der lernenden Person prüfen (Besitz/Co-Leitung).
+    const enrollment = await this.prisma.enrollment.findFirst({
+      where: { id: dto.enrollmentId, class: { moduleId: ev.moduleId, tenantId } },
+      select: {
+        id: true,
+        class: {
+          select: {
+            status: true,
+            ownerId: true,
+            coTeachers: { where: { userId }, select: { userId: true } },
+          },
+        },
+      },
+    });
+    if (!enrollment) {
+      throw new NotFoundException('Lernende Person nicht in diesem Modulanlass gefunden.');
+    }
+    const isAdmin = roles.includes(Role.ADMIN);
+    const isClassTeacher =
+      enrollment.class.ownerId === userId || enrollment.class.coTeachers.length > 0;
+    if (!isAdmin && !isClassTeacher) {
+      throw new ForbiddenException('Kein Zugriff auf diesen Modulanlass.');
+    }
+    if (enrollment.class.status === 'ARCHIVED') {
+      throw new ConflictException('Archivierter Modulanlass ist read-only.');
+    }
+
+    const fileKey = dto.fileKey?.trim() || null;
+    const fileName = dto.fileName?.trim() || null;
+    const files = fileKey
+      ? [{ key: fileKey, name: fileName ?? 'Datei', kind: 'file' as const }]
+      : [];
+    const content = { kind: 'teacher', files } as unknown as Prisma.InputJsonValue;
+
+    // Bestehende Einreichung dieser Person wiederverwenden, sonst neu anlegen.
+    const existing = await this.prisma.submission.findFirst({
+      where: { evidenceId, enrollmentId: enrollment.id },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, status: true },
+    });
+
+    let submissionId: string;
+    if (existing) {
+      submissionId = existing.id;
+      await this.prisma.submission.update({
+        where: { id: existing.id },
+        data: {
+          // Datei nur ersetzen, wenn eine neue angefügt wurde.
+          ...(fileKey ? { fileKey, fileName, content } : {}),
+          // Solange nicht bewertet wird, bleibt der Status „eingereicht".
+          ...(existing.status === SubmissionStatus.GRADED
+            ? {}
+            : { status: SubmissionStatus.SUBMITTED }),
+          submittedAt: new Date(),
+        },
+      });
+    } else {
+      const created = await this.prisma.submission.create({
+        data: {
+          evidenceId,
+          enrollmentId: enrollment.id,
+          status: SubmissionStatus.SUBMITTED,
+          content,
+          fileKey,
+          fileName,
+          submittedAt: new Date(),
+        },
+      });
+      submissionId = created.id;
+    }
+
+    // Optional direkt bewerten – nutzt die bestehende Bewertungslogik (inkl. Historie).
+    const hasGrade =
+      dto.points !== undefined || dto.level !== undefined || (dto.feedback ?? '').length > 0;
+    if (hasGrade) {
+      await this.submissions.evaluate(
+        submissionId,
+        { points: dto.points, level: dto.level, feedback: dto.feedback },
+        tenantId,
+        userId,
+        roles,
+      );
+    }
+
+    const fresh = await this.prisma.submission.findUnique({
+      where: { id: submissionId },
+      select: { status: true },
+    });
+    return { submissionId, status: fresh?.status ?? SubmissionStatus.SUBMITTED };
+  }
+
   // ── Helfer ────────────────────────────────────────────────────
 
   private async loadVisibleEvidence(id: string, tenantId: string) {
@@ -371,6 +514,18 @@ export class EvidenceService {
     });
     if (!ev) throw new NotFoundException('Nachweis nicht verfügbar.');
     return ev;
+  }
+
+  /**
+   * Bei der Einreichungsart „von Lehrperson angefügt" darf die lernende Person
+   * selbst nichts einreichen – nur die Lehrperson fügt Datei & Punkte an.
+   */
+  private assertStudentMaySubmit(cfg: UploadConfig) {
+    if (cfg.allowTeacherAttached === true) {
+      throw new ForbiddenException(
+        'Dieser Nachweis wird von der Lehrperson angefügt – eine eigene Einreichung ist nicht möglich.',
+      );
+    }
   }
 
   private async resolveEnrollment(moduleId: string, tenantId: string, userId: string) {
@@ -408,18 +563,21 @@ export class EvidenceService {
 
   private normalizeConfig(config: UploadConfig | undefined): UploadConfig {
     const cfg = config ?? {};
+    const teacherAttached = cfg.allowTeacherAttached === true;
     return {
       allowedFileTypes: cfg.allowedFileTypes ?? [],
       maxFileSizeMb: cfg.maxFileSizeMb ?? 10,
-      // Standard: Datei/Link/Text erlaubt, Screenshot optional
-      allowFile: cfg.allowFile ?? true,
-      allowLink: cfg.allowLink ?? true,
-      allowText: cfg.allowText ?? true,
-      allowScreenshot: cfg.allowScreenshot ?? false,
+      // „Von Lehrperson angefügt": die lernende Person kann nichts einreichen –
+      // alle Einreichungswege werden in diesem Fall hart deaktiviert.
+      allowFile: teacherAttached ? false : (cfg.allowFile ?? true),
+      allowLink: teacherAttached ? false : (cfg.allowLink ?? true),
+      allowText: teacherAttached ? false : (cfg.allowText ?? true),
+      allowScreenshot: teacherAttached ? false : (cfg.allowScreenshot ?? false),
       // Einfügen standardmässig gesperrt (Lernende sollen selbst schreiben)
-      allowPaste: cfg.allowPaste ?? false,
+      allowPaste: teacherAttached ? false : (cfg.allowPaste ?? false),
       // Fachgespräch/Präsentation optional (KI-Übung im Abgabe-Dialog)
-      allowExpertTalk: cfg.allowExpertTalk ?? false,
+      allowExpertTalk: teacherAttached ? false : (cfg.allowExpertTalk ?? false),
+      allowTeacherAttached: teacherAttached,
       ...(cfg.attachmentKey ? { attachmentKey: cfg.attachmentKey } : {}),
       ...(cfg.attachmentName ? { attachmentName: cfg.attachmentName } : {}),
     };

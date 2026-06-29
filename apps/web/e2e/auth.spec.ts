@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAs, clearSession } from './helpers';
+import { loginAs, clearSession, trackTestUser, cleanupTestUsers } from './helpers';
 
 /**
  * Auth-Flow – Dev-Login UI und rollenbasierte Weiterleitung.
@@ -8,6 +8,12 @@ import { loginAs, clearSession } from './helpers';
  * Dev-Login muss in .env aktiv sein (ALLOW_DEV_LOGIN=1 o.ä.).
  */
 test.describe('Login UI', () => {
+  // Geteilte Demo-Konten (lehrperson@/lernende@/admin@demo.ch) bleiben erhalten;
+  // nur eigens angelegte Test-User werden hier wieder entfernt.
+  test.afterAll(async () => {
+    await cleanupTestUsers();
+  });
+
   test('Login-Seite zeigt Dev-Login-Formular', async ({ page }) => {
     await page.goto('/login');
     await expect(page.getByRole('button', { name: 'Als Dev anmelden' })).toBeVisible();
@@ -44,7 +50,7 @@ test.describe('Login UI', () => {
   });
 
   test('Eigene E-Mail im Dev-Login verwenden', async ({ page }) => {
-    const mail = `e2e-custom-${Date.now()}@demo.ch`;
+    const mail = trackTestUser(`e2e-custom-${Date.now()}@demo.ch`);
     await page.goto('/login');
     await page.getByRole('button', { name: /Lehrperson/ }).click();
     await page.getByPlaceholder('lehrperson@demo.ch').fill(mail);

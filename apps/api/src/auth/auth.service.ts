@@ -172,6 +172,25 @@ export class AuthService {
     };
   }
 
+  /**
+   * Löscht einen per Dev-Login angelegten Test-User samt seiner kaskadierenden
+   * Daten (Memberships, Klassen, Enrollments, Bewertungen). Module werden durch
+   * onDelete:SetNull verwaist statt gelöscht. Dient ausschließlich dem Aufräumen
+   * in Smoke-Tests und ist nur bei aktivem Dev-Login verfügbar.
+   *
+   * @returns true, wenn ein Konto gelöscht wurde, sonst false (z. B. unbekannte E-Mail).
+   */
+  async devDeleteByEmail(emailRaw: string): Promise<boolean> {
+    // dev-login speichert die E-Mail nur getrimmt (ohne Lowercasing) – hier
+    // identisch behandeln, damit das Konto sicher gefunden wird.
+    const email = emailRaw?.trim();
+    if (!email) return false;
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) return false;
+    await this.prisma.user.delete({ where: { id: user.id } });
+    return true;
+  }
+
   /** Liefert das Profil + aktuelle Rollen für /auth/me. */
   async me(userId: string, tenantId: string): Promise<AuthResult['user'] | null> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });

@@ -20,11 +20,44 @@ export interface LoginResult {
 }
 
 /**
+ * Sammelt alle per Dev-Login/Exchange angelegten Test-User, damit sie nach dem
+ * Testlauf wieder gelöscht werden können (siehe `cleanupTestUsers`). Geteilte
+ * Demo-Konten (lehrperson@/lernende@/admin@demo.ch) werden bewusst NICHT
+ * getrackt, damit lokale Demo-Daten erhalten bleiben.
+ */
+const createdEmails = new Set<string>();
+
+/** Merkt sich eine angelegte Test-E-Mail und gibt sie unverändert zurück. */
+export function trackTestUser(email: string): string {
+  if (email) createdEmails.add(email);
+  return email;
+}
+
+/**
+ * Löscht alle gemerkten Test-User wieder (best effort) über den Dev-Endpunkt
+ * `POST /auth/dev-delete`. In `test.afterAll` jeder Spec aufrufen.
+ */
+export async function cleanupTestUsers(): Promise<void> {
+  for (const email of createdEmails) {
+    try {
+      await fetch(`${API_BASE}/api/v1/auth/dev-delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+    } catch {
+      // Aufräumen ist best effort – Fehler hier dürfen den Testlauf nicht kippen.
+    }
+  }
+  createdEmails.clear();
+}
+
+/**
  * Meldet sich via Dev-Login-API an und speichert Token + User in localStorage.
  * Navigiert zuerst zu /login um den richtigen Origin zu setzen.
  */
 export async function loginAs(page: Page, role: Role, email?: string): Promise<LoginResult> {
-  const mail = email ?? `e2e-${role.toLowerCase()}-${Date.now()}@demo.ch`;
+  const mail = trackTestUser(email ?? `e2e-${role.toLowerCase()}-${Date.now()}@demo.ch`);
   await page.goto('/login');
   const res = await page.request.post(`${API_BASE}/api/v1/auth/dev-login`, {
     data: { email: mail, role },
@@ -63,6 +96,14 @@ export async function api(
     'Content-Type': 'application/json',
   };
   const data = body as Record<string, unknown> | undefined;
+
+  // Per API angelegte Test-User für das spätere Aufräumen vormerken.
+  if (
+    (path === '/auth/dev-login' || path === '/auth/exchange') &&
+    typeof data?.email === 'string'
+  ) {
+    trackTestUser(data.email);
+  }
 
   let res;
   switch (method) {

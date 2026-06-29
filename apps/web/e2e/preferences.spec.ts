@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAs, clearSession } from './helpers';
+import { loginAs, clearSession, cleanupTestUsers } from './helpers';
 
 /**
  * Sprache und Layout – Persistenz über Sitzungen hinweg.
@@ -9,6 +9,10 @@ import { loginAs, clearSession } from './helpers';
  */
 test.describe('Sprache und Layout', () => {
   const stamp = Date.now();
+
+  test.afterAll(async () => {
+    await cleanupTestUsers();
+  });
 
   // --- Sprache ---
 

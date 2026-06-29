@@ -2,12 +2,15 @@
  * Smoke-Test Sprint 5 – Einreichung & Bewertung (FA-50, 53, 60, 62, 65)
  * Läuft gegen die lokale API (http://localhost:3001).
  */
+import { trackUser, cleanupUsers } from './_cleanup.mjs';
+
 const BASE = 'http://localhost:3001/api/v1';
 
 let ok = 0;
 let fail = 0;
 
 async function req(method, path, body, token) {
+  if (path === '/auth/dev-login' && body?.email) trackUser(body.email);
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
   const res = await fetch(`${BASE}${path}`, {
@@ -192,6 +195,8 @@ check(
 await req('DELETE', `/evidence/${evId}`, null, teacher);
 await req('DELETE', `/classes/${cls.body.id}`, null, teacher);
 await req('DELETE', `/modules/${moduleId}`, null, teacher);
+
+await cleanupUsers(BASE);
 
 console.log(`\nErgebnis: ${ok} OK, ${fail} FAIL`);
 if (fail > 0) process.exit(1);

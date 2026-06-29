@@ -5,12 +5,15 @@
  * keine Co-Leitung verwalten. Lehrperson C bleibt aussen vor.
  * Läuft gegen http://localhost:3001.
  */
+import { trackUser, cleanupUsers } from './_cleanup.mjs';
+
 const BASE = 'http://localhost:3001/api/v1';
 
 let ok = 0;
 let fail = 0;
 
 async function req(method, path, body, token) {
+  if (path === '/auth/dev-login' && body?.email) trackUser(body.email);
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
   const res = await fetch(`${BASE}${path}`, {
@@ -157,6 +160,8 @@ const rem = await req('DELETE', `/classes/${classId}/co-teachers/${bUserId}`, nu
 check('A entfernt Co-Leitung', rem.status === 204);
 const bListAfter = await req('GET', '/classes', null, b);
 check('B sieht Anlass nach Entzug nicht mehr', !bListAfter.body?.some?.((x) => x.id === classId));
+
+await cleanupUsers(BASE);
 
 console.log(`\n${ok} OK, ${fail} FAIL`);
 process.exit(fail > 0 ? 1 : 0);

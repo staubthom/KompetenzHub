@@ -8,6 +8,8 @@
  * Voraussetzung: API läuft auf http://localhost:3001 und das Beispiel-Plugin
  * ist gebaut (plugins/packages/_example/dist/server). DEV_LOGIN muss aktiv sein.
  */
+import { trackUser, cleanupUsers } from './_cleanup.mjs';
+
 const BASE = 'http://localhost:3001/api/v1';
 const PLUGIN = 'example';
 
@@ -15,6 +17,7 @@ let ok = 0;
 let fail = 0;
 
 async function req(method, path, body, token) {
+  if (path === '/auth/dev-login' && body?.email) trackUser(body.email);
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
   const res = await fetch(`${BASE}${path}`, {
@@ -176,6 +179,8 @@ check(
 const listAfter = await req('GET', '/admin/plugins', null, admin);
 const instAfter = listAfter.body?.find?.((p) => p.pluginId === PLUGIN);
 check('Nach Uninstall: installiert aber deaktiviert', !!instAfter && instAfter.enabled === false);
+
+await cleanupUsers(BASE);
 
 console.log(`\n${ok} OK, ${fail} FAIL`);
 process.exit(fail > 0 ? 1 : 0);

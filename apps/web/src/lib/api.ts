@@ -231,6 +231,25 @@ export const evidence = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+  /**
+   * Lehrperson fügt für eine lernende Person eine Datei an und trägt optional
+   * Punkte/Level/Feedback ein (Einreichungsart „von Lehrperson angefügt").
+   */
+  teacherSubmission: (
+    id: string,
+    payload: {
+      enrollmentId: string;
+      fileKey?: string;
+      fileName?: string;
+      points?: number;
+      level?: string;
+      feedback?: string;
+    },
+  ) =>
+    apiFetch<{ submissionId: string; status: string }>(`/evidence/${id}/teacher-submission`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 };
 
 /** Lade eine Datei/Screenshot zur Einreichung hoch → liefert Storage-Key. */
@@ -800,6 +819,8 @@ export interface EvidenceConfig {
   allowScreenshot?: boolean;
   allowPaste?: boolean;
   allowExpertTalk?: boolean;
+  /** Einreichungsart „von Lehrperson angefügt" – Lernende reichen nichts ein. */
+  allowTeacherAttached?: boolean;
   attachmentKey?: string;
   attachmentName?: string;
 }

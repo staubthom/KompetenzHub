@@ -1,5 +1,7 @@
 // Smoke-Test für den Auth/RBAC-Flow gegen die laufende API.
 // Aufruf: node apps/api/scripts/smoke-auth.mjs
+import { trackUser, cleanupUsers } from './_cleanup.mjs';
+
 const BASE = process.env.API_BASE ?? 'http://localhost:3001/api/v1';
 
 let pass = 0;
@@ -16,6 +18,7 @@ function check(label, cond, extra = '') {
 }
 
 async function devLogin(role, email) {
+  trackUser(email);
   const res = await fetch(`${BASE}/auth/dev-login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -146,10 +149,12 @@ async function main() {
   }
 
   console.log(`\nErgebnis: ${pass} OK, ${fail} FAIL`);
-  process.exit(fail === 0 ? 0 : 1);
+  process.exitCode = fail === 0 ? 0 : 1;
 }
 
-main().catch((e) => {
-  console.error('Smoke-Test abgebrochen:', e);
-  process.exit(2);
-});
+main()
+  .catch((e) => {
+    console.error('Smoke-Test abgebrochen:', e);
+    process.exitCode = 2;
+  })
+  .finally(() => cleanupUsers(BASE));

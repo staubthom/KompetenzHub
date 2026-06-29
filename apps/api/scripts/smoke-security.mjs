@@ -4,6 +4,8 @@
  * THROTTLE_AUTH_LIMIT=5 THROTTLE_LIMIT=50 node dist/main.js
  * Läuft gegen http://localhost:3001.
  */
+import { trackUser, cleanupUsers } from './_cleanup.mjs';
+
 const BASE = 'http://localhost:3001/api/v1';
 const AUTH_LIMIT = Number(process.env.THROTTLE_AUTH_LIMIT ?? 60);
 
@@ -33,6 +35,9 @@ check('Header X-Powered-By entfernt', !h.headers.get('x-powered-by'));
 
 // ── Eingabevalidierung (class-validator) ──────────────────────────
 async function post(path, body) {
+  if ((path === '/auth/dev-login' || path === '/auth/exchange') && body?.email) {
+    trackUser(body.email);
+  }
   const res = await fetch(`${BASE}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -71,10 +76,10 @@ const burst = AUTH_LIMIT + 5;
 
 // Requests parallel abfeuern für einen echten Belastungstest
 const promises = Array.from({ length: burst }).map((_, i) =>
-  post('/auth/dev-login', { email: `rl-${i}@demo.ch`, role: 'LEARNER' })
+  post('/auth/dev-login', { email: `rl-${i}@demo.ch`, role: 'LEARNER' }),
 );
 const results = await Promise.all(promises);
-const got429 = results.some(r => r.status === 429);
+const got429 = results.some((r) => r.status === 429);
 
 check(`Rate Limiting greift nach ${AUTH_LIMIT} Auth-Anfragen (429)`, got429, `Limit ${AUTH_LIMIT}`);
 
@@ -103,7 +108,11 @@ const xss = await post('/auth/exchange', {
   email: 'xss@test.ch',
   displayName: '<script>alert(document.cookie)</script>',
 });
-check('XSS-Payload in displayName → blockiert oder verarbeitet, kein 500', xss.status === 400 || xss.status === 201, `status ${xss.status}`);
+check(
+  'XSS-Payload in displayName → blockiert oder verarbeitet, kein 500',
+  xss.status === 400 || xss.status === 201,
+  `status ${xss.status}`,
+);
 
 const sqli = await post('/auth/exchange', {
   provider: 'MICROSOFT',
@@ -111,15 +120,23 @@ const sqli = await post('/auth/exchange', {
   email: 'sqli@test.ch',
   displayName: "' OR '1'='1",
 });
-check('SQL-Injection in externalId/displayName → blockiert oder verarbeitet, kein 500', sqli.status === 400 || sqli.status === 201, `status ${sqli.status}`);
+check(
+  'SQL-Injection in externalId/displayName → blockiert oder verarbeitet, kein 500',
+  sqli.status === 400 || sqli.status === 201,
+  `status ${sqli.status}`,
+);
 
 const nosql = await post('/auth/exchange', {
   provider: 'MICROSOFT',
-  externalId: { $gt: '' },   // NoSQL-Operator als Wert → class-validator erwartet string
+  externalId: { $gt: '' }, // NoSQL-Operator als Wert → class-validator erwartet string
   email: 'nosql@test.ch',
   displayName: 'test',
 });
-check('NoSQL-Injection-Objekt in externalId → blockiert oder verarbeitet, kein 500', nosql.status === 400 || nosql.status === 201, `status ${nosql.status}`);
+check(
+  'NoSQL-Injection-Objekt in externalId → blockiert oder verarbeitet, kein 500',
+  nosql.status === 400 || nosql.status === 201,
+  `status ${nosql.status}`,
+);
 
 // ── CORS-Header ───────────────────────────────────────────────────
 const corsSimple = await fetch(`${BASE}/health`, {
@@ -146,6 +163,8 @@ check(
   preflightAcao !== 'http://malicious.com' && preflightAcao !== '*',
   `Preflight Access-Control-Allow-Origin: ${preflightAcao ?? '(nicht gesetzt)'}`,
 );
+
+await cleanupUsers(BASE);
 
 console.log(`\n${ok} OK, ${fail} FAIL`);
 process.exit(fail > 0 ? 1 : 0);

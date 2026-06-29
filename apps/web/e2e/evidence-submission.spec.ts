@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAs, api } from './helpers';
+import { loginAs, api, cleanupTestUsers } from './helpers';
 
 /**
  * Evidence-Submission-Flow – Student reicht zwei Nachweise ein, Lehrperson
@@ -91,6 +91,7 @@ test.describe('Evidence-Submission-Flow', () => {
     await api(request, 'DELETE', `/evidence/${evidenceId2}`, teacherToken).catch(() => {});
     await api(request, 'DELETE', `/classes/${classId}`, teacherToken).catch(() => {});
     await api(request, 'DELETE', `/modules/${moduleId}`, teacherToken).catch(() => {});
+    await cleanupTestUsers();
   });
 
   // --- Test 1: Student sieht beide Nachweise in der Matrix ---

@@ -10,7 +10,7 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import { Role } from '@prisma/client';
+import { AchievedLevel, Role } from '@prisma/client';
 import { CurrentUser, Roles } from '../auth/decorators';
 import type { RequestContext } from '../common/request-context';
 import { EvidenceService } from './evidence.service';
@@ -54,6 +54,28 @@ export class EvidenceController {
   @Roles(Role.TEACHER, Role.ADMIN)
   remove(@Param('id') id: string, @CurrentUser() user: RequestContext) {
     return this.evidence.remove(id, user.tenantId);
+  }
+
+  /**
+   * Einreichungsart „von Lehrperson angefügt": die Lehrperson fügt für eine
+   * lernende Person eine Datei an und trägt optional Punkte/Level/Feedback ein.
+   */
+  @Post(':id/teacher-submission')
+  @Roles(Role.TEACHER, Role.ADMIN)
+  teacherAttach(
+    @Param('id') id: string,
+    @Body()
+    dto: {
+      enrollmentId: string;
+      fileKey?: string;
+      fileName?: string;
+      points?: number;
+      level?: AchievedLevel;
+      feedback?: string;
+    },
+    @CurrentUser() user: RequestContext,
+  ) {
+    return this.evidence.teacherAttach(id, user.tenantId, user.userId, user.roles, dto);
   }
 
   @Put(':id/fields')

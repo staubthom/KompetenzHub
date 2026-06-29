@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import SubmissionGrader from './SubmissionGrader';
+import TeacherAttachGrader from './TeacherAttachGrader';
 import { useToast } from './ToastProvider';
 import { useI18n, localized } from '../lib/i18n';
 import {
@@ -48,6 +49,13 @@ export default function StudentMatrixViewer({
   const { t, locale } = useI18n();
   const [matrix, setMatrix] = useState<MatrixResponse | null>(null);
   const [gradingSubId, setGradingSubId] = useState<string | null>(null);
+  // Drilldown für die Einreichungsart „von Lehrperson angefügt".
+  const [attachView, setAttachView] = useState<{
+    evidenceId: string;
+    evidenceTitle: string;
+    maxPoints: number | null;
+    submissionId: string | null;
+  } | null>(null);
   const [activeTab, setActiveTab] = useState<string>('matrix');
 
   // Plugin-Tabs (z. B. "Notizen") für diese lernende Person.
@@ -75,11 +83,11 @@ export default function StudentMatrixViewer({
   // Escape schliesst die Matrix-Ansicht (nicht aber den Bewertungs-Drilldown).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !gradingSubId) onClose();
+      if (e.key === 'Escape' && !gradingSubId && !attachView) onClose();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose, gradingSubId]);
+  }, [onClose, gradingSubId, attachView]);
 
   const bands: Band[] = matrix?.matrix?.bands ?? [];
 
@@ -93,7 +101,8 @@ export default function StudentMatrixViewer({
       >
         <div className="modal-head">
           <h2>
-            {gradingSubId ? t('bw.grade') : t('cl.viewMatrix')} · {displayName}
+            {gradingSubId ? t('bw.grade') : attachView ? t('ta.heading') : t('cl.viewMatrix')} ·{' '}
+            {displayName}
             {matrix?.module ? ` · ${t('common.module')} ${matrix.module.number}` : ''}
           </h2>
           <button className="btn-icon" title={t('common.close')} onClick={onClose}>
@@ -102,7 +111,7 @@ export default function StudentMatrixViewer({
         </div>
         <div className="modal-body">
           {/* Tab-Leiste: Kern-Tab "Matrix" + zusätzliche Plugin-Tabs (Tab-Slot) */}
-          {pluginTabs.length > 0 && !gradingSubId && (
+          {pluginTabs.length > 0 && !gradingSubId && !attachView && (
             <div
               className="seg"
               role="group"
@@ -128,7 +137,7 @@ export default function StudentMatrixViewer({
             </div>
           )}
 
-          {activePluginTab && !gradingSubId ? (
+          {activePluginTab && !gradingSubId && !attachView ? (
             activePluginTab.render()
           ) : gradingSubId ? (
             <SubmissionGrader
@@ -136,6 +145,20 @@ export default function StudentMatrixViewer({
               backLabel={t('cl.viewMatrix')}
               onBack={() => {
                 setGradingSubId(null);
+                void reload();
+              }}
+              onSaved={() => void reload()}
+            />
+          ) : attachView ? (
+            <TeacherAttachGrader
+              evidenceId={attachView.evidenceId}
+              enrollmentId={enrollmentId}
+              evidenceTitle={attachView.evidenceTitle}
+              displayName={displayName}
+              maxPoints={attachView.maxPoints}
+              existingSubmissionId={attachView.submissionId}
+              onBack={() => {
+                setAttachView(null);
                 void reload();
               }}
               onSaved={() => void reload()}
@@ -189,18 +212,34 @@ export default function StudentMatrixViewer({
                                 {evidences.map((e) => {
                                   const sub = e.evidence.submissions?.[0];
                                   const st = sub?.status;
+                                  const teacherAttached =
+                                    e.evidence.config?.allowTeacherAttached === true;
+                                  const title = teacherAttached
+                                    ? `📎 ${t('ta.openLabel')}`
+                                    : sub
+                                      ? `${chipStatusLabel(st)} · ${t('cl.openGrading')}`
+                                      : t('cl.notSubmittedYet');
                                   return (
                                     <button
                                       key={e.evidence.id}
                                       className={`evidence-chip evidence-chip-btn${st ? ` chip-${st.toLowerCase()}` : ''}`}
-                                      title={
-                                        sub
-                                          ? `${chipStatusLabel(st)} · ${t('cl.openGrading')}`
-                                          : t('cl.notSubmittedYet')
-                                      }
+                                      title={title}
                                       onClick={() => {
-                                        if (sub) setGradingSubId(sub.id);
-                                        else toast.info(t('cl.notSubmittedYet'));
+                                        if (teacherAttached) {
+                                          setAttachView({
+                                            evidenceId: e.evidence.id,
+                                            evidenceTitle: localized(e.evidence.title, locale),
+                                            maxPoints:
+                                              e.evidence.maxPoints != null
+                                                ? Number(e.evidence.maxPoints)
+                                                : null,
+                                            submissionId: sub?.id ?? null,
+                                          });
+                                        } else if (sub) {
+                                          setGradingSubId(sub.id);
+                                        } else {
+                                          toast.info(t('cl.notSubmittedYet'));
+                                        }
                                       }}
                                     >
                                       {chipIcon(st)} {localized(e.evidence.title, locale)}

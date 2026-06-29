@@ -379,6 +379,20 @@ const de: Record<string, string> = {
   'fe.typeExpertTalk': 'Fachgespräch / Präsentation',
   'fe.expertTalkHint':
     'Bei aktivem KI-Modus können Lernende das Fachgespräch direkt im Abgabe-Dialog mit der KI üben.',
+  'fe.typeTeacherAttached': 'Von Lehrperson angefügt',
+  'fe.teacherAttachedHint':
+    'Die lernende Person kann nichts einreichen. Du fügst im Kompetenzraster (Modulanlass → Lernende:r) pro Person selbst eine Datei an und trägst Punkte ein.',
+  'ta.heading': 'Von Lehrperson angefügt',
+  'ta.openLabel': 'Datei anfügen / bewerten',
+  'ta.uploadFile': 'Datei hochladen',
+  'ta.replaceFile': 'Datei ersetzen',
+  'ta.attachedFile': 'Angefügte Datei',
+  'ta.noFileYet': 'Noch keine Datei angefügt.',
+  'ta.saveAttach': 'Anfügen & speichern',
+  'ta.savedAttach': 'Angefügt und gespeichert.',
+  'sub.teacherAttachedInfo':
+    'Diesen Nachweis fügt deine Lehrperson an – du musst nichts einreichen.',
+  'sub.teacherAttachedPending': 'Deine Lehrperson hat noch nichts angefügt.',
   'fe.allowPaste':
     'Einfügen (Paste) im Textfeld erlauben (Standard: aus – Lernende schreiben selbst)',
   'fe.allowedTypes': 'Erlaubte Dateitypen',
@@ -959,6 +973,20 @@ const fr: Record<string, string> = {
   'fe.typeExpertTalk': 'Entretien professionnel / Présentation',
   'fe.expertTalkHint':
     'Avec le mode IA actif, les apprenant·e·s peuvent s’entraîner à l’entretien directement dans la fenêtre de soumission.',
+  'fe.typeTeacherAttached': 'Ajouté par l’enseignant·e',
+  'fe.teacherAttachedHint':
+    'L’apprenant·e ne peut rien soumettre. Dans la grille de compétences (cours → apprenant·e), vous ajoutez vous-même un fichier par personne et saisissez les points.',
+  'ta.heading': 'Ajouté par l’enseignant·e',
+  'ta.openLabel': 'Ajouter un fichier / évaluer',
+  'ta.uploadFile': 'Téléverser un fichier',
+  'ta.replaceFile': 'Remplacer le fichier',
+  'ta.attachedFile': 'Fichier ajouté',
+  'ta.noFileYet': 'Aucun fichier ajouté pour l’instant.',
+  'ta.saveAttach': 'Ajouter et enregistrer',
+  'ta.savedAttach': 'Ajouté et enregistré.',
+  'sub.teacherAttachedInfo':
+    'Ce justificatif est ajouté par votre enseignant·e – vous n’avez rien à soumettre.',
+  'sub.teacherAttachedPending': 'Votre enseignant·e n’a encore rien ajouté.',
   'fe.allowPaste':
     'Autoriser le collage (paste) dans le champ texte (par défaut : non – les apprenant·e·s écrivent eux-mêmes)',
   'fe.allowedTypes': 'Types de fichiers autorisés',
@@ -1539,6 +1567,20 @@ const it: Record<string, string> = {
   'fe.typeExpertTalk': 'Colloquio tecnico / Presentazione',
   'fe.expertTalkHint':
     'Con la modalità IA attiva, gli apprendisti possono esercitarsi nel colloquio direttamente nella finestra di consegna.',
+  'fe.typeTeacherAttached': 'Aggiunto dal/dalla docente',
+  'fe.teacherAttachedHint':
+    'L’apprendista non può consegnare nulla. Nella griglia delle competenze (corso → apprendista) aggiungi tu stesso/a un file per persona e inserisci i punti.',
+  'ta.heading': 'Aggiunto dal/dalla docente',
+  'ta.openLabel': 'Aggiungi file / valuta',
+  'ta.uploadFile': 'Carica file',
+  'ta.replaceFile': 'Sostituisci file',
+  'ta.attachedFile': 'File aggiunto',
+  'ta.noFileYet': 'Nessun file ancora aggiunto.',
+  'ta.saveAttach': 'Aggiungi e salva',
+  'ta.savedAttach': 'Aggiunto e salvato.',
+  'sub.teacherAttachedInfo':
+    'Questo giustificativo viene aggiunto dal/dalla tua docente – non devi consegnare nulla.',
+  'sub.teacherAttachedPending': 'Il/la tua docente non ha ancora aggiunto nulla.',
   'fe.allowPaste':
     'Consenti incolla (paste) nel campo di testo (predefinito: no – gli apprendisti scrivono da sé)',
   'fe.allowedTypes': 'Tipi di file consentiti',
@@ -2115,6 +2157,20 @@ const en: Record<string, string> = {
   'fe.typeExpertTalk': 'Expert talk / Presentation',
   'fe.expertTalkHint':
     'With AI mode active, learners can practise the expert talk directly in the submission dialog.',
+  'fe.typeTeacherAttached': 'Attached by teacher',
+  'fe.teacherAttachedHint':
+    'The learner cannot submit anything. In the competence grid (class → learner) you attach a file per person and enter the points yourself.',
+  'ta.heading': 'Attached by teacher',
+  'ta.openLabel': 'Attach file / grade',
+  'ta.uploadFile': 'Upload file',
+  'ta.replaceFile': 'Replace file',
+  'ta.attachedFile': 'Attached file',
+  'ta.noFileYet': 'No file attached yet.',
+  'ta.saveAttach': 'Attach & save',
+  'ta.savedAttach': 'Attached and saved.',
+  'sub.teacherAttachedInfo':
+    'This evidence is attached by your teacher – you don’t need to submit anything.',
+  'sub.teacherAttachedPending': 'Your teacher hasn’t attached anything yet.',
   'fe.allowPaste': 'Allow paste in the text field (default: off – learners write it themselves)',
   'fe.allowedTypes': 'Allowed file types',
   'fe.maxSize': 'Max. size (MB)',

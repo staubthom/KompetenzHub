@@ -10,6 +10,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { trackUser, cleanupUsers } from './_cleanup.mjs';
 
 // .env aus dem Repo-Root laden (NODE lädt .env nicht automatisch)
 try {
@@ -29,6 +30,7 @@ let ok = 0;
 let fail = 0;
 
 async function req(method, path, body, token) {
+  if (path === '/auth/dev-login' && body?.email) trackUser(body.email);
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
   const res = await fetch(`${BASE}${path}`, {
@@ -149,6 +151,8 @@ check(
   deniedTpl.status === 403,
   `status ${deniedTpl.status}`,
 );
+
+await cleanupUsers(BASE);
 
 console.log(`\n${ok} OK, ${fail} FAIL`);
 process.exit(fail > 0 ? 1 : 0);

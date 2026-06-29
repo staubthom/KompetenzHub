@@ -49,7 +49,9 @@ export default function EvidenceSubmitPanel({
 
   const cfg = ev.config ?? {};
   const sub = ev.lastSubmission;
-  const canSubmit = !justSubmitted && (!sub || sub.status === 'REJECTED');
+  // „Von Lehrperson angefügt": die lernende Person reicht nichts ein.
+  const teacherAttached = cfg.allowTeacherAttached === true;
+  const canSubmit = !teacherAttached && !justSubmitted && (!sub || sub.status === 'REJECTED');
 
   // Bei gesperrter Bearbeitung (eingereicht/bewertet) die abgegebenen Inhalte laden,
   // damit die lernende Person sieht, was sie eingereicht hat.
@@ -226,6 +228,18 @@ export default function EvidenceSubmitPanel({
           )}
           {sub.status === 'REJECTED' && sub.rejectionReason && (
             <div className="sub-feedback">↩ {sub.rejectionReason}</div>
+          )}
+        </div>
+      )}
+
+      {/* Einreichungsart „von Lehrperson angefügt": Hinweis statt Abgabe-Formular. */}
+      {teacherAttached && (
+        <div className="sub-status sub-open" style={{ marginTop: 12 }}>
+          <strong>📎 {t('sub.teacherAttachedInfo')}</strong>
+          {!sub && (
+            <div className="sub-feedback" style={{ marginTop: 4 }}>
+              {t('sub.teacherAttachedPending')}
+            </div>
           )}
         </div>
       )}

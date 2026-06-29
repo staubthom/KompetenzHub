@@ -4,6 +4,7 @@
  * Läuft gegen die lokale API (http://localhost:3001).
  */
 import AdmZip from 'adm-zip';
+import { trackUser, cleanupUsers } from './_cleanup.mjs';
 
 const BASE = 'http://localhost:3001/api/v1';
 
@@ -11,6 +12,7 @@ let ok = 0;
 let fail = 0;
 
 async function req(method, path, body, token) {
+  if (path === '/auth/dev-login' && body?.email) trackUser(body.email);
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
   const res = await fetch(`${BASE}${path}`, {
@@ -280,6 +282,7 @@ check('Lernende:r → Import 403', impForbidden.status === 403);
 // ── Aufräumen ─────────────────────────────────────────────────────
 await req('DELETE', `/modules/${moduleId}`, null, teacher);
 if (imp.body?.moduleId) await req('DELETE', `/modules/${imp.body.moduleId}`, null, teacher);
+await cleanupUsers(BASE);
 
 console.log(`\nErgebnis: ${ok} OK, ${fail} FAIL`);
 if (fail > 0) process.exit(1);

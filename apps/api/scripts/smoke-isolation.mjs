@@ -3,12 +3,15 @@
  * Lehrperson B darf weder Module noch Einreichungen von Lehrperson A sehen.
  * Läuft gegen die lokale API (http://localhost:3001).
  */
+import { trackUser, cleanupUsers } from './_cleanup.mjs';
+
 const BASE = 'http://localhost:3001/api/v1';
 
 let ok = 0;
 let fail = 0;
 
 async function req(method, path, body, token) {
+  if (path === '/auth/dev-login' && body?.email) trackUser(body.email);
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
   const res = await fetch(`${BASE}${path}`, {
@@ -172,6 +175,7 @@ check('A kann eigene Einreichung bewerten', aGrade.status === 200 || aGrade.stat
 await req('DELETE', `/classes/${aClass.body.id}`, null, teacherA);
 await req('DELETE', `/modules/${aModuleId}`, null, teacherA);
 await req('DELETE', `/modules/${bModuleId}`, null, teacherB);
+await cleanupUsers(BASE);
 
 console.log(`\nErgebnis: ${ok} OK, ${fail} FAIL`);
 if (fail > 0) process.exit(1);

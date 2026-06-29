@@ -2,12 +2,15 @@
  * Smoke-Test Sprint 2 – Matrix-Editor (FA-01..04)
  * Läuft gegen die lokale API (http://localhost:3001).
  */
+import { trackUser, cleanupUsers } from './_cleanup.mjs';
+
 const BASE = 'http://localhost:3001/api/v1';
 
 let ok = 0;
 let fail = 0;
 
 async function req(method, path, body, token) {
+  if (path === '/auth/dev-login' && body?.email) trackUser(body.email);
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
   const res = await fetch(`${BASE}${path}`, {
@@ -190,5 +193,7 @@ const gone = await req('GET', `/modules/${moduleId}`, null, token);
 check('GET /modules/:id nach DELETE → 404', gone.status === 404);
 
 // ── Ergebnis ──────────────────────────────────────────────────────
+await cleanupUsers(BASE);
+
 console.log(`\nErgebnis: ${ok} OK, ${fail} FAIL`);
 if (fail > 0) process.exit(1);

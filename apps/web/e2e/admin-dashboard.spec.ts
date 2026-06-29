@@ -1,11 +1,17 @@
 import { test, expect } from '@playwright/test';
-import { loginAs, api } from './helpers';
+import { loginAs, api, cleanupTestUsers } from './helpers';
 
 /**
  * Admin-Dashboard – Einladungen, Benutzerverwaltung (Sperre, Rollenänderung).
  *
  * Voraussetzung: API (localhost:3001) + Web (localhost:3000) laufen.
  */
+
+// Angelegte Test-User (Admins + Zielbenutzer) nach dem Lauf wieder entfernen.
+test.afterAll(async () => {
+  await cleanupTestUsers();
+});
+
 test.describe('Admin – Einladungen', () => {
   test.beforeEach(async ({ page }) => {
     await loginAs(page, 'ADMIN');

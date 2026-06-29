@@ -138,7 +138,19 @@ await clearSession(page);
 
 // Direkter API-Aufruf für Setup/Teardown (kein Browser nötig)
 await api(request, 'POST', '/modules', token, { number: '293', title: { de: 'Test' } });
+
+// Test-User wieder aufräumen (in test.afterAll jeder Spec)
+await cleanupTestUsers();
 ```
+
+## Aufräumen der Test-User
+
+`loginAs` und `api(..., '/auth/dev-login'|'/auth/exchange', ...)` merken sich
+jede angelegte E-Mail (`trackTestUser`). Jede Spec ruft in `test.afterAll`
+`cleanupTestUsers()` auf, das die User über `POST /auth/dev-delete` wieder löscht
+(kaskadiert deren Daten; Endpunkt nur bei aktivem Dev-Login). Geteilte Demo-Konten
+(`lehrperson@`/`lernende@`/`admin@demo.ch`) werden bewusst **nicht** getrackt,
+damit lokale Demo-Daten erhalten bleiben.
 
 ## Konfiguration
 

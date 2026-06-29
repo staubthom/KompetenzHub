@@ -18,6 +18,7 @@ interface Draft {
   allowScreenshot: boolean;
   allowPaste: boolean;
   allowExpertTalk: boolean;
+  allowTeacherAttached: boolean;
   allowedFileTypes: string;
   maxFileSizeMb: string;
   maxPoints: string;
@@ -37,6 +38,7 @@ function emptyDraft(): Draft {
     allowScreenshot: false,
     allowPaste: false,
     allowExpertTalk: false,
+    allowTeacherAttached: false,
     allowedFileTypes: 'pdf, png, jpg',
     maxFileSizeMb: '10',
     maxPoints: '',
@@ -124,6 +126,7 @@ export default function FieldEvidenceModal({
       allowScreenshot: ev.config.allowScreenshot === true,
       allowPaste: ev.config.allowPaste === true,
       allowExpertTalk: ev.config.allowExpertTalk === true,
+      allowTeacherAttached: ev.config.allowTeacherAttached === true,
       allowedFileTypes: (ev.config.allowedFileTypes ?? []).join(', '),
       maxFileSizeMb: String(ev.config.maxFileSizeMb ?? 10),
       maxPoints: ev.maxPoints ?? '',
@@ -151,6 +154,7 @@ export default function FieldEvidenceModal({
         allowScreenshot: draft.allowScreenshot,
         allowPaste: draft.allowPaste,
         allowExpertTalk: draft.allowExpertTalk,
+        allowTeacherAttached: draft.allowTeacherAttached,
         allowedFileTypes: draft.allowedFileTypes
           .split(',')
           .map((s) => s.trim())
@@ -331,56 +335,96 @@ export default function FieldEvidenceModal({
 
               <div>
                 <div className="field-label">{t('fe.submitTypes')}</div>
-                <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-                  <label className="goal-check">
-                    <input
-                      type="checkbox"
-                      checked={draft.allowFile}
-                      onChange={(e) => setDraft({ ...draft, allowFile: e.target.checked })}
-                    />
-                    {t('fe.typeFile')}
-                  </label>
-                  <label className="goal-check">
-                    <input
-                      type="checkbox"
-                      checked={draft.allowLink}
-                      onChange={(e) => setDraft({ ...draft, allowLink: e.target.checked })}
-                    />
-                    {t('fe.typeLink')}
-                  </label>
-                  <label className="goal-check">
-                    <input
-                      type="checkbox"
-                      checked={draft.allowText}
-                      onChange={(e) => setDraft({ ...draft, allowText: e.target.checked })}
-                    />
-                    {t('fe.typeText')}
-                  </label>
-                  <label className="goal-check">
-                    <input
-                      type="checkbox"
-                      checked={draft.allowScreenshot}
-                      onChange={(e) => setDraft({ ...draft, allowScreenshot: e.target.checked })}
-                    />
-                    {t('fe.typeScreenshot')}
-                  </label>
-                  <label className="goal-check">
-                    <input
-                      type="checkbox"
-                      checked={draft.allowExpertTalk}
-                      onChange={(e) => setDraft({ ...draft, allowExpertTalk: e.target.checked })}
-                    />
-                    {t('fe.typeExpertTalk')}
-                  </label>
-                </div>
-                {draft.allowExpertTalk && (
+
+                {/* Einreichungsart „von Lehrperson angefügt": sperrt alle Lernenden-Wege. */}
+                <label className="goal-check" style={{ fontWeight: 600 }}>
+                  <input
+                    type="checkbox"
+                    checked={draft.allowTeacherAttached}
+                    onChange={(e) => {
+                      const on = e.target.checked;
+                      setDraft({
+                        ...draft,
+                        allowTeacherAttached: on,
+                        // Bei „von Lehrperson angefügt" reicht die lernende Person nichts ein.
+                        ...(on
+                          ? {
+                              allowFile: false,
+                              allowLink: false,
+                              allowText: false,
+                              allowScreenshot: false,
+                              allowPaste: false,
+                              allowExpertTalk: false,
+                            }
+                          : {}),
+                      });
+                    }}
+                  />
+                  {t('fe.typeTeacherAttached')}
+                </label>
+
+                {draft.allowTeacherAttached ? (
                   <p className="kh-muted" style={{ fontSize: 12, margin: '6px 0 0' }}>
-                    {t('fe.expertTalkHint')}
+                    {t('fe.teacherAttachedHint')}
                   </p>
+                ) : (
+                  <>
+                    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 8 }}>
+                      <label className="goal-check">
+                        <input
+                          type="checkbox"
+                          checked={draft.allowFile}
+                          onChange={(e) => setDraft({ ...draft, allowFile: e.target.checked })}
+                        />
+                        {t('fe.typeFile')}
+                      </label>
+                      <label className="goal-check">
+                        <input
+                          type="checkbox"
+                          checked={draft.allowLink}
+                          onChange={(e) => setDraft({ ...draft, allowLink: e.target.checked })}
+                        />
+                        {t('fe.typeLink')}
+                      </label>
+                      <label className="goal-check">
+                        <input
+                          type="checkbox"
+                          checked={draft.allowText}
+                          onChange={(e) => setDraft({ ...draft, allowText: e.target.checked })}
+                        />
+                        {t('fe.typeText')}
+                      </label>
+                      <label className="goal-check">
+                        <input
+                          type="checkbox"
+                          checked={draft.allowScreenshot}
+                          onChange={(e) =>
+                            setDraft({ ...draft, allowScreenshot: e.target.checked })
+                          }
+                        />
+                        {t('fe.typeScreenshot')}
+                      </label>
+                      <label className="goal-check">
+                        <input
+                          type="checkbox"
+                          checked={draft.allowExpertTalk}
+                          onChange={(e) =>
+                            setDraft({ ...draft, allowExpertTalk: e.target.checked })
+                          }
+                        />
+                        {t('fe.typeExpertTalk')}
+                      </label>
+                    </div>
+                    {draft.allowExpertTalk && (
+                      <p className="kh-muted" style={{ fontSize: 12, margin: '6px 0 0' }}>
+                        {t('fe.expertTalkHint')}
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
 
-              {draft.allowText && (
+              {!draft.allowTeacherAttached && draft.allowText && (
                 <label className="goal-check">
                   <input
                     type="checkbox"
@@ -391,7 +435,7 @@ export default function FieldEvidenceModal({
                 </label>
               )}
 
-              {draft.allowFile && (
+              {!draft.allowTeacherAttached && draft.allowFile && (
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   <label style={{ flex: 1, minWidth: 180 }}>
                     {t('fe.allowedTypes')}

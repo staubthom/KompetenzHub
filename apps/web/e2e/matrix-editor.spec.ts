@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAs, api } from './helpers';
+import { loginAs, api, cleanupTestUsers } from './helpers';
 
 /**
  * Kompetenzmatrix-Editor – Modul/HZ/Band/Deskriptor CRUD.
@@ -15,6 +15,10 @@ test.describe('Matrix-Editor', () => {
 
   test.beforeEach(async ({ page }) => {
     await loginAs(page, 'TEACHER');
+  });
+
+  test.afterAll(async () => {
+    await cleanupTestUsers();
   });
 
   test('Neues Modul erstellen → erscheint in der Liste', async ({ page }) => {

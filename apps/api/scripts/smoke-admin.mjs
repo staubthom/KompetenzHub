@@ -9,6 +9,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { trackUser, cleanupUsers } from './_cleanup.mjs';
 
 // .env aus dem Repo-Root laden (NODE lädt .env nicht automatisch)
 try {
@@ -18,7 +19,9 @@ try {
     const m = line.match(/^\s*([^#][^=]*?)\s*=\s*(.*?)\s*$/);
     if (m) process.env[m[1]] ??= m[2].replace(/^["']|["']$/g, '');
   }
-} catch { /* keine .env vorhanden – Umgebungsvariablen gelten weiterhin */ }
+} catch {
+  /* keine .env vorhanden – Umgebungsvariablen gelten weiterhin */
+}
 
 const BASE = process.env.API_BASE ?? 'http://localhost:3001/api/v1';
 
@@ -26,6 +29,7 @@ let ok = 0;
 let fail = 0;
 
 async function req(method, path, body, token) {
+  if (path === '/auth/dev-login' && body?.email) trackUser(body.email);
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
   const res = await fetch(`${BASE}${path}`, {
@@ -55,6 +59,7 @@ const stamp = Date.now();
 const EXCHANGE_SECRET = process.env.AUTH_EXCHANGE_SECRET ?? '';
 
 async function exchange(email, provider = 'MICROSOFT', desiredRole) {
+  trackUser(email);
   const headers = { 'Content-Type': 'application/json' };
   if (EXCHANGE_SECRET) headers['x-auth-exchange'] = EXCHANGE_SECRET;
   const res = await fetch(`${BASE}/auth/exchange`, {
@@ -69,7 +74,11 @@ async function exchange(email, provider = 'MICROSOFT', desiredRole) {
     }),
   });
   let json;
-  try { json = await res.json(); } catch { json = null; }
+  try {
+    json = await res.json();
+  } catch {
+    json = null;
+  }
   return { status: res.status, body: json };
 }
 
@@ -263,6 +272,8 @@ const inv2 = await req(
 );
 const rev = await req('DELETE', `/admin/invitations/${inv2.body?.id}`, null, admin);
 check('Einladung zurückziehen', rev.status === 204);
+
+await cleanupUsers(BASE);
 
 console.log(`\n${ok} OK, ${fail} FAIL`);
 process.exit(fail > 0 ? 1 : 0);

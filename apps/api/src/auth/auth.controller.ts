@@ -13,7 +13,7 @@ import {
 import { join } from 'node:path';
 import { config as loadEnv } from 'dotenv';
 import { AuthProvider, Locale, Role } from '@prisma/client';
-import { Throttle } from '@nestjs/throttler';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { IsBoolean, IsEmail, IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 import { Request, Response } from 'express';
 import { AuthService, ExternalProfile, PublicLoginOptions } from './auth.service';
@@ -57,6 +57,11 @@ class DevLoginDto {
   @IsOptional()
   @IsEnum(Role)
   role?: Role;
+}
+
+class DevDeleteDto {
+  @IsEmail()
+  email!: string;
 }
 
 class ExchangeDto {
@@ -163,6 +168,22 @@ export class AuthController {
     const result = await this.auth.loginWithProfile(profile, { bypassGate: true });
     this.setCookie(res, result.token);
     return result;
+  }
+
+  /**
+   * Dev-Cleanup: löscht einen per Dev-Login angelegten Test-User wieder.
+   * Dient dem Aufräumen in Smoke-Tests; nur aktiv, wenn DEV_LOGIN_ENABLED=true.
+   */
+  @Public()
+  @SkipThrottle()
+  @Post('dev-delete')
+  @HttpCode(200)
+  async devDelete(@Body() dto: DevDeleteDto): Promise<{ deleted: boolean }> {
+    if (!isDevLoginEnabled()) {
+      throw new BadRequestException('Dev-Login ist deaktiviert.');
+    }
+    const deleted = await this.auth.devDeleteByEmail(dto.email);
+    return { deleted };
   }
 
   /**
