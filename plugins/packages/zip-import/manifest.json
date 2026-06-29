@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "pluginId": "zip-import",
+  "displayName": "ZIP-Import (Lehrperson-Nachweise)",
+  "version": "0.1.0",
+  "publisher": { "name": "KompetenzHub Core", "url": "https://potenzialentwickler.ch" },
+  "license": "AGPL-3.0-or-later",
+  "description": {
+    "de": "Lehrperson lädt ein ZIP hoch (pro Lernende:r ein Ordner mit Dateien); die Dateien werden dem passenden „von Lehrperson angefügt\"-Nachweis der jeweiligen Person zugeordnet.",
+    "fr": "L'enseignant·e téléverse un ZIP (un dossier par apprenant·e); les fichiers sont rattachés au justificatif « ajouté par l'enseignant·e » de la personne correspondante.",
+    "it": "Il/la docente carica uno ZIP (una cartella per studente); i file vengono allegati al giustificativo « aggiunto dal/dalla docente » della persona corrispondente.",
+    "en": "Teacher uploads a ZIP (one folder per learner); the files are attached to each learner's matching \"attached by teacher\" evidence."
+  },
+  "core": { "minVersion": "0.0.0", "apiVersion": 1 },
+  "capabilities": ["plugin:zip-import:import"],
+  "contributions": {
+    "apiRoutes": [
+      {
+        "method": "GET",
+        "path": "/classes",
+        "capability": "plugin:zip-import:import",
+        "roles": ["TEACHER"]
+      },
+      {
+        "method": "GET",
+        "path": "/evidences",
+        "capability": "plugin:zip-import:import",
+        "roles": ["TEACHER"]
+      },
+      {
+        "method": "POST",
+        "path": "/upload-url",
+        "capability": "plugin:zip-import:import",
+        "roles": ["TEACHER"]
+      },
+      {
+        "method": "POST",
+        "path": "/process",
+        "capability": "plugin:zip-import:import",
+        "roles": ["TEACHER"]
+      }
+    ],
+    "nav": [
+      {
+        "id": "zip-import",
+        "labelKey": "plugin.zip-import.nav",
+        "icon": "🗂",
+        "href": "/plugins/zip-import",
+        "roles": ["TEACHER"]
+      }
+    ],
+    "pages": [{ "route": "/", "component": "ZipImportPage", "roles": ["TEACHER"] }]
+  },
+  "storage": { "prefixes": ["plugins/zip-import/"] },
+  "translations": { "namespaces": ["plugin.zip-import"] },
+  "audit": { "events": ["import.run"] },
+  "cleanup": { "data": "delete", "storage": "delete", "secrets": "delete" }
+}

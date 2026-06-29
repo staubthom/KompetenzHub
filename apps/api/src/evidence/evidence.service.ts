@@ -399,6 +399,9 @@ export class EvidenceService {
     roles: Role[],
     dto: {
       enrollmentId: string;
+      /** Mehrere angefügte Dateien (Storage-Keys + Anzeigenamen). */
+      files?: { key: string; name: string }[];
+      /** Einzeldatei (Abwärtskompatibilität) – wird wie eine `files`-Liste behandelt. */
       fileKey?: string;
       fileName?: string;
       points?: number;
@@ -442,12 +445,25 @@ export class EvidenceService {
       throw new ConflictException('Archivierter Modulanlass ist read-only.');
     }
 
-    const fileKey = dto.fileKey?.trim() || null;
-    const fileName = dto.fileName?.trim() || null;
-    const files = fileKey
-      ? [{ key: fileKey, name: fileName ?? 'Datei', kind: 'file' as const }]
-      : [];
-    const content = { kind: 'teacher', files } as unknown as Prisma.InputJsonValue;
+    // Gewünschte Dateiliste bestimmen: `files` (Mehrfach) hat Vorrang, sonst die
+    // Einzeldatei (Abwärtskompatibilität). `undefined` = Dateien unverändert lassen.
+    const rawFiles = Array.isArray(dto.files)
+      ? dto.files
+      : dto.fileKey
+        ? [{ key: dto.fileKey, name: dto.fileName ?? 'Datei' }]
+        : undefined;
+    const files = rawFiles
+      ?.filter((f) => f?.key)
+      .map((f) => ({ key: String(f.key), name: f.name?.trim() || 'Datei', kind: 'file' as const }));
+    const fileData =
+      files !== undefined
+        ? {
+            content: { kind: 'teacher', files } as unknown as Prisma.InputJsonValue,
+            // fileKey/fileName spiegeln die erste Datei (Einzel-Download/Detailansicht).
+            fileKey: files[0]?.key ?? null,
+            fileName: files[0]?.name ?? null,
+          }
+        : null;
 
     // Bestehende Einreichung dieser Person wiederverwenden, sonst neu anlegen.
     const existing = await this.prisma.submission.findFirst({
@@ -462,8 +478,8 @@ export class EvidenceService {
       await this.prisma.submission.update({
         where: { id: existing.id },
         data: {
-          // Datei nur ersetzen, wenn eine neue angefügt wurde.
-          ...(fileKey ? { fileKey, fileName, content } : {}),
+          // Dateien nur ersetzen, wenn neue übergeben wurden (sonst unverändert lassen).
+          ...(fileData ?? {}),
           // Solange nicht bewertet wird, bleibt der Status „eingereicht".
           ...(existing.status === SubmissionStatus.GRADED
             ? {}
@@ -477,9 +493,11 @@ export class EvidenceService {
           evidenceId,
           enrollmentId: enrollment.id,
           status: SubmissionStatus.SUBMITTED,
-          content,
-          fileKey,
-          fileName,
+          content:
+            fileData?.content ??
+            ({ kind: 'teacher', files: [] } as unknown as Prisma.InputJsonValue),
+          fileKey: fileData?.fileKey ?? null,
+          fileName: fileData?.fileName ?? null,
           submittedAt: new Date(),
         },
       });

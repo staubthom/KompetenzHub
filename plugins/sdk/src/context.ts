@@ -44,6 +44,31 @@ export interface CoreModuleRef {
   title: Record<string, string>;
 }
 
+/** Ein Modulanlass (Klasse) der aufrufenden Lehrperson (Kern-Lesefassade). */
+export interface CoreClassRef {
+  classId: string;
+  name: string;
+  /** Zugeordnetes Modul (null, wenn keines zugewiesen). */
+  moduleId: string | null;
+  moduleNumber: string | null;
+  /** "ACTIVE" | "ARCHIVED". */
+  classStatus: string;
+}
+
+/** Ein „von Lehrperson angefügt"-Nachweis eines Moduls (Kern-Lesefassade). */
+export interface TeacherAttachedEvidenceRef {
+  evidenceId: string;
+  /** i18n-Titel {de,fr,it,en}. */
+  title: Record<string, string>;
+  maxPoints: number | null;
+}
+
+/** Ergebnis des Anfügens von Dateien an einen „von Lehrperson angefügt"-Nachweis. */
+export interface AttachResult {
+  submissionId: string;
+  status: string;
+}
+
 /** Eine lernende Person im Kontext eines Modulanlasses (Kern-Lesefassade). */
 export interface ClassMemberRef {
   enrollmentId: string;
@@ -71,6 +96,27 @@ export interface CoreContext {
   listModuleMembers(moduleId: string): Promise<ClassMemberRef[]>;
   /** Module, die die aufrufende Lehrperson unterrichtet (besitzt/co-leitet); Admin: alle. */
   listMyModules(): Promise<CoreModuleRef[]>;
+  /**
+   * Aktive Modulanlässe (Klassen) mit zugewiesenem Modul, die die aufrufende Person
+   * besitzt/co-leitet (Admin: alle). Lernende werden je Modulanlass geführt.
+   */
+  listMyClasses(): Promise<CoreClassRef[]>;
+  /**
+   * „Von Lehrperson angefügt"-Nachweise eines Moduls, auf das die aufrufende Person
+   * Zugriff hat. Leer, wenn kein Zugriff. (Lese-Fassade für Plugins.)
+   */
+  listTeacherAttachedEvidences(moduleId: string): Promise<TeacherAttachedEvidenceRef[]>;
+  /**
+   * Fügt einer lernenden Person eine oder mehrere Dateien an einen Nachweis vom Typ
+   * „von Lehrperson angefügt" an (Status „eingereicht"). Der Kern erzwingt die
+   * Berechtigung (Besitz/Co-Leitung des Modulanlasses) und den Nachweistyp; die
+   * `files`-Keys müssen im gescopten Plugin-Storage liegen. Schreib-Fassade für Plugins.
+   */
+  attachTeacherFiles(
+    evidenceId: string,
+    enrollmentId: string,
+    files: { key: string; name: string }[],
+  ): Promise<AttachResult>;
 }
 
 export interface ServerContext {

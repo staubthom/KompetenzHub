@@ -67,6 +67,7 @@ export class EvidenceController {
     @Body()
     dto: {
       enrollmentId: string;
+      files?: { key: string; name: string }[];
       fileKey?: string;
       fileName?: string;
       points?: number;

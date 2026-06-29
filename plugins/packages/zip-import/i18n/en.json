@@ -1,0 +1,23 @@
+{
+  "plugin.zip-import.nav": "ZIP import",
+  "plugin.zip-import.title": "ZIP import",
+  "plugin.zip-import.intro": "Upload a ZIP: one folder per learner (folder name = display name) with the files inside. The files are attached to the selected \"attached by teacher\" evidence of each person.",
+  "plugin.zip-import.module": "Class",
+  "plugin.zip-import.evidence": "Evidence",
+  "plugin.zip-import.noEvidence": "— no matching evidence —",
+  "plugin.zip-import.hintCreate": "This module has no \"attached by teacher\" evidence. Create one in the competence grid first.",
+  "plugin.zip-import.drop": "Drop ZIP here or click",
+  "plugin.zip-import.dropHint": "One folder per learner with the files inside.",
+  "plugin.zip-import.uploading": "Uploading",
+  "plugin.zip-import.processing": "Processing …",
+  "plugin.zip-import.pickFirst": "Please choose a module and evidence first.",
+  "plugin.zip-import.badZip": "The file is not a valid ZIP.",
+  "plugin.zip-import.noFolders": "No folders with files were found in the ZIP (expected: one folder per learner).",
+  "plugin.zip-import.failed": "Import failed.",
+  "plugin.zip-import.assigned": "assigned",
+  "plugin.zip-import.skipped": "skipped",
+  "plugin.zip-import.notAssigned": "not assigned (no matching name)",
+  "plugin.zip-import.files": "files",
+  "plugin.zip-import.noClasses": "— no class —",
+  "plugin.zip-import.moduleShort": "Module"
+}

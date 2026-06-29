@@ -239,6 +239,7 @@ export const evidence = {
     id: string,
     payload: {
       enrollmentId: string;
+      files?: { key: string; name: string }[];
       fileKey?: string;
       fileName?: string;
       points?: number;

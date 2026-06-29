@@ -3,16 +3,31 @@
 import { useEffect, useState } from 'react';
 import { useToast } from './ToastProvider';
 import { useI18n } from '../lib/i18n';
+import TrashIcon from './TrashIcon';
 import { evidence, submissions, uploadAttachment, type SubmissionDetail } from '../lib/api';
 
 const LEVELS = ['NOT_MET', 'BEGINNER', 'INTERMEDIATE', 'ADVANCED'];
 
+interface AttachFile {
+  key: string;
+  name: string;
+  /** Presigned-Download-URL bereits gespeicherter Dateien. */
+  url?: string;
+  /** Lokale Vorschau-URL (Object-URL) neu hochgeladener Bilder. */
+  previewUrl?: string;
+}
+
+function isImage(name: string): boolean {
+  return /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(name);
+}
+
 /**
  * Einreichungsart „von Lehrperson angefügt": die Lehrperson lädt im
- * Kompetenzraster (Modulanlass → Lernende:r) für eine lernende Person eine
- * Datei hoch und trägt Punkte/Level/Feedback ein. Es entsteht eine Einreichung
- * im Namen der lernenden Person (Status „eingereicht" bis bewertet, danach
- * „bewertet"). Wird aus dem StudentMatrixViewer geöffnet.
+ * Kompetenzraster (Modulanlass → Lernende:r) für eine lernende Person eine oder
+ * mehrere Dateien hoch (auch per Drag & Drop) und trägt Punkte/Level/Feedback
+ * ein. Es entsteht eine Einreichung im Namen der lernenden Person (Status
+ * „eingereicht" bis bewertet, danach „bewertet"). Wird aus dem
+ * StudentMatrixViewer geöffnet.
  */
 export default function TeacherAttachGrader({
   evidenceId,
@@ -35,14 +50,13 @@ export default function TeacherAttachGrader({
 }) {
   const toast = useToast();
   const { t } = useI18n();
-  const [fileKey, setFileKey] = useState('');
-  const [fileName, setFileName] = useState('');
-  const [fileUrl, setFileUrl] = useState<string | null>(null);
+  const [files, setFiles] = useState<AttachFile[]>([]);
   const [points, setPoints] = useState('');
   const [level, setLevel] = useState('');
   const [feedback, setFeedback] = useState('');
   const [upBusy, setUpBusy] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
 
   // Bestehende Einreichung (falls vorhanden) zum Vorbefüllen laden.
   useEffect(() => {
@@ -55,8 +69,23 @@ export default function TeacherAttachGrader({
         setPoints(d.evaluation?.points ?? '');
         setLevel(d.evaluation?.achievedLevel ?? '');
         setFeedback(d.evaluation?.feedback ?? '');
-        if (d.fileName) setFileName(d.fileName);
-        if (d.fileUrl) setFileUrl(d.fileUrl);
+        // Keys aus content.files, Download-URLs aus files (gleiche Reihenfolge).
+        const keyed = d.content?.files ?? [];
+        const urls = d.files ?? [];
+        const existing: AttachFile[] = keyed.map((f, i) => ({
+          key: f.key,
+          name: f.name,
+          url: urls[i]?.url,
+        }));
+        // Fallback: Einzeldatei aus fileKey/fileName, falls content.files leer ist.
+        if (existing.length === 0 && d.fileKey) {
+          existing.push({
+            key: d.fileKey,
+            name: d.fileName ?? 'Datei',
+            url: d.fileUrl ?? undefined,
+          });
+        }
+        setFiles(existing);
       } catch {
         /* Vorbefüllen ist optional. */
       }
@@ -66,19 +95,33 @@ export default function TeacherAttachGrader({
     };
   }, [existingSubmissionId]);
 
+  // Lokale Vorschau-URLs beim Unmount freigeben.
+  useEffect(() => {
+    return () => {
+      files.forEach((f) => f.previewUrl && URL.revokeObjectURL(f.previewUrl));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function showError(e: unknown) {
     const err = e as { body?: { title?: string } };
     toast.error(err.body?.title ?? 'Aktion fehlgeschlagen.');
   }
 
-  async function pickFile(file: File) {
+  async function addFiles(fileList: File[]) {
+    if (fileList.length === 0) return;
     setUpBusy(true);
     try {
-      const { key, name } = await uploadAttachment(file);
-      setFileKey(key);
-      setFileName(name);
-      setFileUrl(null); // neue, noch nicht gespeicherte Datei
-      toast.success(`„${name}" hochgeladen.`);
+      for (const file of fileList) {
+        const { key, name } = await uploadAttachment(file);
+        const previewUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined;
+        setFiles((prev) => [...prev, { key, name, previewUrl }]);
+      }
+      toast.success(
+        fileList.length === 1
+          ? `„${fileList[0].name}" hochgeladen.`
+          : `${fileList.length} Dateien hochgeladen.`,
+      );
     } catch (e: unknown) {
       showError(e);
     } finally {
@@ -86,13 +129,20 @@ export default function TeacherAttachGrader({
     }
   }
 
+  function removeFile(key: string) {
+    setFiles((prev) => {
+      const target = prev.find((f) => f.key === key);
+      if (target?.previewUrl) URL.revokeObjectURL(target.previewUrl);
+      return prev.filter((f) => f.key !== key);
+    });
+  }
+
   async function save() {
     setBusy(true);
     try {
       await evidence.teacherSubmission(evidenceId, {
         enrollmentId,
-        fileKey: fileKey || undefined,
-        fileName: fileName || undefined,
+        files: files.map((f) => ({ key: f.key, name: f.name })),
         points: points === '' ? undefined : Number(points),
         level: level || undefined,
         feedback: feedback || undefined,
@@ -109,7 +159,6 @@ export default function TeacherAttachGrader({
 
   const max = maxPoints;
   const pct = max != null && points !== '' ? Math.round((Number(points) / max) * 100) : null;
-  const hasFile = !!fileName;
 
   return (
     <>
@@ -136,29 +185,98 @@ export default function TeacherAttachGrader({
           <h2>{t('ta.attachedFile')}</h2>
         </div>
         <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {hasFile ? (
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-              {fileUrl ? (
-                <a className="btn sm" href={fileUrl} target="_blank" rel="noopener">
-                  ⬇ {fileName}
-                </a>
-              ) : (
-                <span className="kh-muted">📎 {fileName}</span>
-              )}
-            </div>
+          {/* Datei-Ansicht: Bilder als Vorschau, andere als Download-Link. */}
+          {files.length > 0 ? (
+            <ul
+              className="hz-list"
+              style={{ border: '1px solid var(--border)', borderRadius: 8, margin: 0 }}
+            >
+              {files.map((f) => {
+                const viewUrl = f.previewUrl ?? f.url;
+                return (
+                  <li key={f.key} className="hz-item" style={{ alignItems: 'center', gap: 10 }}>
+                    {isImage(f.name) && viewUrl ? (
+                      <a href={viewUrl} target="_blank" rel="noopener" title={f.name}>
+                        {/* eslint-disable-next-line @next/next/no-img-element -- presigned/Blob-URL, kein next/image */}
+                        <img
+                          src={viewUrl}
+                          alt={f.name}
+                          style={{
+                            width: 64,
+                            height: 48,
+                            objectFit: 'cover',
+                            borderRadius: 6,
+                            border: '1px solid var(--border)',
+                            display: 'block',
+                          }}
+                        />
+                      </a>
+                    ) : (
+                      <span aria-hidden>📄</span>
+                    )}
+                    <span style={{ flex: 1, wordBreak: 'break-all' }}>{f.name}</span>
+                    {viewUrl && (
+                      <a className="btn sm" href={viewUrl} target="_blank" rel="noopener">
+                        {t('sub.view')}
+                      </a>
+                    )}
+                    <button
+                      className="btn-icon"
+                      title={t('common.delete')}
+                      onClick={() => removeFile(f.key)}
+                    >
+                      <TrashIcon />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
           ) : (
             <p className="kh-muted" style={{ margin: 0 }}>
               {t('ta.noFileYet')}
             </p>
           )}
-          <label className="btn sm" style={{ cursor: 'pointer', alignSelf: 'flex-start' }}>
-            {upBusy ? '…' : hasFile ? t('ta.replaceFile') : t('ta.uploadFile')}
+
+          {/* Drag-&-Drop-Zone + Mehrfach-Auswahl. */}
+          <label
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragOver(true);
+            }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOver(false);
+              const dropped = Array.from(e.dataTransfer.files);
+              if (dropped.length) void addFiles(dropped);
+            }}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 4,
+              padding: '18px 14px',
+              border: `2px dashed ${dragOver ? 'var(--primary, #2563eb)' : 'var(--border)'}`,
+              borderRadius: 8,
+              background: dragOver ? 'rgba(37, 99, 235, 0.06)' : 'transparent',
+              cursor: 'pointer',
+              textAlign: 'center',
+            }}
+          >
+            <span style={{ fontSize: 22 }} aria-hidden>
+              ⬆
+            </span>
+            <strong>{upBusy ? '…' : t('ta.dropFiles')}</strong>
+            <span className="kh-muted" style={{ fontSize: 12 }}>
+              {t('ta.dropHint')}
+            </span>
             <input
               type="file"
+              multiple
               style={{ display: 'none' }}
               onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) void pickFile(f);
+                const picked = Array.from(e.target.files ?? []);
+                if (picked.length) void addFiles(picked);
                 e.target.value = '';
               }}
             />

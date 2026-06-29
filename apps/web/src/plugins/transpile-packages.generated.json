@@ -1,4 +1,5 @@
 [
   "@kompetenzhub/plugin-example",
-  "@kompetenzhub/plugin-memo"
+  "@kompetenzhub/plugin-memo",
+  "@kompetenzhub/plugin-zip-import"
 ]

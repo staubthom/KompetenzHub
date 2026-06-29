@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { S3Service } from '../storage/s3.service';
+import { EvidenceModule } from '../evidence/evidence.module';
 import { PluginRegistryService } from './plugin-registry.service';
 import { PluginActivationService } from './plugin-activation.service';
 import { PluginDataService } from './plugin-data.service';
@@ -22,6 +23,7 @@ import { PluginAdminController } from './plugin-admin.controller';
  * Vorrang beim Routing-Matching behalten (siehe planung/Planung_Plugin.md §20).
  */
 @Module({
+  imports: [EvidenceModule],
   controllers: [PluginDispatcherController, PluginAdminController],
   providers: [
     PrismaService,

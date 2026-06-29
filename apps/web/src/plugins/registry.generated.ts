@@ -12,6 +12,10 @@ import memo_de from '@kompetenzhub/plugin-memo/i18n/de.json';
 import memo_fr from '@kompetenzhub/plugin-memo/i18n/fr.json';
 import memo_it from '@kompetenzhub/plugin-memo/i18n/it.json';
 import memo_en from '@kompetenzhub/plugin-memo/i18n/en.json';
+import zip_import_de from '@kompetenzhub/plugin-zip-import/i18n/de.json';
+import zip_import_fr from '@kompetenzhub/plugin-zip-import/i18n/fr.json';
+import zip_import_it from '@kompetenzhub/plugin-zip-import/i18n/it.json';
+import zip_import_en from '@kompetenzhub/plugin-zip-import/i18n/en.json';
 
 export const pluginWebRegistry: Record<string, PluginWebModule> = {
   example: {
@@ -45,6 +49,19 @@ export const pluginWebRegistry: Record<string, PluginWebModule> = {
       fr: memo_fr,
       it: memo_it,
       en: memo_en,
+    },
+  },
+  'zip-import': {
+    pages: {
+      '/': dynamic<PluginComponentProps>(() => import('@kompetenzhub/plugin-zip-import/web/ZipImportPage'), { ssr: false }),
+    },
+    widgets: {},
+    components: {},
+    translations: {
+      de: zip_import_de,
+      fr: zip_import_fr,
+      it: zip_import_it,
+      en: zip_import_en,
     },
   },
 };

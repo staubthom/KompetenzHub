@@ -153,6 +153,13 @@ export default function SubmissionGrader({
   const max = sub.evidence.maxPoints ? Number(sub.evidence.maxPoints) : null;
   const pct = max && points !== '' ? Math.round((Number(points) / max) * 100) : null;
   const content = sub.content ?? {};
+  // Alle eingereichten/angefügten Dateien (Mehrfach). Fallback auf die Einzeldatei.
+  const files =
+    sub.files && sub.files.length > 0
+      ? sub.files
+      : sub.fileUrl
+        ? [{ name: sub.fileName ?? 'Datei', kind: 'file', url: sub.fileUrl }]
+        : [];
 
   return (
     <>
@@ -198,11 +205,6 @@ export default function SubmissionGrader({
           <div className="panel">
             <div className="panel-head">
               <h2>{t('bw.submittedEvidence')}</h2>
-              {sub.fileUrl && (
-                <a className="btn sm" href={sub.fileUrl} target="_blank" rel="noopener">
-                  ⬇ {sub.fileName ?? 'Datei'}
-                </a>
-              )}
             </div>
             <div className="panel-body">
               {content.text && <p style={{ marginTop: 0 }}>{content.text}</p>}
@@ -215,7 +217,22 @@ export default function SubmissionGrader({
                 </p>
               )}
               {content.expertTalk && <p style={{ marginTop: 0 }}>🗣 {t('bw.expertTalk')}</p>}
-              {!content.text && !content.link && !sub.fileUrl && !content.expertTalk && (
+              {files.length > 0 && (
+                <ul className="hz-list" style={{ margin: 0 }}>
+                  {files.map((f, i) => (
+                    <li key={i} className="hz-item" style={{ alignItems: 'center', gap: 10 }}>
+                      <span style={{ flex: 1 }}>
+                        {f.kind === 'screenshot' ? '🖼 ' : '📄 '}
+                        {f.name}
+                      </span>
+                      <a className="btn sm" href={f.url} target="_blank" rel="noopener">
+                        ⬇ {t('sub.view')}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {!content.text && !content.link && files.length === 0 && !content.expertTalk && (
                 <p className="kh-muted" style={{ marginTop: 0 }}>
                   {t('bw.noText')}
                 </p>

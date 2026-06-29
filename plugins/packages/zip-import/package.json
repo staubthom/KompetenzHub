@@ -1,0 +1,20 @@
+{
+  "name": "@kompetenzhub/plugin-zip-import",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ZIP-Import: ordner-basierte Zuordnung von Dateien zu „von Lehrperson angefügt\"-Nachweisen je Lernende:r.",
+  "license": "AGPL-3.0-or-later",
+  "main": "dist/server/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kompetenzhub/plugin-sdk": "*",
+    "@kompetenzhub/plugin-contracts": "*",
+    "fflate": "^0.8.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}

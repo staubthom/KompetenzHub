@@ -1,0 +1,23 @@
+{
+  "plugin.zip-import.nav": "Importa ZIP",
+  "plugin.zip-import.title": "Importa ZIP",
+  "plugin.zip-import.intro": "Carica uno ZIP: una cartella per studente (nome cartella = nome visualizzato), con i file all'interno. I file vengono allegati al giustificativo « aggiunto dal/dalla docente » selezionato di ciascuna persona.",
+  "plugin.zip-import.module": "Corso",
+  "plugin.zip-import.evidence": "Giustificativo",
+  "plugin.zip-import.noEvidence": "— nessun giustificativo corrispondente —",
+  "plugin.zip-import.hintCreate": "Questo modulo non ha un giustificativo « aggiunto dal/dalla docente ». Creane prima uno nella griglia delle competenze.",
+  "plugin.zip-import.drop": "Trascina qui lo ZIP o clicca",
+  "plugin.zip-import.dropHint": "Una cartella per studente con i file all'interno.",
+  "plugin.zip-import.uploading": "Caricamento",
+  "plugin.zip-import.processing": "Elaborazione …",
+  "plugin.zip-import.pickFirst": "Seleziona prima un corso e un giustificativo.",
+  "plugin.zip-import.badZip": "Il file non è uno ZIP valido.",
+  "plugin.zip-import.noFolders": "Nessuna cartella con file trovata nello ZIP (atteso: una cartella per studente).",
+  "plugin.zip-import.failed": "Importazione fallita.",
+  "plugin.zip-import.assigned": "assegnato",
+  "plugin.zip-import.skipped": "saltato",
+  "plugin.zip-import.notAssigned": "non assegnato (nessun nome corrispondente)",
+  "plugin.zip-import.files": "file",
+  "plugin.zip-import.noClasses": "— nessun corso —",
+  "plugin.zip-import.moduleShort": "Modulo"
+}

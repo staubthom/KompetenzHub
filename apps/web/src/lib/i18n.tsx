@@ -390,6 +390,8 @@ const de: Record<string, string> = {
   'ta.noFileYet': 'Noch keine Datei angefügt.',
   'ta.saveAttach': 'Anfügen & speichern',
   'ta.savedAttach': 'Angefügt und gespeichert.',
+  'ta.dropFiles': 'Dateien hierher ziehen oder klicken',
+  'ta.dropHint': 'Mehrere Dateien möglich (Drag & Drop oder Auswahl).',
   'sub.teacherAttachedInfo':
     'Diesen Nachweis fügt deine Lehrperson an – du musst nichts einreichen.',
   'sub.teacherAttachedPending': 'Deine Lehrperson hat noch nichts angefügt.',
@@ -984,6 +986,8 @@ const fr: Record<string, string> = {
   'ta.noFileYet': 'Aucun fichier ajouté pour l’instant.',
   'ta.saveAttach': 'Ajouter et enregistrer',
   'ta.savedAttach': 'Ajouté et enregistré.',
+  'ta.dropFiles': 'Glissez les fichiers ici ou cliquez',
+  'ta.dropHint': 'Plusieurs fichiers possibles (glisser-déposer ou sélection).',
   'sub.teacherAttachedInfo':
     'Ce justificatif est ajouté par votre enseignant·e – vous n’avez rien à soumettre.',
   'sub.teacherAttachedPending': 'Votre enseignant·e n’a encore rien ajouté.',
@@ -1578,6 +1582,8 @@ const it: Record<string, string> = {
   'ta.noFileYet': 'Nessun file ancora aggiunto.',
   'ta.saveAttach': 'Aggiungi e salva',
   'ta.savedAttach': 'Aggiunto e salvato.',
+  'ta.dropFiles': 'Trascina qui i file o clicca',
+  'ta.dropHint': 'Più file possibili (drag & drop o selezione).',
   'sub.teacherAttachedInfo':
     'Questo giustificativo viene aggiunto dal/dalla tua docente – non devi consegnare nulla.',
   'sub.teacherAttachedPending': 'Il/la tua docente non ha ancora aggiunto nulla.',
@@ -2168,6 +2174,8 @@ const en: Record<string, string> = {
   'ta.noFileYet': 'No file attached yet.',
   'ta.saveAttach': 'Attach & save',
   'ta.savedAttach': 'Attached and saved.',
+  'ta.dropFiles': 'Drop files here or click',
+  'ta.dropHint': 'Multiple files supported (drag & drop or pick).',
   'sub.teacherAttachedInfo':
     'This evidence is attached by your teacher – you don’t need to submit anything.',
   'sub.teacherAttachedPending': 'Your teacher hasn’t attached anything yet.',

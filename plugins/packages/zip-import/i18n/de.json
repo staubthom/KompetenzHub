@@ -1,0 +1,23 @@
+{
+  "plugin.zip-import.nav": "ZIP-Import",
+  "plugin.zip-import.title": "ZIP-Import",
+  "plugin.zip-import.intro": "Lade ein ZIP hoch: ein Ordner pro Lernende:r (Ordnername = Anzeigename), darin die Dateien. Die Dateien werden dem gewählten „von Lehrperson angefügt\"-Nachweis der jeweiligen Person angehängt.",
+  "plugin.zip-import.module": "Modulanlass",
+  "plugin.zip-import.evidence": "Nachweis",
+  "plugin.zip-import.noEvidence": "— kein passender Nachweis —",
+  "plugin.zip-import.hintCreate": "Für dieses Modul gibt es keinen „von Lehrperson angefügt\"-Nachweis. Lege zuerst einen solchen Nachweis im Kompetenzraster an.",
+  "plugin.zip-import.drop": "ZIP hierher ziehen oder klicken",
+  "plugin.zip-import.dropHint": "Ein Ordner pro Lernende:r mit den Dateien darin.",
+  "plugin.zip-import.uploading": "Lade hoch",
+  "plugin.zip-import.processing": "Verarbeite …",
+  "plugin.zip-import.pickFirst": "Bitte zuerst Modul und Nachweis wählen.",
+  "plugin.zip-import.badZip": "Die Datei ist kein gültiges ZIP.",
+  "plugin.zip-import.noFolders": "Im ZIP wurden keine Ordner mit Dateien gefunden (erwartet: ein Ordner pro Lernende:r).",
+  "plugin.zip-import.failed": "Import fehlgeschlagen.",
+  "plugin.zip-import.assigned": "zugeordnet",
+  "plugin.zip-import.skipped": "übersprungen",
+  "plugin.zip-import.notAssigned": "nicht zugeordnet (kein passender Name)",
+  "plugin.zip-import.files": "Dateien",
+  "plugin.zip-import.noClasses": "— kein Modulanlass —",
+  "plugin.zip-import.moduleShort": "Modul"
+}

@@ -50,7 +50,7 @@ export class PluginContextFactory {
       logger: this.makeLogger(pluginId),
       audit: (event, detail) => this.audit(pluginId, tenantId, user.userId, event, detail),
       config,
-      core: this.coreFacade.scoped(user),
+      core: this.coreFacade.scoped(user, pluginId),
     };
   }
 
