@@ -101,7 +101,9 @@ export default function ZipImportPage({ ctx }: { ctx: PluginWebContext }) {
     setError('');
     setReport(null);
     if (!moduleId || !evidenceId) {
-      setError(ctx.t('plugin.zip-import-lp-nachweis.pickFirst', 'Bitte zuerst Modul und Nachweis wählen.'));
+      setError(
+        ctx.t('plugin.zip-import-lp-nachweis.pickFirst', 'Bitte zuerst Modul und Nachweis wählen.'),
+      );
       return;
     }
     setBusy(true);
@@ -172,7 +174,10 @@ export default function ZipImportPage({ ctx }: { ctx: PluginWebContext }) {
       });
       setReport(result);
     } catch (e) {
-      setError((e as Error).message || ctx.t('plugin.zip-import-lp-nachweis.failed', 'Import fehlgeschlagen.'));
+      setError(
+        (e as Error).message ||
+          ctx.t('plugin.zip-import-lp-nachweis.failed', 'Import fehlgeschlagen.'),
+      );
     } finally {
       setBusy(false);
       setProgress(null);
@@ -194,7 +199,9 @@ export default function ZipImportPage({ ctx }: { ctx: PluginWebContext }) {
 
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           <label className="fld" style={{ minWidth: 220 }}>
-            <span className="field-label">{ctx.t('plugin.zip-import-lp-nachweis.module', 'Modulanlass')}</span>
+            <span className="field-label">
+              {ctx.t('plugin.zip-import-lp-nachweis.module', 'Modulanlass')}
+            </span>
             <select
               className="inline-select"
               value={classId}
@@ -217,7 +224,9 @@ export default function ZipImportPage({ ctx }: { ctx: PluginWebContext }) {
           </label>
 
           <label className="fld" style={{ minWidth: 220 }}>
-            <span className="field-label">{ctx.t('plugin.zip-import-lp-nachweis.evidence', 'Nachweis')}</span>
+            <span className="field-label">
+              {ctx.t('plugin.zip-import-lp-nachweis.evidence', 'Nachweis')}
+            </span>
             <select
               className="inline-select"
               value={evidenceId}
@@ -311,8 +320,10 @@ export default function ZipImportPage({ ctx }: { ctx: PluginWebContext }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div className="sub-status sub-graded" style={{ margin: 0 }}>
               <strong>
-                ✅ {report.matched.length} {ctx.t('plugin.zip-import-lp-nachweis.assigned', 'zugeordnet')} ·{' '}
-                {report.unmatched.length} {ctx.t('plugin.zip-import-lp-nachweis.skipped', 'übersprungen')}
+                ✅ {report.matched.length}{' '}
+                {ctx.t('plugin.zip-import-lp-nachweis.assigned', 'zugeordnet')} ·{' '}
+                {report.unmatched.length}{' '}
+                {ctx.t('plugin.zip-import-lp-nachweis.skipped', 'übersprungen')}
               </strong>
             </div>
 
@@ -332,7 +343,8 @@ export default function ZipImportPage({ ctx }: { ctx: PluginWebContext }) {
                         {m.displayName !== m.folder ? ` (${m.folder})` : ''}
                       </span>
                       <span className="kh-muted" style={{ fontSize: 12 }}>
-                        {m.fileCount} {ctx.t('plugin.zip-import-lp-nachweis.files', 'Dateien')} · {m.status}
+                        {m.fileCount} {ctx.t('plugin.zip-import-lp-nachweis.files', 'Dateien')} ·{' '}
+                        {m.status}
                       </span>
                     </li>
                   ))}
@@ -343,7 +355,10 @@ export default function ZipImportPage({ ctx }: { ctx: PluginWebContext }) {
             {report.unmatched.length > 0 && (
               <div>
                 <div className="field-label">
-                  {ctx.t('plugin.zip-import-lp-nachweis.notAssigned', 'nicht zugeordnet (kein passender Name)')}
+                  {ctx.t(
+                    'plugin.zip-import-lp-nachweis.notAssigned',
+                    'nicht zugeordnet (kein passender Name)',
+                  )}
                 </div>
                 <ul
                   className="hz-list"
