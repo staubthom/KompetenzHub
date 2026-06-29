@@ -66,14 +66,28 @@ export async function api(
 
   let res;
   switch (method) {
-    case 'POST':   res = await request.post(url, { headers, data }); break;
-    case 'PATCH':  res = await request.patch(url, { headers, data }); break;
-    case 'PUT':    res = await request.put(url, { headers, data }); break;
-    case 'DELETE': res = await request.delete(url, { headers }); break;
-    default:       res = await request.get(url, { headers }); break;
+    case 'POST':
+      res = await request.post(url, { headers, data });
+      break;
+    case 'PATCH':
+      res = await request.patch(url, { headers, data });
+      break;
+    case 'PUT':
+      res = await request.put(url, { headers, data });
+      break;
+    case 'DELETE':
+      res = await request.delete(url, { headers });
+      break;
+    default:
+      res = await request.get(url, { headers });
+      break;
   }
 
   let json: Record<string, unknown> = {};
-  try { json = (await res.json()) as Record<string, unknown>; } catch { /* leer */ }
+  try {
+    json = (await res.json()) as Record<string, unknown>;
+  } catch {
+    /* leer */
+  }
   return { status: res.status(), body: json };
 }

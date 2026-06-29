@@ -84,7 +84,8 @@ test.describe('Matrix-Editor', () => {
 
     // Cleanup
     await api(request, 'DELETE', `/modules/${moduleId}`, token);
-    void matrixId; void hz;
+    void matrixId;
+    void hz;
   });
 
   test('Deskriptor in Matrixfeld eintragen', async ({ page, request }) => {
@@ -112,14 +113,17 @@ test.describe('Matrix-Editor', () => {
     await page.goto(`/modules/${moduleId}`);
 
     // Matrixzelle ist ein Button – erst anklicken, dann erscheint das Textarea
-    await page.getByRole('button', { name: /Ich kann/ }).first().click();
-    await page.getByPlaceholder('Ich kann …').fill('Ich kann ein Netzwerk vollständig dokumentieren.');
+    await page
+      .getByRole('button', { name: /Ich kann/ })
+      .first()
+      .click();
+    await page
+      .getByPlaceholder('Ich kann …')
+      .fill('Ich kann ein Netzwerk vollständig dokumentieren.');
     await page.getByRole('button', { name: /Speichern/ }).click();
 
     // Deskriptor sichtbar in der Matrix
-    await expect(
-      page.getByText('Ich kann ein Netzwerk vollständig dokumentieren.'),
-    ).toBeVisible();
+    await expect(page.getByText('Ich kann ein Netzwerk vollständig dokumentieren.')).toBeVisible();
 
     // Nachweis im Matrixfeld erstellen
     await page.getByRole('button', { name: '+ Nachweis' }).first().click();

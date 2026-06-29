@@ -793,12 +793,12 @@ npm run test:e2e:ui --workspace apps/web
 
 Abgedeckte Flows:
 
-| Datei | Was wird getestet |
-|---|---|
-| `auth.spec.ts` | Dev-Login UI, rollenbasierte Weiterleitung, Logout |
-| `admin-dashboard.spec.ts` | Einladungen erstellen/zurückziehen, Sperren/Entsperren, Rollenänderung |
-| `evidence-submission.spec.ts` | Nachweis einreichen (Student) und bewerten (Lehrperson) |
-| `matrix-editor.spec.ts` | Modul, Handlungsziel, Band und Deskriptor erstellen und löschen |
+| Datei                         | Was wird getestet                                                      |
+| ----------------------------- | ---------------------------------------------------------------------- |
+| `auth.spec.ts`                | Dev-Login UI, rollenbasierte Weiterleitung, Logout                     |
+| `admin-dashboard.spec.ts`     | Einladungen erstellen/zurückziehen, Sperren/Entsperren, Rollenänderung |
+| `evidence-submission.spec.ts` | Nachweis einreichen (Student) und bewerten (Lehrperson)                |
+| `matrix-editor.spec.ts`       | Modul, Handlungsziel, Band und Deskriptor erstellen und löschen        |
 
 Vollständige Dokumentation: [apps/web/e2e/Readme.md](apps/web/e2e/Readme.md)
 
@@ -840,6 +840,5 @@ plugins/packages/<pluginId>/
 Eine leere Vorlage steht unter `plugins/packages/_example` bereit.
 
 ---
-
 
 _KompetenzHub · Benutzerhandbuch · weitere technische Dokumentation siehe Ordner `docs/`._

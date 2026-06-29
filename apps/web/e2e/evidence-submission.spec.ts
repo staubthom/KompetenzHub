@@ -157,7 +157,9 @@ test.describe('Evidence-Submission-Flow', () => {
     // Nachweis B: zurückweisen
     const rowB = page.getByRole('row').filter({ has: page.getByText(evidenceTitle2) });
     await rowB.getByRole('button', { name: 'Öffnen' }).click();
-    await page.getByPlaceholder(/Begründung/).fill('Bitte die Quellen ergänzen und erneut einreichen.');
+    await page
+      .getByPlaceholder(/Begründung/)
+      .fill('Bitte die Quellen ergänzen und erneut einreichen.');
     await page.getByRole('button', { name: /Zur Überarbeitung zurückweisen/ }).click();
     await expect(page.getByText('Einreichung zurückgewiesen.')).toBeVisible();
     await expect(page.locator('.badge', { hasText: 'zurückgewiesen' })).toBeVisible();

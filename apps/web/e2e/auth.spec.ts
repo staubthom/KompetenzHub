@@ -76,9 +76,7 @@ test.describe('Login UI', () => {
     const google = page.getByRole('button', { name: /Mit Google/ });
     const devLogin = page.getByRole('button', { name: 'Als Dev anmelden' });
     const anyVisible =
-      (await microsoft.isVisible()) ||
-      (await google.isVisible()) ||
-      (await devLogin.isVisible());
+      (await microsoft.isVisible()) || (await google.isVisible()) || (await devLogin.isVisible());
     expect(anyVisible).toBe(true);
   });
 });
