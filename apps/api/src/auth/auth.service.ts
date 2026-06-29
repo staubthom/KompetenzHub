@@ -1,7 +1,17 @@
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
-import { AuthProvider, InvitationStatus, Locale, MembershipStatus, Role } from '@prisma/client';
+import {
+  AuthProvider,
+  InvitationStatus,
+  Locale,
+  MailTemplateType,
+  MembershipStatus,
+  Role,
+} from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { TokenService } from './token.service';
+import { MailService } from '../mail/mail.service';
+import { MailTemplateService } from '../mail/mail-template.service';
+import { localeKey, webUrl } from '../mail/mail.templates';
 
 /** E-Mail-Adressen, die beim Login automatisch ADMIN-Rechte erhalten (Bootstrap). */
 function adminEmails(): string[] {
@@ -32,6 +42,7 @@ export interface AuthResult {
     avatarUrl: string | null;
     locale: Locale;
     theme: string;
+    notifyDigest: boolean;
     tenantId: string;
     roles: Role[];
   };
@@ -64,6 +75,8 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tokens: TokenService,
+    private readonly mail: MailService,
+    private readonly templates: MailTemplateService,
   ) {}
 
   /** Stellt sicher, dass ein Default-Tenant existiert (MVP: ein aktiver Mandant). */
@@ -82,7 +95,7 @@ export class AuthService {
    */
   async loginWithProfile(
     profile: ExternalProfile,
-    opts: { bypassGate?: boolean } = {},
+    opts: { bypassGate?: boolean; ip?: string; userAgent?: string } = {},
   ): Promise<AuthResult> {
     const tenantId = await this.ensureDefaultTenant();
 
@@ -128,7 +141,13 @@ export class AuthService {
       throw new UnauthorizedException('Dieses Konto ist deaktiviert. Bitte an die Schuladmin.');
     }
 
-    await this.audit(tenantId, user.id, 'auth.login', { provider: profile.provider });
+    // Anmeldung von neuem Gerät/IP erkennen (vor dem Schreiben des neuen
+    // Login-Eintrags, damit dieser nicht mitzählt).
+    const isNewDevice = await this.isNewDevice(user.id, opts.ip);
+    await this.audit(tenantId, user.id, 'auth.login', { provider: profile.provider }, opts);
+    if (isNewDevice) {
+      await this.sendSecurityAlert(tenantId, user, opts);
+    }
 
     const token = this.tokens.sign({
       userId: user.id,
@@ -146,6 +165,7 @@ export class AuthService {
         avatarUrl: user.avatarUrl,
         locale: user.locale,
         theme: user.theme,
+        notifyDigest: user.notifyDigest,
         tenantId,
         roles,
       },
@@ -164,6 +184,7 @@ export class AuthService {
       avatarUrl: user.avatarUrl,
       locale: user.locale,
       theme: user.theme,
+      notifyDigest: user.notifyDigest,
       tenantId,
       roles,
     };
@@ -173,14 +194,18 @@ export class AuthService {
   async updatePreferences(
     userId: string,
     tenantId: string,
-    prefs: { locale?: string; theme?: string; displayName?: string },
+    prefs: { locale?: string; theme?: string; displayName?: string; notifyDigest?: boolean },
   ): Promise<AuthResult['user'] | null> {
-    const data: { locale?: Locale; theme?: string; displayName?: string } = {};
+    const data: { locale?: Locale; theme?: string; displayName?: string; notifyDigest?: boolean } =
+      {};
     if (prefs.locale && ['de', 'fr', 'it', 'en'].includes(prefs.locale)) {
       data.locale = prefs.locale as Locale;
     }
     if (prefs.theme && ['light', 'dark', 'gray'].includes(prefs.theme)) {
       data.theme = prefs.theme;
+    }
+    if (typeof prefs.notifyDigest === 'boolean') {
+      data.notifyDigest = prefs.notifyDigest;
     }
     // Anzeigename selbst pflegen (FA): nicht-leer, getrimmt, max. 120 Zeichen.
     if (prefs.displayName !== undefined) {
@@ -345,13 +370,65 @@ export class AuthService {
     userId: string | null,
     action: string,
     detail: Record<string, unknown>,
+    meta: { ip?: string; userAgent?: string } = {},
   ): Promise<void> {
     try {
       await this.prisma.auditLog.create({
-        data: { tenantId, userId, action, detail: detail as object },
+        data: {
+          tenantId,
+          userId,
+          action,
+          detail: detail as object,
+          ip: meta.ip ?? null,
+          userAgent: meta.userAgent ?? null,
+        },
       });
     } catch (error) {
       this.logger.warn(`Audit konnte nicht geschrieben werden: ${String(error)}`);
     }
+  }
+
+  /**
+   * True, wenn von dieser IP noch nie ein Login erfolgte – aber nur, wenn es
+   * überhaupt schon frühere Logins gibt (der allererste Login ist kein „neues
+   * Gerät"). Ohne IP-Information wird keine Warnung erzeugt.
+   */
+  private async isNewDevice(userId: string, ip?: string): Promise<boolean> {
+    if (!ip) return false;
+    const priorTotal = await this.prisma.auditLog.count({
+      where: { userId, action: 'auth.login' },
+    });
+    if (priorTotal === 0) return false; // erster Login überhaupt
+    const priorSameIp = await this.prisma.auditLog.count({
+      where: { userId, action: 'auth.login', ip },
+    });
+    return priorSameIp === 0;
+  }
+
+  /** Sicherheits-Hinweis bei Anmeldung von neuem Gerät (Versand ist No-op-fähig). */
+  private async sendSecurityAlert(
+    tenantId: string,
+    user: { email: string; displayName: string; locale: Locale },
+    meta: { ip?: string; userAgent?: string },
+  ): Promise<void> {
+    const k = localeKey(user.locale);
+    const time = new Date().toLocaleString(k === 'en' ? 'en-GB' : `${k}-CH`, {
+      timeZone: 'Europe/Zurich',
+    });
+    const mail = await this.templates.compose(
+      tenantId,
+      MailTemplateType.SECURITY_ALERT,
+      user.locale,
+      {
+        scalars: {
+          name: user.displayName,
+          ip: meta.ip ?? '–',
+          device: meta.userAgent ?? '–',
+          time,
+        },
+        ctaHref: `${webUrl()}/lernende/einstellungen`,
+      },
+    );
+    await this.mail.send({ to: user.email, ...mail });
   }
 }

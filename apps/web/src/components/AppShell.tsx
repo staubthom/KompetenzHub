@@ -73,6 +73,12 @@ const ADMIN_NAV: NavItem[] = [
     href: '/admin/einstellungen',
   },
   {
+    id: 'admin-mail',
+    icon: '✉',
+    labelKey: 'nav.adminMail',
+    href: '/admin/mail-vorlagen',
+  },
+  {
     id: 'admin-konto',
     icon: '⚙',
     labelKey: 'nav.einstellungen',

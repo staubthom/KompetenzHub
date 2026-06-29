@@ -227,6 +227,38 @@ Plugins haben keinen direkten Zugriff auf den globalen `PrismaClient` oder den `
 | `ctx.audit(event, detail)` | Schreibt einen manipulationssicheren Eintrag in das zentrale Audit-Log der Schule.               |
 | `ctx.core`                 | **Schreibgeschützte Lesefassade** auf die Stammdaten des Kerns zwecks Berechtigungsprüfung.      |
 
+### 5.2.1 Warum Plugins (noch) keine E-Mails versenden können
+
+In der obigen Tabelle fehlt bewusst ein `ctx.mail`. **Plugins können derzeit keine
+E-Mails über das Schul-Mailsystem versenden** – und das ist eine Design-Entscheidung,
+kein Versehen:
+
+- **Isolationsprinzip.** Ein Plugin sieht nie den `PrismaClient`, den `S3Service` – und
+  eben auch nicht den Kern-`MailService`. Jede Fähigkeit muss als **explizit gescopte,
+  vom Core implementierte** Schnittstelle in den `ctx` gehängt werden. Solange das nicht
+  geschehen ist, gibt es schlicht keinen Weg zum Versand.
+- **Missbrauchs- und Spam-Risiko.** E-Mail ist ein Ausgangskanal nach aussen. Ein
+  ungescopter Versand würde es einem Plugin erlauben, beliebige Adressen anzuschreiben
+  (Spam, Phishing über die Schul-Absenderdomain). Ein Eingriffspunkt bräuchte daher harte
+  Leitplanken: Empfänger-Begrenzung (z. B. nur Tenant-Mitglieder), Rate-Limit/Quota pro
+  Mandant und eine Admin-Freigabe beim Aktivieren.
+- **Datenschutz.** Empfängeradressen sind Personendaten. Ein Plugin soll nicht
+  unkontrolliert E-Mail-Adressen der Schule abgreifen oder nach aussen tragen können.
+- **Keine Umgehung der Schul-Einstellungen.** Der Kern-Mailversand respektiert SMTP-Konfig,
+  No-op ohne Mailserver, die **vom Schuladmin anpassbaren Vorlagen** sowie das **Opt-out**
+  der Nutzer:innen. Ein direkter Plugin-Versand würde diese Garantien aushebeln.
+
+**Der einzige heute mögliche Weg** ist der Umweg über `ctx.http` zu einem **externen**
+Mail-Dienst (z. B. eine eigene API) – aber nur, wenn der Host im Manifest unter
+`integrations.outboundHosts` deklariert ist und das Plugin **eigene** Zugangsdaten über
+`ctx.secrets` mitbringt. Das läuft dann komplett am Schul-Mailsystem vorbei und liegt in
+der Verantwortung des Plugin-Anbieters.
+
+> **Fazit:** „Versand über das Schul-Mailsystem“ ist eine **Core-Aufgabe**. Es bräuchte
+> einen neuen, abgesicherten Eingriffspunkt (`ctx.mail`) inkl. Empfänger-Policy, Quota und
+> Admin-Permission – analog zur Logik in Abschnitt 1 („Wenn dir ein Erweiterungspunkt
+> fehlt“). Bis dahin ist der Mailversand dem Kern vorbehalten.
+
 ### 5.3 Datenhaltung: der Key-Value (KV) Store
 
 Pilot-Stand: **`data.mode: "kv"`**. Du speicherst JSON-Dokumente pro `collection` unter

@@ -14,7 +14,7 @@ import { join } from 'node:path';
 import { config as loadEnv } from 'dotenv';
 import { AuthProvider, Locale, Role } from '@prisma/client';
 import { Throttle } from '@nestjs/throttler';
-import { IsEmail, IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 import { Request, Response } from 'express';
 import { AuthService, ExternalProfile, PublicLoginOptions } from './auth.service';
 import { TokenService } from './token.service';
@@ -102,6 +102,10 @@ class UpdateMeDto {
   @IsString()
   @MaxLength(120)
   displayName?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  notifyDigest?: boolean;
 }
 
 @Controller('auth')
@@ -181,17 +185,28 @@ export class AuthController {
     if (!dto.provider || !dto.externalId || !dto.email || !dto.displayName) {
       throw new BadRequestException('provider, externalId, email, displayName erforderlich.');
     }
-    const result = await this.auth.loginWithProfile({
-      provider: dto.provider,
-      externalId: dto.externalId,
-      email: dto.email,
-      displayName: dto.displayName,
-      avatarUrl: dto.avatarUrl,
-      locale: dto.locale,
-      desiredRole: dto.desiredRole,
-    });
+    const result = await this.auth.loginWithProfile(
+      {
+        provider: dto.provider,
+        externalId: dto.externalId,
+        email: dto.email,
+        displayName: dto.displayName,
+        avatarUrl: dto.avatarUrl,
+        locale: dto.locale,
+        desiredRole: dto.desiredRole,
+      },
+      this.clientMeta(req),
+    );
     this.setCookie(res, result.token);
     return result;
+  }
+
+  /** Client-IP (hinter Proxy: erster X-Forwarded-For-Eintrag) + User-Agent. */
+  private clientMeta(req: Request): { ip?: string; userAgent?: string } {
+    const fwd = req.headers['x-forwarded-for'];
+    const ip = (Array.isArray(fwd) ? fwd[0] : fwd)?.split(',')[0]?.trim() || req.ip || undefined;
+    const ua = req.headers['user-agent'];
+    return { ip, userAgent: typeof ua === 'string' ? ua.slice(0, 250) : undefined };
   }
 
   /** Profil + Rollen des eingeloggten Nutzers. */

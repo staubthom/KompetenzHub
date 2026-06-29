@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import AppShell from '../../../components/AppShell';
 import ProfileNamePanel from '../../../components/ProfileNamePanel';
+import NotificationPrefsPanel from '../../../components/NotificationPrefsPanel';
 import { useToast } from '../../../components/ToastProvider';
 import { useI18n } from '../../../lib/i18n';
 import { ai, type AiConfig, type AiTestResult } from '../../../lib/api';
@@ -144,6 +145,9 @@ export default function KiSettingsPage() {
 
       {/* Anzeigename (erscheint in der Kopfzeile) */}
       <ProfileNamePanel />
+
+      {/* E-Mail-Benachrichtigungen (Tages-Digest, Opt-out) */}
+      <NotificationPrefsPanel />
 
       <div className="panel" style={{ maxWidth: 640 }}>
         <div className="panel-head">

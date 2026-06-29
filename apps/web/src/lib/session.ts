@@ -15,6 +15,7 @@ export interface SessionUser {
   avatarUrl: string | null;
   locale: string;
   theme?: string;
+  notifyDigest?: boolean;
   tenantId: string;
   roles: Role[];
 }

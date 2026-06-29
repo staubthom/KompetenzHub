@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { HealthController } from './health/health.controller';
 import { ConnectivityService } from './health/connectivity.service';
@@ -20,6 +21,7 @@ import { MatrixIoModule } from './matrix-io/matrix-io.module';
 import { ClassArchiveModule } from './class-archive/class-archive.module';
 import { AdminModule } from './admin/admin.module';
 import { BrandingModule } from './branding/branding.module';
+import { MailModule } from './mail/mail.module';
 import { PluginsCoreModule } from './plugins/plugins.module';
 
 @Module({
@@ -32,6 +34,10 @@ import { PluginsCoreModule } from './plugins/plugins.module';
         limit: Number(process.env.THROTTLE_LIMIT ?? 300),
       },
     ]),
+    // Cron-Scheduler (Tages-Digest um 04:00). Global registriert.
+    ScheduleModule.forRoot(),
+    // Global: stellt MailService/DigestService bereit (vor Modulen, die sie nutzen).
+    MailModule,
     AuthModule,
     AdminModule,
     BrandingModule,

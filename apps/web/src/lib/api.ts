@@ -75,6 +75,7 @@ export async function updatePreferences(prefs: {
   locale?: string;
   theme?: string;
   displayName?: string;
+  notifyDigest?: boolean;
 }): Promise<SessionUser> {
   const user = await apiFetch<SessionUser>('/auth/me', {
     method: 'PATCH',
@@ -1082,7 +1083,47 @@ export const admin = {
     }),
   ops: () => apiFetch<AdminOps>('/admin/ops'),
   audit: (limit = 100) => apiFetch<AuditEntry[]>(`/admin/audit?limit=${limit}`),
+  // E-Mail-Benachrichtigungen: geplante Läufe manuell auslösen
+  runDigest: () =>
+    apiFetch<{ mails: number }>('/admin/notifications/digest-run', {
+      method: 'POST',
+      body: '{}',
+    }),
+  runWeeklyReport: () =>
+    apiFetch<{ mails: number }>('/admin/notifications/weekly-report-run', {
+      method: 'POST',
+      body: '{}',
+    }),
+  runInviteReminders: () =>
+    apiFetch<{ mails: number }>('/admin/notifications/invite-reminders-run', {
+      method: 'POST',
+      body: '{}',
+    }),
+  // E-Mail-Vorlagen
+  mailTemplates: () => apiFetch<MailTemplate[]>('/admin/mail-templates'),
+  updateMailTemplate: (
+    type: string,
+    locale: string,
+    data: { subject?: string | null; body?: string | null },
+  ) =>
+    apiFetch<void>(`/admin/mail-templates/${type}/${locale}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  resetMailTemplate: (type: string, locale: string) =>
+    apiFetch<void>(`/admin/mail-templates/${type}/${locale}`, { method: 'DELETE' }),
 };
+
+export interface MailTemplate {
+  type: string;
+  locale: string;
+  subject: string;
+  body: string;
+  defaultSubject: string;
+  defaultBody: string;
+  customized: boolean;
+  placeholders: string[];
+}
 
 /** Voll-Backup (DB-Daten + Dateien) als ZIP herunterladen. */
 export async function exportBackupZip(): Promise<{ blob: Blob; filename: string }> {

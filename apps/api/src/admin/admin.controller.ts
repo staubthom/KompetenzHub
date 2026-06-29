@@ -8,15 +8,17 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
   Res,
 } from '@nestjs/common';
-import { Role } from '@prisma/client';
+import { MailTemplateType, Role } from '@prisma/client';
 import { IsEmail, IsEnum, IsOptional } from 'class-validator';
 import type { Response } from 'express';
 import { CurrentUser, Roles } from '../auth/decorators';
 import type { RequestContext } from '../common/request-context';
 import { AdminService } from './admin.service';
+import { DigestService } from '../mail/digest.service';
 
 interface RoleDto {
   role?: Role;
@@ -47,7 +49,10 @@ interface UserPatchDto {
 @Controller('admin')
 @Roles(Role.ADMIN)
 export class AdminController {
-  constructor(private readonly admin: AdminService) {}
+  constructor(
+    private readonly admin: AdminService,
+    private readonly digest: DigestService,
+  ) {}
 
   @Get('overview')
   overview(@CurrentUser() user: RequestContext) {
@@ -134,6 +139,51 @@ export class AdminController {
   @Get('audit')
   audit(@Query('limit') limit: string | undefined, @CurrentUser() user: RequestContext) {
     return this.admin.audit(user.tenantId, limit ? Number(limit) : 100);
+  }
+
+  // ── E-Mail-Benachrichtigungen ──
+  /** Tages-Digest für die eigene Schule sofort auslösen (statt erst um 04:00). */
+  @Post('notifications/digest-run')
+  digestRun(@CurrentUser() user: RequestContext) {
+    return this.digest.runForTenant(user.tenantId).then((mails) => ({ mails }));
+  }
+
+  /** Wochenbericht für die eigene Schule sofort auslösen. */
+  @Post('notifications/weekly-report-run')
+  weeklyReportRun(@CurrentUser() user: RequestContext) {
+    return this.digest.runWeeklyReportForTenant(user.tenantId).then((mails) => ({ mails }));
+  }
+
+  /** Einladungs-Erinnerungen für die eigene Schule sofort auslösen. */
+  @Post('notifications/invite-reminders-run')
+  inviteRemindersRun(@CurrentUser() user: RequestContext) {
+    return this.digest.runInviteRemindersForTenant(user.tenantId).then((mails) => ({ mails }));
+  }
+
+  // ── E-Mail-Vorlagen ──
+  @Get('mail-templates')
+  mailTemplates(@CurrentUser() user: RequestContext) {
+    return this.admin.listMailTemplates(user.tenantId);
+  }
+
+  @Put('mail-templates/:type/:locale')
+  updateMailTemplate(
+    @Param('type') type: MailTemplateType,
+    @Param('locale') locale: string,
+    @Body() dto: { subject?: string | null; body?: string | null },
+    @CurrentUser() user: RequestContext,
+  ) {
+    return this.admin.updateMailTemplate(user.tenantId, type, locale, dto ?? {});
+  }
+
+  @Delete('mail-templates/:type/:locale')
+  @HttpCode(204)
+  async resetMailTemplate(
+    @Param('type') type: MailTemplateType,
+    @Param('locale') locale: string,
+    @CurrentUser() user: RequestContext,
+  ): Promise<void> {
+    await this.admin.resetMailTemplate(user.tenantId, type, locale);
   }
 
   @Get('backup')

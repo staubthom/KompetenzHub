@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell from '../../../components/AppShell';
 import ProfileNamePanel from '../../../components/ProfileNamePanel';
+import NotificationPrefsPanel from '../../../components/NotificationPrefsPanel';
 import { useToast } from '../../../components/ToastProvider';
 import { useI18n, LOCALES, LOCALE_LABEL, type Locale } from '../../../lib/i18n';
 import { getUser, isAdmin, homePathForRole } from '../../../lib/session';
@@ -93,6 +94,9 @@ export default function AdminKontoPage() {
           </div>
         </div>
       </div>
+
+      {/* E-Mail-Benachrichtigungen (Tages-Digest, Opt-out) */}
+      <NotificationPrefsPanel />
     </AppShell>
   );
 }

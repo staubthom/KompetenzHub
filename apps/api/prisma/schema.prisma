@@ -106,6 +106,14 @@ enum EvaluationSource {
   AI
 }
 
+enum MailTemplateType {
+  INVITE
+  INVITE_REMINDER
+  DIGEST
+  WEEKLY_REPORT
+  SECURITY_ALERT
+}
+
 // ============================================================
 // Mandant & Benutzer
 // ============================================================
@@ -121,7 +129,9 @@ model Tenant {
   users       Membership[]
   modules     Module[]
   classes     Class[]
-  invitations Invitation[]
+  invitations   Invitation[]
+  digestState   DigestState?
+  mailTemplates MailTemplate[]
 }
 
 model TenantBranding {
@@ -147,6 +157,7 @@ model User {
   avatarUrl    String?
   locale       Locale       @default(de)
   theme        String       @default("light") // Anzeigemodus: light | dark | gray
+  notifyDigest Boolean      @default(true) // Tages-Digest per E-Mail (Opt-out)
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
@@ -193,12 +204,45 @@ model Invitation {
   invitedById String?
   createdAt   DateTime         @default(now())
   acceptedAt  DateTime?
+  remindedAt  DateTime? // letzte Erinnerungs-Mail an offene Einladung (Cron)
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, email])
   @@index([tenantId])
   @@index([email])
+}
+
+// ============================================================
+// E-Mail-Benachrichtigungen: Tages-Digest
+// ============================================================
+// Merkt sich pro Mandant, bis zu welchem Zeitpunkt der Tages-Digest
+// (Abgaben/Bewertungen) bereits versendet wurde. Der Cron-Job verarbeitet
+// das Fenster [lastRunAt, jetzt) – so gehen bei einem verpassten Lauf
+// keine Ereignisse verloren.
+model DigestState {
+  tenantId  String   @id
+  lastRunAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+// Pro Mandant anpassbare E-Mail-Vorlagen (Schuladmin). Betreff/Text je Typ und
+// Sprache. Fehlt ein Eintrag (oder ist ein Feld null), greift die eingebaute
+// Standardvorlage aus dem Code. Texte enthalten {{platzhalter}}.
+model MailTemplate {
+  tenantId  String
+  type      MailTemplateType
+  locale    Locale
+  subject   String?
+  body      String?
+  updatedAt DateTime         @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@id([tenantId, type, locale])
+  @@index([tenantId])
 }
 
 // ============================================================

@@ -10,6 +10,10 @@ import AdmZip from 'adm-zip';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConnectivityService } from '../health/connectivity.service';
 import { S3Service } from '../storage/s3.service';
+import { MailService } from '../mail/mail.service';
+import { MailTemplateService } from '../mail/mail-template.service';
+import { localeKey, roleLabel, webUrl } from '../mail/mail.templates';
+import { MailTemplateType } from '@prisma/client';
 
 const ROLE_RANK: Record<Role, number> = { ADMIN: 3, TEACHER: 2, LEARNER: 1 };
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -34,6 +38,8 @@ export class AdminService {
     private readonly prisma: PrismaService,
     private readonly connectivity: ConnectivityService,
     private readonly s3: S3Service,
+    private readonly mail: MailService,
+    private readonly templates: MailTemplateService,
   ) {}
 
   // ── Personen ────────────────────────────────────────────────
@@ -160,17 +166,66 @@ export class AdminService {
     if (member) {
       throw new ConflictException('Diese Person ist bereits in der Schule. Rolle direkt ändern.');
     }
-    return this.prisma.invitation.upsert({
+    const invitation = await this.prisma.invitation.upsert({
       where: { tenantId_email: { tenantId, email } },
       update: { role, status: InvitationStatus.PENDING, invitedById, acceptedAt: null },
       create: { tenantId, email, role, status: InvitationStatus.PENDING, invitedById },
     });
+
+    // Einladungs-Mail (transaktional). Versand ist im MailService gekapselt und
+    // schluckt Fehler – ein Mail-Problem darf die Einladung nicht scheitern lassen.
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { name: true, settings: true, branding: { select: { displayName: true } } },
+    });
+    const schoolName = tenant?.branding?.displayName?.trim() || tenant?.name || 'KompetenzHub';
+    const settings = (tenant?.settings ?? {}) as Record<string, unknown>;
+    const locale = typeof settings.defaultLocale === 'string' ? settings.defaultLocale : 'de';
+    const mail = await this.templates.compose(tenantId, MailTemplateType.INVITE, locale, {
+      scalars: {
+        email,
+        role: roleLabel(localeKey(locale), role),
+        school: schoolName,
+        url: webUrl(),
+      },
+      ctaHref: webUrl(),
+    });
+    await this.mail.send({ to: email, ...mail });
+
+    return invitation;
   }
 
   async revokeInvitation(tenantId: string, id: string): Promise<void> {
     const inv = await this.prisma.invitation.findFirst({ where: { id, tenantId } });
     if (!inv) throw new NotFoundException('Einladung nicht gefunden.');
     await this.prisma.invitation.delete({ where: { id } });
+  }
+
+  // ── E-Mail-Vorlagen (Schuladmin) ─────────────────────────────
+  listMailTemplates(tenantId: string) {
+    return this.templates.listForAdmin(tenantId);
+  }
+
+  async updateMailTemplate(
+    tenantId: string,
+    type: MailTemplateType,
+    locale: string,
+    data: { subject?: string | null; body?: string | null },
+  ): Promise<void> {
+    if (!Object.values(MailTemplateType).includes(type)) {
+      throw new BadRequestException('Unbekannter Vorlagen-Typ.');
+    }
+    if (!LOCALES.includes(locale)) {
+      throw new BadRequestException('Unbekannte Sprache.');
+    }
+    await this.templates.upsert(tenantId, type, locale as Locale, data);
+  }
+
+  async resetMailTemplate(tenantId: string, type: MailTemplateType, locale: string): Promise<void> {
+    if (!Object.values(MailTemplateType).includes(type) || !LOCALES.includes(locale)) {
+      throw new BadRequestException('Unbekannter Vorlagen-Typ oder Sprache.');
+    }
+    await this.templates.reset(tenantId, type, locale as Locale);
   }
 
   // ── Schul-Einstellungen / Auth-Provider ─────────────────────
