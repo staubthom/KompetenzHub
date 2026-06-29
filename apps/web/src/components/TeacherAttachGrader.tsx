@@ -100,7 +100,6 @@ export default function TeacherAttachGrader({
     return () => {
       files.forEach((f) => f.previewUrl && URL.revokeObjectURL(f.previewUrl));
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function showError(e: unknown) {

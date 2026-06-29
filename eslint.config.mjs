@@ -16,6 +16,9 @@ export default defineConfig([
     '**/.next/**',
     '**/*.config.js',
     '**/mockups/**',
+    // Generierte Test-Artefakte (Playwright) – nie linten.
+    '**/playwright-report/**',
+    '**/test-results/**',
     // Generierte Plugin-Registry (aus den Manifesten, siehe scripts/generate-plugin-registry.mjs)
     'apps/web/src/plugins/registry.generated.ts',
   ]),
@@ -62,6 +65,16 @@ export default defineConfig([
               return {};
             },
           },
+        },
+      },
+
+      // HACK (analog): react-hooks ist nicht als Plugin installiert, aber Komponenten
+      // nutzen `// eslint-disable-next-line react-hooks/exhaustive-deps`. Ohne Definition
+      // bricht ESLint mit „rule not found" ab. Leere Stubs registrieren die Regelnamen.
+      'react-hooks': {
+        rules: {
+          'exhaustive-deps': { create: () => ({}) },
+          'rules-of-hooks': { create: () => ({}) },
         },
       },
     },
