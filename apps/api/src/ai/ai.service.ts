@@ -275,6 +275,10 @@ export class AiService {
     }
     const apiKey = decryptSecret(cfg.apiKeyEnc!);
     const baseUrl = cfg.baseUrl.replace(/\/+$/, '');
+    // Der /models-Listing-Endpoint (Verbindungstest) liefert IDs mit „models/"-Präfix
+    // (z. B. Gemini: „models/gemini-2.5-flash"). Der OpenAI-kompatible /chat/completions
+    // erwartet jedoch die nackte ID. Das Präfix darum entfernen, falls hineinkopiert.
+    const model = cfg.model.replace(/^models\//, '');
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30_000);
     try {
@@ -286,14 +290,19 @@ export class AiService {
         },
         signal: controller.signal,
         body: JSON.stringify({
-          model: cfg.model,
+          model,
           temperature: opts.json ? 0.2 : 0.6,
           ...(opts.json ? { response_format: { type: 'json_object' } } : {}),
           messages,
         }),
       });
       if (!res.ok) {
-        throw new ConflictException(`KI-Anfrage fehlgeschlagen (HTTP ${res.status}).`);
+        // Upstream-Begründung mitnehmen (z. B. „model not found", ungültiger Key,
+        // nicht unterstütztes response_format) – sonst bleibt der Fehler undurchsichtig.
+        const upstream = (await res.text().catch(() => '')).trim().slice(0, 300);
+        throw new ConflictException(
+          `KI-Anfrage fehlgeschlagen (HTTP ${res.status})${upstream ? `: ${upstream}` : ''}.`,
+        );
       }
       const json = (await res.json()) as {
         choices?: { message?: { content?: string } }[];

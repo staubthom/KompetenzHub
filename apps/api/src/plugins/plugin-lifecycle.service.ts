@@ -42,7 +42,8 @@ export class PluginLifecycleService implements OnApplicationBootstrap {
   }
 
   private async syncInstallations(): Promise<void> {
-    for (const manifest of this.registry.getAll()) {
+    const present = this.registry.getAll();
+    for (const manifest of present) {
       const entry = this.registry.getEntry(manifest.pluginId);
       if (!entry) continue;
       await this.prisma.pluginInstallation.upsert({
@@ -61,7 +62,30 @@ export class PluginLifecycleService implements OnApplicationBootstrap {
         },
       });
     }
-    this.logger.log(`${this.registry.getAll().length} Plugin-Installation(en) synchronisiert.`);
+
+    // Reconciliation: Plugins, die nicht mehr im Deployment vorhanden sind (Paket entfernt),
+    // dürfen nicht als „installiert" zurückbleiben – sonst tauchen sie in der Admin-Liste auf
+    // und lassen sich (folgenlos) aktivieren. Buchhaltungszeilen entfernen; Plugin-Daten/
+    // Storage/Secrets bleiben dem bewussten Uninstall vorbehalten.
+    const presentIds = present.map((m) => m.pluginId);
+    const removedInstallations = await this.prisma.pluginInstallation.findMany({
+      where: { pluginId: { notIn: presentIds } },
+      select: { pluginId: true },
+    });
+    if (removedInstallations.length > 0) {
+      const removedIds = removedInstallations.map((i) => i.pluginId);
+      await this.prisma.pluginTenantActivation.deleteMany({
+        where: { pluginId: { in: removedIds } },
+      });
+      await this.prisma.pluginInstallation.deleteMany({
+        where: { pluginId: { in: removedIds } },
+      });
+      this.logger.warn(
+        `${removedIds.length} verwaiste Plugin-Installation(en) entfernt (Paket nicht mehr vorhanden): ${removedIds.join(', ')}`,
+      );
+    }
+
+    this.logger.log(`${present.length} Plugin-Installation(en) synchronisiert.`);
   }
 
   /** Übersicht für die Admin-UI: installierte Plugins + Aktivierungsstatus dieses Tenants. */

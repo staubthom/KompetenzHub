@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pluginId": "zip-import",
+  "pluginId": "zip-import-lp-nachweis",
   "displayName": "ZIP-Import (Lehrperson-Nachweise)",
   "version": "0.1.0",
   "publisher": { "name": "KompetenzHub Core", "url": "https://potenzialentwickler.ch" },
@@ -12,47 +12,47 @@
     "en": "Teacher uploads a ZIP (one folder per learner); the files are attached to each learner's matching \"attached by teacher\" evidence."
   },
   "core": { "minVersion": "0.0.0", "apiVersion": 1 },
-  "capabilities": ["plugin:zip-import:import"],
+  "capabilities": ["plugin:zip-import-lp-nachweis:import"],
   "contributions": {
     "apiRoutes": [
       {
         "method": "GET",
         "path": "/classes",
-        "capability": "plugin:zip-import:import",
+        "capability": "plugin:zip-import-lp-nachweis:import",
         "roles": ["TEACHER"]
       },
       {
         "method": "GET",
         "path": "/evidences",
-        "capability": "plugin:zip-import:import",
+        "capability": "plugin:zip-import-lp-nachweis:import",
         "roles": ["TEACHER"]
       },
       {
         "method": "POST",
         "path": "/upload-url",
-        "capability": "plugin:zip-import:import",
+        "capability": "plugin:zip-import-lp-nachweis:import",
         "roles": ["TEACHER"]
       },
       {
         "method": "POST",
         "path": "/process",
-        "capability": "plugin:zip-import:import",
+        "capability": "plugin:zip-import-lp-nachweis:import",
         "roles": ["TEACHER"]
       }
     ],
     "nav": [
       {
-        "id": "zip-import",
-        "labelKey": "plugin.zip-import.nav",
-        "icon": "🗂",
-        "href": "/plugins/zip-import",
+        "id": "zip-import-lp-nachweis",
+        "labelKey": "plugin.zip-import-lp-nachweis.nav",
+        "icon": "🗂️",
+        "href": "/plugins/zip-import-lp-nachweis",
         "roles": ["TEACHER"]
       }
     ],
     "pages": [{ "route": "/", "component": "ZipImportPage", "roles": ["TEACHER"] }]
   },
-  "storage": { "prefixes": ["plugins/zip-import/"] },
-  "translations": { "namespaces": ["plugin.zip-import"] },
+  "storage": { "prefixes": ["plugins/zip-import-lp-nachweis/"] },
+  "translations": { "namespaces": ["plugin.zip-import-lp-nachweis"] },
   "audit": { "events": ["import.run"] },
   "cleanup": { "data": "delete", "storage": "delete", "secrets": "delete" }
 }

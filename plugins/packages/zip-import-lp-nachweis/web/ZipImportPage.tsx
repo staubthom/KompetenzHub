@@ -101,7 +101,7 @@ export default function ZipImportPage({ ctx }: { ctx: PluginWebContext }) {
     setError('');
     setReport(null);
     if (!moduleId || !evidenceId) {
-      setError(ctx.t('plugin.zip-import.pickFirst', 'Bitte zuerst Modul und Nachweis wählen.'));
+      setError(ctx.t('plugin.zip-import-lp-nachweis.pickFirst', 'Bitte zuerst Modul und Nachweis wählen.'));
       return;
     }
     setBusy(true);
@@ -111,7 +111,7 @@ export default function ZipImportPage({ ctx }: { ctx: PluginWebContext }) {
       try {
         entries = unzipSync(buf);
       } catch {
-        setError(ctx.t('plugin.zip-import.badZip', 'Die Datei ist kein gültiges ZIP.'));
+        setError(ctx.t('plugin.zip-import-lp-nachweis.badZip', 'Die Datei ist kein gültiges ZIP.'));
         return;
       }
 
@@ -132,7 +132,7 @@ export default function ZipImportPage({ ctx }: { ctx: PluginWebContext }) {
       if (byFolder.size === 0) {
         setError(
           ctx.t(
-            'plugin.zip-import.noFolders',
+            'plugin.zip-import-lp-nachweis.noFolders',
             'Im ZIP wurden keine Ordner mit Dateien gefunden (erwartet: ein Ordner pro Lernende:r).',
           ),
         );
@@ -172,7 +172,7 @@ export default function ZipImportPage({ ctx }: { ctx: PluginWebContext }) {
       });
       setReport(result);
     } catch (e) {
-      setError((e as Error).message || ctx.t('plugin.zip-import.failed', 'Import fehlgeschlagen.'));
+      setError((e as Error).message || ctx.t('plugin.zip-import-lp-nachweis.failed', 'Import fehlgeschlagen.'));
     } finally {
       setBusy(false);
       setProgress(null);
@@ -182,19 +182,19 @@ export default function ZipImportPage({ ctx }: { ctx: PluginWebContext }) {
   return (
     <div className="panel">
       <div className="panel-head">
-        <h2>🗂 {ctx.t('plugin.zip-import.title', 'ZIP-Import')}</h2>
+        <h2>🗂️ {ctx.t('plugin.zip-import-lp-nachweis.title', 'ZIP-Import')}</h2>
       </div>
       <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <p className="kh-muted" style={{ margin: 0, fontSize: 13 }}>
           {ctx.t(
-            'plugin.zip-import.intro',
+            'plugin.zip-import-lp-nachweis.intro',
             'Lade ein ZIP hoch: ein Ordner pro Lernende:r (Ordnername = Anzeigename), darin die Dateien. Die Dateien werden dem gewählten „von Lehrperson angefügt"-Nachweis der jeweiligen Person angehängt.',
           )}
         </p>
 
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           <label className="fld" style={{ minWidth: 220 }}>
-            <span className="field-label">{ctx.t('plugin.zip-import.module', 'Modulanlass')}</span>
+            <span className="field-label">{ctx.t('plugin.zip-import-lp-nachweis.module', 'Modulanlass')}</span>
             <select
               className="inline-select"
               value={classId}
@@ -202,14 +202,14 @@ export default function ZipImportPage({ ctx }: { ctx: PluginWebContext }) {
             >
               {classes.length === 0 && (
                 <option value="">
-                  {ctx.t('plugin.zip-import.noClasses', '— kein Modulanlass —')}
+                  {ctx.t('plugin.zip-import-lp-nachweis.noClasses', '— kein Modulanlass —')}
                 </option>
               )}
               {classes.map((c) => (
                 <option key={c.classId} value={c.classId}>
                   {c.name}
                   {c.moduleNumber
-                    ? ` · ${ctx.t('plugin.zip-import.moduleShort', 'Modul')} ${c.moduleNumber}`
+                    ? ` · ${ctx.t('plugin.zip-import-lp-nachweis.moduleShort', 'Modul')} ${c.moduleNumber}`
                     : ''}
                 </option>
               ))}
@@ -217,7 +217,7 @@ export default function ZipImportPage({ ctx }: { ctx: PluginWebContext }) {
           </label>
 
           <label className="fld" style={{ minWidth: 220 }}>
-            <span className="field-label">{ctx.t('plugin.zip-import.evidence', 'Nachweis')}</span>
+            <span className="field-label">{ctx.t('plugin.zip-import-lp-nachweis.evidence', 'Nachweis')}</span>
             <select
               className="inline-select"
               value={evidenceId}
@@ -225,7 +225,7 @@ export default function ZipImportPage({ ctx }: { ctx: PluginWebContext }) {
             >
               {evidences.length === 0 && (
                 <option value="">
-                  {ctx.t('plugin.zip-import.noEvidence', '— kein passender Nachweis —')}
+                  {ctx.t('plugin.zip-import-lp-nachweis.noEvidence', '— kein passender Nachweis —')}
                 </option>
               )}
               {evidences.map((e) => (
@@ -240,7 +240,7 @@ export default function ZipImportPage({ ctx }: { ctx: PluginWebContext }) {
         {evidences.length === 0 && moduleId && (
           <p className="kh-muted" style={{ margin: 0, fontSize: 13 }}>
             {ctx.t(
-              'plugin.zip-import.hintCreate',
+              'plugin.zip-import-lp-nachweis.hintCreate',
               'Für dieses Modul gibt es keinen „von Lehrperson angefügt"-Nachweis. Lege zuerst einen solchen Nachweis im Kompetenzraster an.',
             )}
           </p>
@@ -278,13 +278,13 @@ export default function ZipImportPage({ ctx }: { ctx: PluginWebContext }) {
           <strong>
             {busy
               ? progress
-                ? `${ctx.t('plugin.zip-import.uploading', 'Lade hoch')} ${progress.done}/${progress.total} …`
-                : ctx.t('plugin.zip-import.processing', 'Verarbeite …')
-              : ctx.t('plugin.zip-import.drop', 'ZIP hierher ziehen oder klicken')}
+                ? `${ctx.t('plugin.zip-import-lp-nachweis.uploading', 'Lade hoch')} ${progress.done}/${progress.total} …`
+                : ctx.t('plugin.zip-import-lp-nachweis.processing', 'Verarbeite …')
+              : ctx.t('plugin.zip-import-lp-nachweis.drop', 'ZIP hierher ziehen oder klicken')}
           </strong>
           <span className="kh-muted" style={{ fontSize: 12 }}>
             {ctx.t(
-              'plugin.zip-import.dropHint',
+              'plugin.zip-import-lp-nachweis.dropHint',
               'Ein Ordner pro Lernende:r mit den Dateien darin.',
             )}
           </span>
@@ -311,15 +311,15 @@ export default function ZipImportPage({ ctx }: { ctx: PluginWebContext }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div className="sub-status sub-graded" style={{ margin: 0 }}>
               <strong>
-                ✅ {report.matched.length} {ctx.t('plugin.zip-import.assigned', 'zugeordnet')} ·{' '}
-                {report.unmatched.length} {ctx.t('plugin.zip-import.skipped', 'übersprungen')}
+                ✅ {report.matched.length} {ctx.t('plugin.zip-import-lp-nachweis.assigned', 'zugeordnet')} ·{' '}
+                {report.unmatched.length} {ctx.t('plugin.zip-import-lp-nachweis.skipped', 'übersprungen')}
               </strong>
             </div>
 
             {report.matched.length > 0 && (
               <div>
                 <div className="field-label">
-                  {ctx.t('plugin.zip-import.assigned', 'zugeordnet')}
+                  {ctx.t('plugin.zip-import-lp-nachweis.assigned', 'zugeordnet')}
                 </div>
                 <ul
                   className="hz-list"
@@ -332,7 +332,7 @@ export default function ZipImportPage({ ctx }: { ctx: PluginWebContext }) {
                         {m.displayName !== m.folder ? ` (${m.folder})` : ''}
                       </span>
                       <span className="kh-muted" style={{ fontSize: 12 }}>
-                        {m.fileCount} {ctx.t('plugin.zip-import.files', 'Dateien')} · {m.status}
+                        {m.fileCount} {ctx.t('plugin.zip-import-lp-nachweis.files', 'Dateien')} · {m.status}
                       </span>
                     </li>
                   ))}
@@ -343,7 +343,7 @@ export default function ZipImportPage({ ctx }: { ctx: PluginWebContext }) {
             {report.unmatched.length > 0 && (
               <div>
                 <div className="field-label">
-                  {ctx.t('plugin.zip-import.notAssigned', 'nicht zugeordnet (kein passender Name)')}
+                  {ctx.t('plugin.zip-import-lp-nachweis.notAssigned', 'nicht zugeordnet (kein passender Name)')}
                 </div>
                 <ul
                   className="hz-list"
@@ -353,7 +353,7 @@ export default function ZipImportPage({ ctx }: { ctx: PluginWebContext }) {
                     <li key={u.folder} className="hz-item" style={{ alignItems: 'center' }}>
                       <span style={{ flex: 1 }}>↩ {u.folder}</span>
                       <span className="kh-muted" style={{ fontSize: 12 }}>
-                        {u.fileCount} {ctx.t('plugin.zip-import.files', 'Dateien')}
+                        {u.fileCount} {ctx.t('plugin.zip-import-lp-nachweis.files', 'Dateien')}
                       </span>
                     </li>
                   ))}

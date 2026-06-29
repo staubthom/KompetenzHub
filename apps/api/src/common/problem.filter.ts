@@ -33,9 +33,11 @@ export class ProblemExceptionFilter implements ExceptionFilter {
         title = body;
       } else if (body && typeof body === 'object') {
         const obj = body as Record<string, unknown>;
-        title = (obj.error as string) ?? exception.message;
         const msg = obj.message;
         detail = Array.isArray(msg) ? msg.join(', ') : (msg as string | undefined);
+        // Die spezifische Meldung (message) ist für Nutzer:innen aussagekräftiger als
+        // der generische HTTP-Grund (z. B. „Conflict"). Darum bevorzugt als title.
+        title = detail ?? (obj.error as string) ?? exception.message;
       }
     } else if (exception instanceof Error) {
       this.logger.error(exception.message, exception.stack);

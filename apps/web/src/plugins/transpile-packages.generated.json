@@ -1,5 +1,5 @@
 [
   "@kompetenzhub/plugin-example",
   "@kompetenzhub/plugin-memo",
-  "@kompetenzhub/plugin-zip-import"
+  "@kompetenzhub/plugin-zip-import-lp-nachweis"
 ]

@@ -1,5 +1,5 @@
 {
-  "name": "@kompetenzhub/plugin-zip-import",
+  "name": "@kompetenzhub/plugin-zip-import-lp-nachweis",
   "version": "0.1.0",
   "private": true,
   "description": "ZIP-Import: ordner-basierte Zuordnung von Dateien zu „von Lehrperson angefügt\"-Nachweisen je Lernende:r.",
