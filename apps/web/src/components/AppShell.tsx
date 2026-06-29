@@ -235,6 +235,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <span aria-hidden="true">☰</span>
         </button>
         <Link className="brand" href={homeHref}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- logoUrl ist eine konfigurierbare Branding-URL (auch data:/extern); next/image bringt hier keinen Vorteil */}
           {logoUrl && <img className="brand-logo" src={logoUrl} alt="" />}
           <span className="name">
             Kompetenz<span>Hub</span>

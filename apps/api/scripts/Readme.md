@@ -6,6 +6,7 @@ Smoke-Tests prüfen die laufende API auf grundlegende Korrektheit – sie senden
 
 Die API muss lokal laufen (Standard: `http://localhost:3001`).  
 Die Basis-URL kann über die Umgebungsvariable `API_BASE` überschrieben werden.
+Für die KI Test muss die .env Variabel  `AI_STUB_MODE=1` sein. 
 
 ## Alle Tests auf einmal starten
 
@@ -39,7 +40,7 @@ node apps/api/scripts/smoke-auth.mjs
 | `smoke-matrix.mjs` | Kompetenzmatrix |
 | `smoke-matrix-io.mjs` | Import/Export der Kompetenzmatrix |
 | `smoke-plugins.mjs` | Plugin-System |
-| `smoke-security.mjs` | Sicherheits-Header (helmet), Eingabevalidierung, Rate Limiting |
+| `smoke-security.mjs` | Sicherheits-Header (helmet), Eingabevalidierung, Rate Limiting, Auth-Guard, Injection/XSS-Basics, CORS |
 
 ## Hinweise
 

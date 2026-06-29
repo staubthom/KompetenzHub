@@ -370,6 +370,7 @@ export default function EvidenceSubmitPanel({
                       rel="noopener"
                       title={t('sub.previewOpen')}
                     >
+                      {/* eslint-disable-next-line @next/next/no-img-element -- previewUrl ist eine lokale Blob-URL (URL.createObjectURL); next/image kann diese nicht optimieren */}
                       <img
                         src={f.previewUrl}
                         alt={f.name}

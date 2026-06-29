@@ -26,7 +26,8 @@
 17. [Glossar](#17-glossar)
 18. [Lizenz](#18-lizenz)
 19. [Plugins aktivierenz](#19-plugins-aktivieren)
-20. [Plugins selbst entwickeln](#20-plugins-selbst-entwickeln)
+20. [Testing](#20-testing)
+21. [Plugins selbst entwickeln](#21-plugins-selbst-entwickeln)
 
 ---
 
@@ -751,10 +752,94 @@ KompetenzHub ist so entwickelt, dass die Community selber Plugins erstellen kann
 >
 > ![Screenshot: Backup-Schaltfläche auf der Betriebs-Seite](docs/Images/27-06-2026_14-35-07.png)
 
-## 20 Plugins selbst entwickeln
+## 20. Testing
 
-Es ist an Lehrpersonen freigestellt, selbst Plugins für die Software zu erstellen. Genaue Anleitung findest du [hier](docs/pluginanleitung.md).
+KompetenzHub verfügt über zwei Teststufen, die sich ergänzen: **Smoke-Tests** prüfen die API direkt auf HTTP-Ebene, **Playwright-Tests** testen die Benutzeroberfläche im echten Browser.
+
+Für beide Teststufen müssen API (`localhost:3001`) und – bei Playwright – auch die Web-App (`localhost:3000`) laufen.
+
+### 20.1 Smoke-Tests (API)
+
+Smoke-Tests senden echte HTTP-Anfragen an die laufende API und geben pro Prüfpunkt `OK` oder `FAIL` aus. Sie decken alle wichtigen Backend-Flows ab: Authentifizierung, RBAC, Einladungen, Bewertungen, KI-Konfiguration, Sicherheits-Header u.v.m.
+
+```bash
+# Alle Smoke-Tests auf einmal
+node --test apps/api/scripts/*.mjs
+
+# Einzelner Test
+node apps/api/scripts/smoke-auth.mjs
+```
+
+> Für die KI-Tests (`smoke-ai-grading.mjs`, `smoke-expert-talk.mjs`) muss die API mit `AI_STUB_MODE=1` gestartet sein.
+
+Vollständige Dokumentation: [apps/api/scripts/Readme.md](apps/api/scripts/Readme.md)
 
 ---
+
+### 20.2 Playwright E2E-Tests (UI)
+
+Playwright-Tests steuern einen echten Chromium-Browser und testen die vollständigen Benutzer-Journeys durch die Oberfläche – vom Login über die Nachweis-Einreichung bis zur Bewertung durch die Lehrperson.
+
+```bash
+# Einmalig: Browser installieren
+cd apps/web && npx playwright install chromium
+
+# Alle E2E-Tests ausführen
+npm run test:e2e --workspace apps/web
+
+# Mit interaktivem UI (Zeitreise, Schritt-für-Schritt)
+npm run test:e2e:ui --workspace apps/web
+```
+
+Abgedeckte Flows:
+
+| Datei | Was wird getestet |
+|---|---|
+| `auth.spec.ts` | Dev-Login UI, rollenbasierte Weiterleitung, Logout |
+| `admin-dashboard.spec.ts` | Einladungen erstellen/zurückziehen, Sperren/Entsperren, Rollenänderung |
+| `evidence-submission.spec.ts` | Nachweis einreichen (Student) und bewerten (Lehrperson) |
+| `matrix-editor.spec.ts` | Modul, Handlungsziel, Band und Deskriptor erstellen und löschen |
+
+Vollständige Dokumentation: [apps/web/e2e/Readme.md](apps/web/e2e/Readme.md)
+
+---
+
+## 21 Plugins selbst entwickeln
+
+KompetenzHub ist durch ein **Plugin-System** erweiterbar. Lehrpersonen, Schulentwickler und Drittanbieter können neue Funktionen als isolierte Pakete beisteuern, ohne den Kern der Anwendung anzutasten. Die vollständige Entwickleranleitung befindet sich in [docs/pluginanleitung.md](docs/pluginanleitung.md). Dieses Kapitel gibt einen kompakten Überblick.
+
+### 21.1 Grundprinzip
+
+Ein Plugin darf **keine** Datei in `apps/api` oder `apps/web` verändern. Jede Interaktion mit dem Kern läuft ausschliesslich über drei Verträge:
+
+1. **`manifest.json`** – deklariert Routen, UI-Beiträge, Rechte und Ressourcen.
+2. **`server/index.ts`** – Backend-Logik über eine gescopte Kontext-API.
+3. **`web/*.tsx`** – UI-Komponenten, die an festen Erweiterungspunkten (Slots) injiziert werden.
+
+Als Lernbeispiel ist das Plugin **`memo`** (Dossier- & Memo-Assistent) unter `plugins/packages/memo/` mitgeliefert. Es zeigt alle Konzepte in der Praxis.
+
+### 21.2 Dateistruktur
+
+Jedes Plugin liegt unter `plugins/packages/<pluginId>/` und folgt dieser Struktur:
+
+```
+plugins/packages/<pluginId>/
+├── manifest.json          # Pflicht – Vertrags- und Sicherheitsbasis
+├── package.json           # Name: @kompetenzhub/plugin-<id>
+├── server/
+│   └── index.ts           # Backend via definePlugin({ routes })
+├── web/
+│   └── <Komponente>.tsx   # UI-Komponenten (Name exakt wie im Manifest)
+└── i18n/
+    ├── de.json            # Flache Schlüssel: plugin.<id>.*
+    ├── fr.json
+    ├── it.json
+    └── en.json
+```
+
+Eine leere Vorlage steht unter `plugins/packages/_example` bereit.
+
+---
+
 
 _KompetenzHub · Benutzerhandbuch · weitere technische Dokumentation siehe Ordner `docs/`._

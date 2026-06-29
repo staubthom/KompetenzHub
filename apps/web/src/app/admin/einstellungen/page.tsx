@@ -196,6 +196,7 @@ export default function AdminSettingsPage() {
               </p>
               <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
                 {settings.logoUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element -- logoUrl ist eine hochgeladene/konfigurierbare Branding-URL; next/image bringt hier keinen Vorteil
                   <img
                     src={settings.logoUrl}
                     alt="Logo"

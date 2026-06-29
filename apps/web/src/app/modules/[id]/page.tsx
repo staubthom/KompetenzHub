@@ -74,7 +74,7 @@ export default function ModuleDetailPage({ params }: { params: Promise<{ id: str
   const load = useCallback(async () => {
     try {
       setMod(await modules.get(id));
-    } catch (e: unknown) {
+    } catch {
       setLoadFailed(true);
       toast.error(t('me.loadFailed'));
     }
