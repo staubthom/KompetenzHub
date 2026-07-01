@@ -29,6 +29,10 @@ const googleClientId = process.env.AUTH_GOOGLE_CLIENT_ID?.trim();
 const googleClientSecret = process.env.AUTH_GOOGLE_CLIENT_SECRET?.trim();
 const githubClientId = process.env.AUTH_GITHUB_CLIENT_ID?.trim();
 const githubClientSecret = process.env.AUTH_GITHUB_CLIENT_SECRET?.trim();
+// Eigener Identity-Provider (Logto) – Self-Service-Registrierung ohne externes Konto.
+const kompetenzhubIssuer = process.env.KOMPETENZHUB_OIDC_ISSUER?.trim();
+const kompetenzhubClientId = process.env.KOMPETENZHUB_OIDC_CLIENT_ID?.trim();
+const kompetenzhubClientSecret = process.env.KOMPETENZHUB_OIDC_CLIENT_SECRET?.trim();
 
 function hasConfiguredValue(value: string | undefined): boolean {
   const normalized = value?.trim();
@@ -68,6 +72,39 @@ export const authOptions: NextAuthOptions = {
           }),
         ]
       : []),
+    // Eigener IdP (Logto) als generischer OIDC-Provider. Issuer = Logto-Endpoint
+    // (z. B. http://localhost:3011/oidc). Registrierung läuft direkt in Logto.
+    ...(hasConfiguredValue(kompetenzhubIssuer) &&
+    hasConfiguredValue(kompetenzhubClientId) &&
+    hasConfiguredValue(kompetenzhubClientSecret)
+      ? [
+          {
+            id: 'kompetenzhub',
+            name: 'KompetenzHub-Konto',
+            type: 'oauth' as const,
+            wellKnown: `${kompetenzhubIssuer}/.well-known/openid-configuration`,
+            clientId: kompetenzhubClientId!,
+            clientSecret: kompetenzhubClientSecret!,
+            authorization: { params: { scope: 'openid email profile' } },
+            // Profil aus dem UserInfo-Endpoint beziehen (NICHT nur aus dem ID-Token):
+            // Logto liefert email/name/picture standardkonform über UserInfo, das ID-Token
+            // selbst enthält keine email -> sonst schlägt der /auth/exchange fehl
+            // ("email must be an email"). Der userinfo_endpoint kommt aus der Discovery.
+            checks: ['pkce', 'state'] as ('pkce' | 'state')[],
+            // Logto signiert ID-Tokens standardmäßig mit ES384 (ECDSA P-384);
+            // openid-client erwartet sonst RS256 und lehnt das Token ab.
+            client: { id_token_signed_response_alg: 'ES384' },
+            profile(profile: Record<string, unknown>) {
+              return {
+                id: String(profile.sub),
+                name: (profile.name ?? profile.username ?? profile.email) as string | null,
+                email: (profile.email ?? null) as string | null,
+                image: (profile.picture ?? null) as string | null,
+              };
+            },
+          },
+        ]
+      : []),
   ],
 
   callbacks: {
@@ -82,7 +119,9 @@ export const authOptions: NextAuthOptions = {
             ? 'MICROSOFT'
             : account.provider === 'github'
               ? 'GITHUB'
-              : 'GOOGLE';
+              : account.provider === 'kompetenzhub'
+                ? 'KOMPETENZHUB'
+                : 'GOOGLE';
         const email = profile.email ?? user?.email ?? '';
         const displayName = profile.name ?? user?.name ?? email;
         const avatarUrl = ((profile as Record<string, unknown>).picture ??

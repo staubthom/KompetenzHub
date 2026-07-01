@@ -53,6 +53,7 @@ export interface PublicLoginOptions {
     microsoft: boolean;
     google: boolean;
     github: boolean;
+    kompetenzhub: boolean;
   };
 }
 
@@ -264,6 +265,9 @@ export class AuthService {
         github:
           this.isProviderConfigured(AuthProvider.GITHUB) &&
           (await this.isProviderEnabled(tenantId, AuthProvider.GITHUB)),
+        kompetenzhub:
+          this.isProviderConfigured(AuthProvider.KOMPETENZHUB) &&
+          (await this.isProviderEnabled(tenantId, AuthProvider.KOMPETENZHUB)),
       },
     };
   }
@@ -340,6 +344,7 @@ export class AuthService {
       [AuthProvider.MICROSOFT]: 'microsoft',
       [AuthProvider.GOOGLE]: 'google',
       [AuthProvider.GITHUB]: 'github',
+      [AuthProvider.KOMPETENZHUB]: 'kompetenzhub',
     };
     const key = keyByProvider[provider];
     return providers[key] !== false;
@@ -361,6 +366,12 @@ export class AuthService {
         return (
           hasConfiguredValue(process.env.AUTH_GITHUB_CLIENT_ID) &&
           hasConfiguredValue(process.env.AUTH_GITHUB_CLIENT_SECRET)
+        );
+      case AuthProvider.KOMPETENZHUB:
+        return (
+          hasConfiguredValue(process.env.KOMPETENZHUB_OIDC_ISSUER) &&
+          hasConfiguredValue(process.env.KOMPETENZHUB_OIDC_CLIENT_ID) &&
+          hasConfiguredValue(process.env.KOMPETENZHUB_OIDC_CLIENT_SECRET)
         );
       default:
         return false;

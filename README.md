@@ -102,6 +102,7 @@ KompetenzHub kennt drei Rollen. Jede Person hat genau **eine** aktive Rolle pro 
 KompetenzHub wird im Webbrowser geöffnet (Standard-Adresse im Betrieb: die URL Ihrer Schule, lokal `http://localhost:3000`).
 
 - **Produktiv:** Anmeldung über **Microsoft** oder **Google** (Single Sign-On). Welche Anbieter verfügbar sind, legt die Schuladmin fest.
+- **Eigenes KompetenzHub-Konto:** Für Personen **ohne** Microsoft-/Google-Konto kann die Schule einen eigenen Anmelde-Anbieter betreiben (Self-Service-**Registrierung** mit E-Mail/Passwort). Auf der Anmeldeseite erscheinen dann der Knopf **„Mit KompetenzHub-Konto anmelden"** und der Link **„Jetzt registrieren"**. Einrichtung siehe [Kapitel 10.8](#108-eigener-anmelde-anbieter-mit-selbstregistrierung-logto).
 - **Entwicklung/Test:** ein **Dev-Login** mit Rollenwahl (Lehrperson / Lernende / Administration) steht zur Verfügung, sofern aktiviert.
 
 Nach der Anmeldung werden Sie automatisch auf die zu Ihrer Rolle passende Startseite geleitet.
@@ -470,6 +471,8 @@ Danach erreichbar:
 
 > Die API und Web können auch einzeln gestartet werden: `npm run dev:api` bzw. `npm run dev:web`.
 
+> **Optional – eigenes KompetenzHub-Konto mit Registrierung:** Wer Anmeldung/Registrierung ohne Microsoft-/Google-Konto anbieten möchte, richtet zusätzlich den mitgelieferten Identity-Provider (Logto) ein – siehe [Kapitel 10.8](#108-eigener-anmelde-anbieter-mit-selbstregistrierung-logto).
+
 ### 10.4 Produktions-Build
 
 ```bash
@@ -540,6 +543,48 @@ Ab dann können weitere Admins/Lehrpersonen bequem über das Dashboard (Einladun
 
 > Für lokale Tests genügt der **Dev-Login** mit Rollenwahl „Administration".
 
+### 10.8 Eigener Anmelde-Anbieter mit Selbstregistrierung (Logto)
+
+**Optional.** Microsoft- und Google-Login decken nicht alle ab: Manche Lernende/Lehrpersonen haben **kein** solches Konto oder wollen es nicht nutzen. Für diesen Fall kann KompetenzHub einen **eigenen Identity-Provider** betreiben, bei dem sich Nutzer:innen direkt mit **E-Mail und Passwort registrieren**. Dafür wird der schlanke, quelloffene IdP **[Logto](https://logto.io)** als **eigener Docker-Container** mitgeliefert (Service `logto` in `docker-compose_dev.yaml`). Es muss **nichts** selbst an OAuth/OIDC programmiert werden.
+
+> KompetenzHub bleibt dabei die „interne Währung": Logto übernimmt nur Anmeldung/Registrierung, das eigentliche API-Token und die Rollen (RBAC, Zugangs-Gate) vergibt weiterhin KompetenzHub. Logto ist damit nur eine weitere Login-Quelle neben Microsoft/Google.
+
+> **Wichtig – E-Mail ist Pflicht:** KompetenzHub identifiziert Personen über ihre **E-Mail-Adresse**. Logtos Standard-Registrierung verlangt aber nur einen **Benutzernamen** – ein so angelegtes Konto hätte keine E-Mail, und die Anmeldung an KompetenzHub würde mit _„Konto wurde beim Server nicht akzeptiert"_ abgewiesen. Damit das nicht passiert, stellt der mitgelieferte Init-Service **`logto-init`** die Registrierung **automatisch auf E-Mail + Passwort** um (ohne E-Mail-Verifikation, da Logto sonst einen SMTP-Server bräuchte). Es ist also **kein manueller Schritt** in Logto nötig.
+
+**Einrichtung Schritt für Schritt:**
+
+1. **Container starten** (nutzt denselben PostgreSQL, aber eine eigene Datenbank `logto`). Der Service `logto-init` wartet, bis Logto bereit ist, und stellt die Registrierung auf **E-Mail + Passwort** um:
+
+   ```bash
+   docker compose -f docker-compose_dev.yaml up -d logto logto-init
+   ```
+
+   > Läuft PostgreSQL bereits mit Daten aus einem früheren Start, fehlt evtl. die `logto`-Datenbank. Dann einmalig anlegen:
+   > `docker compose -f docker-compose_dev.yaml exec postgres createdb -U kompetenzhub logto`
+   > (Bei einem frischen Daten-Volume geschieht das automatisch über `infra/postgres-init/`.)
+
+2. **Admin-Konsole öffnen:** `http://localhost:3012` → beim ersten Aufruf ein **Logto-Admin-Konto** anlegen.
+
+3. **Anwendung registrieren:** _Applications → Create application → „Traditional Web"_, Name z. B. „KompetenzHub Web". Folgende Werte eintragen:
+   - **Redirect URI:** `http://localhost:3000/api/auth/callback/kompetenzhub`
+   - **Post sign-out redirect URI:** `http://localhost:3000/login`
+
+4. **In die `.env` übertragen** (App-Id/-Secret stehen in der Logto-App-Detailansicht):
+
+   ```bash
+   KOMPETENZHUB_OIDC_ISSUER=http://localhost:3011/oidc
+   KOMPETENZHUB_OIDC_CLIENT_ID=<App ID aus Logto>
+   KOMPETENZHUB_OIDC_CLIENT_SECRET=<App Secret aus Logto>
+   ```
+
+5. **API und Web neu starten.** Sobald die drei Werte gesetzt sind, erscheinen auf der Anmeldeseite automatisch der Knopf **„Mit KompetenzHub-Konto anmelden"** und der **„Jetzt registrieren"**-Link. Neu registrierte Personen werden – wie alle Neuanmeldungen – standardmässig **Lernende** (Zugangs-Gate, siehe [Kapitel 3](#3-rollen--berechtigungen)).
+
+> **Registrierung lieber manuell konfigurieren?** Der Init-Service ändert die Einstellung nur, solange noch der unveränderte Logto-Standard aktiv ist – passt die Schuladmin sie später unter _Sign-in experience_ selbst an, bleibt das bei Neustarts erhalten. Wichtig ist nur, dass **E-Mail als Identifier** aktiv ist (sonst entstehen Konten ohne E-Mail). Soll Logto Registrierungs-E-Mails verifizieren, dann zusätzlich einen **SMTP-Connector** in Logto einrichten.
+
+**Container-Modus (`--profile app`):** Wenn auch Web/API in Containern laufen, muss der Issuer eine URL sein, die sowohl der Browser als auch der `web`-Container gleich erreichen – z. B. `http://host.docker.internal:3011/oidc` – und mit Logtos `ENDPOINT` (`KOMPETENZHUB_OIDC_ENDPOINT`) übereinstimmen. Für den üblichen `npm run dev`-Betrieb auf dem Host genügt `http://localhost:3011/oidc`. Die **API** braucht den Issuer nur zur Anzeige („Anbieter konfiguriert"); sie ruft Logto nicht auf.
+
+> Admin-Konsole: `http://localhost:3012` · OIDC-Endpoint (Login/Registrierung): `http://localhost:3011`
+
 ---
 
 ## 11. Konfiguration: Umgebungsvariablen
@@ -587,6 +632,18 @@ Alle Einstellungen liegen in der zentralen Datei **`.env`** (Vorlage: `.env.exam
 ### OIDC (Microsoft/Google) – optional
 
 `AUTH_MICROSOFT_CLIENT_ID/SECRET`, `AUTH_GOOGLE_CLIENT_ID/SECRET`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL` – für die produktive Single-Sign-On-Anbindung.
+
+### Eigener Anmelde-Anbieter / Selbstregistrierung (Logto) – optional
+
+Aktiviert den Knopf „Mit KompetenzHub-Konto anmelden" samt Registrierung (siehe [Kapitel 10.8](#108-eigener-anmelde-anbieter-mit-selbstregistrierung-logto)). Der Provider erscheint nur, wenn alle drei Pflichtwerte gesetzt sind.
+
+| Variable                          | Bedeutung                                                  | Beispiel/Default          |
+| --------------------------------- | ---------------------------------------------------------- | ------------------------- |
+| `KOMPETENZHUB_OIDC_ISSUER`        | OIDC-Issuer des Logto-Containers (`ENDPOINT` + `/oidc`)    | `http://localhost:3011/oidc` |
+| `KOMPETENZHUB_OIDC_CLIENT_ID`     | App-Id der in Logto angelegten „Traditional Web"-App       | –                         |
+| `KOMPETENZHUB_OIDC_CLIENT_SECRET` | App-Secret derselben App                                   | –                         |
+| `KOMPETENZHUB_OIDC_ENDPOINT`      | Browser-erreichbare URL des Logto-OIDC-Endpoints           | `http://localhost:3011`   |
+| `KOMPETENZHUB_ADMIN_ENDPOINT`     | Browser-erreichbare URL der Logto-Admin-Konsole            | `http://localhost:3012`   |
 
 ---
 

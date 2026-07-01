@@ -35,6 +35,9 @@ enum AuthProvider {
   MICROSOFT
   GOOGLE
   GITHUB
+  // Eigener Identity-Provider (Logto): Self-Service-Registrierung mit E-Mail/Passwort
+  // für Nutzer ohne Microsoft-/Google-/GitHub-Konto.
+  KOMPETENZHUB
 }
 
 enum InvitationStatus {

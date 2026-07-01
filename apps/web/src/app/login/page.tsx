@@ -73,16 +73,41 @@ function LoginPageInner() {
     }
   }
 
-  function handleOAuth(provider: 'microsoft' | 'google' | 'github') {
+  function handleOAuth(provider: 'microsoft' | 'google' | 'github' | 'kompetenzhub') {
     const providerId =
-      provider === 'microsoft' ? 'azure-ad' : provider === 'github' ? 'github' : 'google';
+      provider === 'microsoft'
+        ? 'azure-ad'
+        : provider === 'github'
+          ? 'github'
+          : provider === 'kompetenzhub'
+            ? 'kompetenzhub'
+            : 'google';
     const label =
-      provider === 'microsoft' ? 'Microsoft' : provider === 'github' ? 'GitHub' : 'Google';
+      provider === 'microsoft'
+        ? 'Microsoft'
+        : provider === 'github'
+          ? 'GitHub'
+          : provider === 'kompetenzhub'
+            ? 'KompetenzHub-Konto'
+            : 'Google';
     if (loginOptions && !loginOptions.authProviders[provider]) {
       toast.info(`${label}-Login ist auf diesem Server nicht konfiguriert.`);
       return;
     }
     void signIn(providerId, { callbackUrl: '/login/callback' });
+  }
+
+  /**
+   * Self-Service-Registrierung über den eigenen IdP (Logto). `first_screen=register`
+   * öffnet direkt die Registrierungs- statt der Anmeldemaske (Logto-Parameter; ältere
+   * Logto-Versionen erwarten `interaction_mode=signUp`).
+   */
+  function handleRegister() {
+    if (loginOptions && !loginOptions.authProviders.kompetenzhub) {
+      toast.info('Registrierung ist auf diesem Server nicht konfiguriert.');
+      return;
+    }
+    void signIn('kompetenzhub', { callbackUrl: '/login/callback' }, { first_screen: 'register' });
   }
 
   return (
@@ -138,6 +163,35 @@ function LoginPageInner() {
             </svg>
             Mit GitHub anmelden
           </button>
+        )}
+        {loginOptions?.authProviders.kompetenzhub && (
+          <>
+            <button
+              className="provider-btn"
+              onClick={() => handleOAuth('kompetenzhub')}
+              type="button"
+            >
+              <svg className="logo" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M12 1 3 5v6c0 5 3.8 9.7 9 11 5.2-1.3 9-6 9-11V5l-9-4Zm0 6a3 3 0 1 1 0 6 3 3 0 0 1 0-6Zm0 13.5c-2.5-.8-4.7-2.8-5.6-5.3.4-1.5 3-2.2 5.6-2.2s5.2.7 5.6 2.2c-.9 2.5-3.1 4.5-5.6 5.3Z"
+                />
+              </svg>
+              Mit KompetenzHub-Konto anmelden
+            </button>
+            <p className="login-hint" style={{ textAlign: 'center', marginTop: 4 }}>
+              Noch kein Konto?{' '}
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleRegister();
+                }}
+              >
+                Jetzt registrieren
+              </a>
+            </p>
+          </>
         )}
 
         {loginOptions?.devLoginEnabled && <div className="login-divider">oder zum Entwickeln</div>}

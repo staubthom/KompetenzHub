@@ -11,6 +11,11 @@ services:
       - '${POSTGRES_PORT:-5432}:5432'
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      # Legt beim ERSTEN Hochfahren (leeres Volume) zusaetzlich die Logto-DB an.
+      # Bei bereits bestehendem Volume einmalig manuell:
+      #   docker compose -f docker-compose_dev.yaml exec postgres \
+      #     createdb -U kompetenzhub logto
+      - ./infra/postgres-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-kompetenzhub}']
       interval: 10s
@@ -49,6 +54,75 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # ── Eigener Identity-Provider (Logto): Self-Service-Registrierung mit E-Mail/Passwort ──
+  # Nutzt denselben Postgres-Server, aber eine eigene Datenbank `logto`.
+  # OIDC-Endpoint (Login/Registrierung): http://localhost:3011
+  # Admin-Konsole (App anlegen, Client-ID/Secret holen): http://localhost:3012
+  logto:
+    image: svhd/logto:latest
+    container_name: kompetenzhub-logto
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+    # Schema beim Start sicherstellen (idempotent), danach Server starten.
+    entrypoint: ['sh', '-c', 'npm run cli db seed -- --swe && npm start']
+    environment:
+      # Logto MUSS intern auf denselben Ports lauschen, die der Browser sieht: Die CORS-Allowlist
+      # der Admin-Konsole basiert auf dem internen Listen-Port. Veroeffentlicht man einen anderen
+      # Port (z. B. 3012->3002), passt die Browser-Origin nicht zur erlaubten Origin und der Core
+      # liefert kein Access-Control-Allow-Origin -> "Create application" haengt ohne Fehler.
+      # Standardport 3001 (Core) kollidiert mit der KompetenzHub-API, daher 3011/3012.
+      PORT: 3011
+      ADMIN_PORT: 3012
+      DB_URL: postgresql://${POSTGRES_USER:-kompetenzhub}:${POSTGRES_PASSWORD:-kompetenzhub}@postgres:5432/logto
+      ENDPOINT: ${KOMPETENZHUB_OIDC_ENDPOINT:-http://localhost:3011}
+      ADMIN_ENDPOINT: ${KOMPETENZHUB_ADMIN_ENDPOINT:-http://localhost:3012}
+      CONNECTORS: '[{"id":"smtp-mail","target":"@logto/connector-smtp","config":{"host":"${SMTP_HOST}","port":${SMTP_PORT},"secure":${SMTP_SECURE},"auth":{"user":"${SMTP_USER}","pass":"${SMTP_PASS}"},"from":"${SMTP_USER}"}}]'
+    ports:
+      - '3011:3011' # OIDC-Endpoint  (Core)
+      - '3012:3012' # Admin-Konsole
+    healthcheck:
+      # Erst "healthy", wenn die OIDC-Discovery antwortet -> dann ist die DB geseedet.
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:3011/oidc/.well-known/openid-configuration',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  # ── Logto-Vorkonfiguration: Selbst-Registrierung auf E-Mail+Passwort umstellen ──
+  # Einmaliger Init nach dem Logto-Seed. KompetenzHub identifiziert Nutzer:innen ueber die
+  # E-Mail – Logtos Standard ("username") wuerde sonst zu Konten ohne E-Mail fuehren und der
+  # /auth/exchange schluege fehl. Das SQL greift nur den unveraenderten Standard (idempotent,
+  # ueberschreibt spaetere Konsolen-Anpassungen der Schuladmin nicht).
+  logto-init:
+    image: postgres:16-alpine
+    container_name: kompetenzhub-logto-init
+    restart: 'no'
+    depends_on:
+      logto: { condition: service_healthy }
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD:-kompetenzhub}      
+    volumes:
+      - ./infra/logto:/sql:ro
+    command:
+      - psql
+      - -h
+      - postgres
+      - -U
+      - ${POSTGRES_USER:-kompetenzhub}
+      - -d
+      - logto
+      - -v
+      - ON_ERROR_STOP=1
+      - -f
+      - /sql/10-email-identifier.sql
 
   # ── Anwendung (nur mit Profil "app", z. B. `docker compose -f docker-compose_dev.yaml --profile  app up -d --build`) ──
   api:
@@ -94,6 +168,13 @@ services:
       AUTH_GITHUB_CLIENT_SECRET: ${AUTH_GITHUB_CLIENT_SECRET:-}
       AUTH_GOOGLE_CLIENT_ID: ${AUTH_GOOGLE_CLIENT_ID:-}
       AUTH_GOOGLE_CLIENT_SECRET: ${AUTH_GOOGLE_CLIENT_SECRET:-}
+      # Eigener IdP (Logto). Die API ruft Logto NICHT auf – sie nutzt diese Werte nur,
+      # um den Provider auf der Login-Seite als "konfiguriert" anzuzeigen, und vertraut
+      # beim /auth/exchange dem vom web-Container verifizierten Profil (AUTH_EXCHANGE_SECRET).
+      # Daher genügt hier der öffentliche Issuer; host.docker.internal ist NICHT nötig.
+      KOMPETENZHUB_OIDC_ISSUER: ${KOMPETENZHUB_OIDC_ISSUER:-}
+      KOMPETENZHUB_OIDC_CLIENT_ID: ${KOMPETENZHUB_OIDC_CLIENT_ID:-}
+      KOMPETENZHUB_OIDC_CLIENT_SECRET: ${KOMPETENZHUB_OIDC_CLIENT_SECRET:-}
     ports:
       - '${API_PORT:-3001}:3001'
     healthcheck:
@@ -133,6 +214,12 @@ services:
       AUTH_GITHUB_CLIENT_SECRET: ${AUTH_GITHUB_CLIENT_SECRET:-}
       AUTH_GOOGLE_CLIENT_ID: ${AUTH_GOOGLE_CLIENT_ID:-}
       AUTH_GOOGLE_CLIENT_SECRET: ${AUTH_GOOGLE_CLIENT_SECRET:-}
+      # Eigener IdP (Logto). Im reinen Container-Betrieb (--profile app) muss der Issuer
+      # eine sowohl vom Browser als auch vom web-Container erreichbare URL sein
+      # (z. B. http://host.docker.internal:3011/oidc) und mit Logtos ENDPOINT übereinstimmen.
+      KOMPETENZHUB_OIDC_ISSUER: ${KOMPETENZHUB_OIDC_ISSUER:-}
+      KOMPETENZHUB_OIDC_CLIENT_ID: ${KOMPETENZHUB_OIDC_CLIENT_ID:-}
+      KOMPETENZHUB_OIDC_CLIENT_SECRET: ${KOMPETENZHUB_OIDC_CLIENT_SECRET:-}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-mein-dev-nextauth-secret-change-me-in-production124364546v34243vdfs}
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
     ports:

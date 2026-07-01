@@ -33,6 +33,7 @@ export interface LoginOptions {
     microsoft: boolean;
     google: boolean;
     github: boolean;
+    kompetenzhub: boolean;
   };
   devLoginEnabled: boolean;
   showAdminLogin: boolean;
