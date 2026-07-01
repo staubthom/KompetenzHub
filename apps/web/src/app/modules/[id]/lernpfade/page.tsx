@@ -71,10 +71,10 @@ export default function LearningPathsPage({ params }: { params: { id: string } }
         setData(m);
         if (m.matrix?.id) await loadPaths(m.matrix.id);
       } catch {
-        toast.error('Matrix konnte nicht geladen werden.');
+        toast.error(t('toast.matrixLoadFailed'));
       }
     })();
-  }, [moduleId, loadPaths, toast]);
+  }, [moduleId, loadPaths, toast, t]);
 
   function resetForm() {
     setEditId(null);

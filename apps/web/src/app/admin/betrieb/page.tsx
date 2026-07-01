@@ -56,7 +56,7 @@ export default function AdminOpsPage() {
       toast.success(t('admin.backupDone'));
     } catch (err: unknown) {
       const e2 = err as { body?: { title?: string }; message?: string };
-      toast.error(e2.body?.title ?? e2.message ?? 'Aktion fehlgeschlagen.');
+      toast.error(e2.body?.title ?? e2.message ?? t('common.actionFailed'));
     } finally {
       setDownloading(false);
     }

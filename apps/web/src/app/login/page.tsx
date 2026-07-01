@@ -58,7 +58,11 @@ function LoginPageInner() {
       .catch(() => {
         /* ignorieren */
       });
-    toast.success(tenantSlug ? `Schule „${tenantSlug}" gewählt.` : 'Standard-Schule gewählt.');
+    toast.success(
+      tenantSlug
+        ? t('toast.schoolSelected', { slug: tenantSlug })
+        : t('toast.defaultSchoolSelected'),
+    );
   }
 
   // Bereits eingeloggt? → direkt weiterleiten
@@ -73,20 +77,27 @@ function LoginPageInner() {
     document.documentElement.setAttribute('data-theme', saved);
   }, []);
 
+  // Abgelaufene Sitzung (Weiterleitung aus apiFetch bei 401): dezenter Hinweis.
+  useEffect(() => {
+    if (searchParams.get('reason') === 'expired') {
+      toast.info(t('toast.sessionExpired'));
+    }
+  }, [searchParams, toast, t]);
+
   // OAuth-Fehler aus URL-Parameter anzeigen (Redirect von /login/callback oder NextAuth)
   useEffect(() => {
     const error = searchParams.get('error');
     if (!error) return;
     const messages: Record<string, string> = {
-      oauth: 'Anmeldung fehlgeschlagen. Bitte erneut versuchen.',
-      exchange: 'Konto wurde beim Server nicht akzeptiert. Bitte an die Schuladmin wenden.',
-      OAuthCallback: 'Fehler beim OAuth-Callback. Bitte erneut versuchen.',
-      OAuthCreateAccount: 'Konto konnte nicht erstellt werden.',
-      AccessDenied: 'Zugriff verweigert.',
+      oauth: t('toast.loginFailedRetry'),
+      exchange: t('toast.oauthExchangeFailed'),
+      OAuthCallback: t('toast.oauthCallbackError'),
+      OAuthCreateAccount: t('toast.oauthCreateFailed'),
+      AccessDenied: t('toast.accessDenied'),
     };
     // Bei Exchange-Fehlern die konkrete Server-Meldung (RFC 7807) bevorzugen,
     // z. B. „E-Mail bereits über Google registriert". 500er bleiben generisch.
-    let message = messages[error] ?? 'Anmeldung fehlgeschlagen.';
+    let message = messages[error] ?? t('toast.loginFailedShort');
     const detail = searchParams.get('detail');
     if (error === 'exchange' && detail) {
       try {
@@ -97,7 +108,7 @@ function LoginPageInner() {
       }
     }
     toast.error(message);
-  }, [searchParams, toast]);
+  }, [searchParams, toast, t]);
 
   async function handleDevLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -107,7 +118,7 @@ function LoginPageInner() {
       const result = await devLogin(mail, role);
       router.replace(homePathForRole(result.user));
     } catch {
-      toast.error('Login fehlgeschlagen. Läuft die API?');
+      toast.error(t('toast.loginFailedApi'));
     } finally {
       setLoading(false);
     }
@@ -131,7 +142,7 @@ function LoginPageInner() {
             ? 'KompetenzHub-Konto'
             : 'Google';
     if (loginOptions && !loginOptions.authProviders[provider]) {
-      toast.info(`${label}-Login ist auf diesem Server nicht konfiguriert.`);
+      toast.info(t('toast.providerNotConfigured', { label }));
       return;
     }
     void signIn(providerId, { callbackUrl: '/login/callback' });
@@ -144,7 +155,7 @@ function LoginPageInner() {
    */
   function handleRegister() {
     if (loginOptions && !loginOptions.authProviders.kompetenzhub) {
-      toast.info('Registrierung ist auf diesem Server nicht konfiguriert.');
+      toast.info(t('toast.registrationNotConfigured'));
       return;
     }
     void signIn('kompetenzhub', { callbackUrl: '/login/callback' }, { first_screen: 'register' });

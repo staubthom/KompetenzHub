@@ -105,7 +105,7 @@ export default function EvidenceSubmitPanel({
 
   function showError(e: unknown) {
     const err = e as { body?: { title?: string }; message?: string };
-    toast.error(err.body?.title ?? err.message ?? 'Aktion fehlgeschlagen.');
+    toast.error(err.body?.title ?? err.message ?? t('common.actionFailed'));
   }
 
   async function pickFile(file: File) {
@@ -114,7 +114,7 @@ export default function EvidenceSubmitPanel({
       const key = await uploadSubmissionFile(ev.id, file, file.name, 'file');
       const previewUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined;
       setFiles((f) => [...f, { key, name: file.name, kind: 'file', previewUrl }]);
-      toast.success(`„${file.name}" hochgeladen.`);
+      toast.success(t('toast.fileUploaded', { name: file.name }));
     } catch (e: unknown) {
       showError(e);
     } finally {
@@ -129,7 +129,7 @@ export default function EvidenceSubmitPanel({
         getDisplayMedia?: (c: { video: boolean }) => Promise<MediaStream>;
       };
       if (!md?.getDisplayMedia) {
-        toast.error('Screenshot wird von diesem Browser nicht unterstützt.');
+        toast.error(t('toast.screenshotUnsupported'));
         return;
       }
       const stream = await md.getDisplayMedia({ video: true });
@@ -149,7 +149,7 @@ export default function EvidenceSubmitPanel({
       const key = await uploadSubmissionFile(ev.id, blob, name, 'screenshot');
       const previewUrl = URL.createObjectURL(blob);
       setFiles((f) => [...f, { key, name, kind: 'screenshot', previewUrl }]);
-      toast.success('Screenshot aufgenommen – du kannst ihn vor der Abgabe ansehen.');
+      toast.success(t('toast.screenshotTaken'));
     } catch (e: unknown) {
       const err = e as { name?: string };
       if (err?.name === 'NotAllowedError') return; // Nutzer hat abgebrochen
@@ -166,7 +166,7 @@ export default function EvidenceSubmitPanel({
         getDisplayMedia?: (c: MediaStreamConstraints) => Promise<MediaStream>;
       };
       if (!md?.getDisplayMedia || typeof MediaRecorder === 'undefined') {
-        toast.error('Screencast wird von diesem Browser nicht unterstützt.');
+        toast.error(t('toast.screencastUnsupported'));
         return;
       }
       const display = await md.getDisplayMedia({ video: true, audio: true });
@@ -202,7 +202,7 @@ export default function EvidenceSubmitPanel({
       setRecording(true);
       // Beendet die lernende Person die Freigabe über die Browser-Leiste, Aufnahme stoppen.
       display.getVideoTracks()[0]?.addEventListener('ended', () => stopScreencast());
-      toast.info('Aufnahme läuft – klicke auf „Aufnahme stoppen", wenn du fertig bist.');
+      toast.info(t('toast.recordingStarted'));
     } catch (e: unknown) {
       const err = e as { name?: string };
       if (err?.name === 'NotAllowedError') return; // Nutzer hat abgebrochen
@@ -226,7 +226,7 @@ export default function EvidenceSubmitPanel({
     // Screencast-Obergrenze: 50 MB (bzw. grössere Datei-Obergrenze der Lehrperson).
     const maxMb = Math.max(50, cfg.maxFileSizeMb ?? 0);
     if (blob.size > maxMb * 1024 * 1024) {
-      toast.error(`Video zu gross (max. ${maxMb} MB). Bitte kürzer aufnehmen.`);
+      toast.error(t('toast.videoTooLarge', { maxMb }));
       return;
     }
     setCastBusy(true);
@@ -235,7 +235,7 @@ export default function EvidenceSubmitPanel({
       const key = await uploadSubmissionFile(ev.id, blob, name, 'screencast');
       const previewUrl = URL.createObjectURL(blob);
       setFiles((f) => [...f, { key, name, kind: 'screencast', previewUrl }]);
-      toast.success('Screencast aufgenommen – du kannst ihn vor der Abgabe ansehen.');
+      toast.success(t('toast.screencastTaken'));
     } catch (e: unknown) {
       showError(e);
     } finally {

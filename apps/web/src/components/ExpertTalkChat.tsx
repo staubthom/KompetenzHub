@@ -27,7 +27,7 @@ export default function ExpertTalkChat({ topic, context }: { topic: string; cont
         if (!cancelled) setSession(s);
       } catch (e: unknown) {
         const err = e as { body?: { title?: string } };
-        toast.error(err.body?.title ?? 'Fachgespräch konnte nicht gestartet werden.');
+        toast.error(err.body?.title ?? t('toast.talkStartFailed'));
       } finally {
         if (!cancelled) setStarting(false);
       }
@@ -35,7 +35,7 @@ export default function ExpertTalkChat({ topic, context }: { topic: string; cont
     return () => {
       cancelled = true;
     };
-  }, [topic, context, toast]);
+  }, [topic, context, toast, t]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -67,7 +67,7 @@ export default function ExpertTalkChat({ topic, context }: { topic: string; cont
       setSession((cur) => (cur ? { ...cur, messages: [...cur.messages, reply] } : cur));
     } catch (e: unknown) {
       const err = e as { body?: { title?: string } };
-      toast.error(err.body?.title ?? 'Senden fehlgeschlagen.');
+      toast.error(err.body?.title ?? t('toast.sendFailed'));
       setSession((cur) =>
         cur ? { ...cur, messages: cur.messages.filter((m) => !m.id.startsWith('tmp-')) } : cur,
       );

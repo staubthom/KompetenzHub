@@ -46,9 +46,9 @@ export default function KlassenPage() {
       setList(cs);
       setMods(ms);
     } catch {
-      toast.error('Modulanlässe konnten nicht geladen werden.');
+      toast.error(t('toast.classesLoadFailed'));
     }
-  }, [toast, showArchived]);
+  }, [toast, showArchived, t]);
 
   const loadDetail = useCallback(
     async (id: string) => {
@@ -62,10 +62,10 @@ export default function KlassenPage() {
         setMembers(m);
         setCoTeachers(co);
       } catch {
-        toast.error('Details konnten nicht geladen werden.');
+        toast.error(t('toast.detailsLoadFailed'));
       }
     },
-    [toast],
+    [toast, t],
   );
 
   useEffect(() => {
@@ -77,7 +77,7 @@ export default function KlassenPage() {
 
   function showError(e: unknown) {
     const err = e as { body?: { title?: string } };
-    toast.error(err.body?.title ?? 'Aktion fehlgeschlagen.');
+    toast.error(err.body?.title ?? t('common.actionFailed'));
   }
 
   function joinLink(code: string): string {
@@ -88,7 +88,7 @@ export default function KlassenPage() {
   async function copy(text: string, label: string) {
     try {
       await navigator.clipboard.writeText(text);
-      toast.success(`${label} kopiert.`);
+      toast.success(t('toast.copied', { label }));
     } catch {
       toast.info(text);
     }
@@ -187,7 +187,7 @@ export default function KlassenPage() {
       setSelectedId(null);
       setDetail(null);
       await loadList();
-      toast.success('Modulanlass archiviert.');
+      toast.success(t('toast.classArchived'));
     } catch (e: unknown) {
       showError(e);
     }
@@ -199,7 +199,7 @@ export default function KlassenPage() {
       setSelectedId(null);
       setDetail(null);
       await loadList();
-      toast.success('Modulanlass wiederhergestellt.');
+      toast.success(t('toast.classRestored'));
     } catch (e: unknown) {
       showError(e);
     }
@@ -214,7 +214,7 @@ export default function KlassenPage() {
       a.download = filename;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success('Modulanlass exportiert (ZIP).');
+      toast.success(t('toast.classExported'));
     } catch (e: unknown) {
       showError(e);
     }
@@ -226,7 +226,7 @@ export default function KlassenPage() {
       const res = await importClassArchiveZip(file);
       setShowArchived(true);
       await loadList();
-      toast.success(`Archiv importiert als „${res.name}" (archiviert, read-only).`);
+      toast.success(t('toast.archiveImported', { name: res.name }));
     } catch (e: unknown) {
       showError(e);
     } finally {

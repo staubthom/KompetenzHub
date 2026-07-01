@@ -78,7 +78,7 @@ export default function NachweisePage() {
     try {
       setList(await evidence.studentList());
     } catch {
-      toast.error('Nachweise konnten nicht geladen werden.');
+      toast.error(t('toast.evidenceListLoadFailed'));
     }
   }
   useEffect(() => {

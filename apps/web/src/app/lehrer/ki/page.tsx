@@ -39,9 +39,9 @@ export default function KiSettingsPage() {
       setEnabled(c.enabled);
       setShareWithLearners(c.shareWithLearners);
     } catch {
-      toast.error('KI-Konfiguration konnte nicht geladen werden.');
+      toast.error(t('toast.aiConfigLoadFailed'));
     }
-  }, [toast]);
+  }, [toast, t]);
 
   useEffect(() => {
     void load();
@@ -67,11 +67,11 @@ export default function KiSettingsPage() {
 
   async function save() {
     if (!baseUrl.trim()) {
-      toast.error('Endpoint (baseUrl) ist erforderlich.');
+      toast.error(t('toast.baseUrlRequired'));
       return;
     }
     if (!model.trim()) {
-      toast.error('Modell ist erforderlich.');
+      toast.error(t('toast.modelRequired'));
       return;
     }
     setSaving(true);
@@ -81,10 +81,10 @@ export default function KiSettingsPage() {
       setEnabled(c.enabled);
       setShareWithLearners(c.shareWithLearners);
       setApiKey('');
-      toast.success('KI-Konfiguration gespeichert.');
+      toast.success(t('toast.aiConfigSaved'));
     } catch (e: unknown) {
       const err = e as { body?: { title?: string } };
-      toast.error(err.body?.title ?? 'Speichern fehlgeschlagen.');
+      toast.error(err.body?.title ?? t('toast.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -100,7 +100,7 @@ export default function KiSettingsPage() {
       else toast.error(res.message);
     } catch (e: unknown) {
       const err = e as { body?: { title?: string } };
-      toast.error(err.body?.title ?? 'Verbindungstest fehlgeschlagen.');
+      toast.error(err.body?.title ?? t('toast.connectionTestFailed'));
     } finally {
       setTesting(false);
     }
@@ -112,9 +112,9 @@ export default function KiSettingsPage() {
       const c = await ai.saveConfig({ apiKey: '' });
       setCfg(c);
       setApiKey('');
-      toast.success('API-Key entfernt.');
+      toast.success(t('toast.apiKeyRemoved'));
     } catch {
-      toast.error('API-Key konnte nicht entfernt werden.');
+      toast.error(t('toast.apiKeyRemoveFailed'));
     } finally {
       setSaving(false);
     }

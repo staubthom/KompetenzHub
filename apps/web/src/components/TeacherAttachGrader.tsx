@@ -104,7 +104,7 @@ export default function TeacherAttachGrader({
 
   function showError(e: unknown) {
     const err = e as { body?: { title?: string } };
-    toast.error(err.body?.title ?? 'Aktion fehlgeschlagen.');
+    toast.error(err.body?.title ?? t('common.actionFailed'));
   }
 
   async function addFiles(fileList: File[]) {
@@ -118,8 +118,8 @@ export default function TeacherAttachGrader({
       }
       toast.success(
         fileList.length === 1
-          ? `„${fileList[0].name}" hochgeladen.`
-          : `${fileList.length} Dateien hochgeladen.`,
+          ? t('toast.fileUploaded', { name: fileList[0].name })
+          : t('toast.filesUploaded', { count: fileList.length }),
       );
     } catch (e: unknown) {
       showError(e);

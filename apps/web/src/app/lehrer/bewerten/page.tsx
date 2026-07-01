@@ -37,7 +37,7 @@ export default function BewertenPage() {
         }),
       );
     } catch {
-      toast.error('Einreichungen konnten nicht geladen werden.');
+      toast.error(t('toast.submissionsLoadFailed'));
     }
   }
   useEffect(() => {

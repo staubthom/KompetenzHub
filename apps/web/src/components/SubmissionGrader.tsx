@@ -63,7 +63,7 @@ export default function SubmissionGrader({
         /* KI optional */
       }
     } catch {
-      toast.error('Einreichung konnte nicht geladen werden.');
+      toast.error(t('toast.submissionLoadFailed'));
     }
   }
   useEffect(() => {
@@ -72,7 +72,7 @@ export default function SubmissionGrader({
 
   function showError(e: unknown) {
     const err = e as { body?: { title?: string } };
-    toast.error(err.body?.title ?? 'Aktion fehlgeschlagen.');
+    toast.error(err.body?.title ?? t('common.actionFailed'));
   }
 
   async function save() {
@@ -85,7 +85,7 @@ export default function SubmissionGrader({
       });
       await load();
       onSaved?.();
-      toast.success('Bewertung gespeichert.');
+      toast.success(t('toast.gradeSaved'));
     } catch (e: unknown) {
       showError(e);
     } finally {
@@ -98,7 +98,7 @@ export default function SubmissionGrader({
     try {
       const a = await submissions.aiAssessment(id);
       setAssessment(a);
-      toast.success('KI-Bewertungsvorschlag erstellt.');
+      toast.success(t('toast.aiGradeSuggested'));
     } catch (e: unknown) {
       showError(e);
     } finally {
@@ -111,7 +111,7 @@ export default function SubmissionGrader({
     try {
       const r = await submissions.aiFeedback(id);
       setFeedback(r.feedback);
-      toast.success('KI-Feedback-Entwurf eingefügt – bitte prüfen/anpassen.');
+      toast.success(t('toast.aiFeedbackInserted'));
     } catch (e: unknown) {
       showError(e);
     } finally {
@@ -124,12 +124,12 @@ export default function SubmissionGrader({
     if (assessment.suggestedPoints != null) setPoints(String(assessment.suggestedPoints));
     if (assessment.suggestedLevel) setLevel(assessment.suggestedLevel);
     if (assessment.feedback) setFeedback(assessment.feedback);
-    toast.info('KI-Vorschlag übernommen – bitte prüfen und speichern.');
+    toast.info(t('toast.aiSuggestionApplied'));
   }
 
   async function doReject() {
     if (!reason.trim()) {
-      toast.error('Begründung für die Rückweisung ist erforderlich.');
+      toast.error(t('toast.rejectionReasonRequired'));
       return;
     }
     setBusy(true);
@@ -138,7 +138,7 @@ export default function SubmissionGrader({
       setReason('');
       await load();
       onSaved?.();
-      toast.info('Einreichung zurückgewiesen.');
+      toast.info(t('toast.submissionRejected'));
     } catch (e: unknown) {
       showError(e);
     } finally {

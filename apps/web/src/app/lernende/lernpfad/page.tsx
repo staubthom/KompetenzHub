@@ -51,20 +51,20 @@ export default function LernpfadPage() {
         const first = mine.find((e) => e.class.module);
         if (first?.class.module) setModuleId(first.class.module.id);
       } catch {
-        toast.error('Modulanlässe konnten nicht geladen werden.');
+        toast.error(t('toast.classesLoadFailed'));
       }
     })();
-  }, [toast]);
+  }, [toast, t]);
 
   const loadPath = useCallback(
     async (mId: string) => {
       try {
         setData(await learningPaths.activeForModule(mId));
       } catch {
-        toast.error('Lernpfad konnte nicht geladen werden.');
+        toast.error(t('toast.learningPathLoadFailed'));
       }
     },
-    [toast],
+    [toast, t],
   );
 
   useEffect(() => {
@@ -76,7 +76,7 @@ export default function LernpfadPage() {
       setOpenEvidence(await evidenceApi.studentGet(evidenceId));
     } catch (e: unknown) {
       const err = e as { body?: { title?: string } };
-      toast.error(err.body?.title ?? 'Nachweis konnte nicht geladen werden.');
+      toast.error(err.body?.title ?? t('toast.evidenceLoadFailed'));
     }
   }
 

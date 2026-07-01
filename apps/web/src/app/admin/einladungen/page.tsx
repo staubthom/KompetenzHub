@@ -45,7 +45,7 @@ export default function AdminInvitesPage() {
       await load();
     } catch (err: unknown) {
       const e2 = err as { body?: { title?: string } };
-      toast.error(e2.body?.title ?? 'Aktion fehlgeschlagen.');
+      toast.error(e2.body?.title ?? t('common.actionFailed'));
     } finally {
       setBusy(false);
     }
@@ -59,7 +59,7 @@ export default function AdminInvitesPage() {
       await load();
     } catch (err: unknown) {
       const e2 = err as { body?: { title?: string } };
-      toast.error(e2.body?.title ?? 'Aktion fehlgeschlagen.');
+      toast.error(e2.body?.title ?? t('common.actionFailed'));
     }
   }
 

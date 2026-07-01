@@ -29,9 +29,9 @@ export default function ModulUebenPage() {
       const all = await expertTalk.list();
       setSessions(all.filter((s) => s.mode === 'module'));
     } catch {
-      toast.error('Gespräche konnten nicht geladen werden.');
+      toast.error(t('toast.talksLoadFailed'));
     }
-  }, [toast]);
+  }, [toast, t]);
 
   useEffect(() => {
     void (async () => {
@@ -41,11 +41,11 @@ export default function ModulUebenPage() {
         const first = mine.find((e) => e.class.module);
         if (first?.class.module) setModuleId(first.class.module.id);
       } catch {
-        toast.error('Modulanlässe konnten nicht geladen werden.');
+        toast.error(t('toast.classesLoadFailed'));
       }
     })();
     void loadSessions();
-  }, [loadSessions, toast]);
+  }, [loadSessions, toast, t]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -53,12 +53,12 @@ export default function ModulUebenPage() {
 
   function showError(e: unknown) {
     const err = e as { body?: { title?: string } };
-    toast.error(err.body?.title ?? 'Aktion fehlgeschlagen.');
+    toast.error(err.body?.title ?? t('common.actionFailed'));
   }
 
   async function start() {
     if (!moduleId) {
-      toast.error('Bitte zuerst ein Modul wählen.');
+      toast.error(t('toast.selectModuleFirst'));
       return;
     }
     setStarting(true);
@@ -122,7 +122,7 @@ export default function ModulUebenPage() {
       const s = await expertTalk.complete(active.id);
       setActive(s);
       void loadSessions();
-      toast.success('Gespräch abgeschlossen.');
+      toast.success(t('toast.talkCompleted'));
     } catch (e: unknown) {
       showError(e);
     }

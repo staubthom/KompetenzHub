@@ -37,7 +37,7 @@ export default function AdminPluginsPage() {
 
   function showError(err: unknown) {
     const e = err as { body?: { title?: string } };
-    toast.error(e.body?.title ?? 'Aktion fehlgeschlagen.');
+    toast.error(e.body?.title ?? t('common.actionFailed'));
   }
 
   async function run(id: string, action: () => Promise<unknown>, successMsg: string) {

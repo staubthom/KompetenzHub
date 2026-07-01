@@ -1,4 +1,11 @@
-import { getToken, saveSession, saveUser, type Role, type SessionUser } from './session';
+import {
+  clearSession,
+  getToken,
+  saveSession,
+  saveUser,
+  type Role,
+  type SessionUser,
+} from './session';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -71,6 +78,23 @@ function tenantAuthHeaders(token: string | null): Record<string, string> {
   return h;
 }
 
+// Verhindert mehrfaches Auslösen (parallele 401-Antworten) während der Weiterleitung.
+let sessionExpiredHandled = false;
+
+/**
+ * Abgelaufene/ungültige Sitzung: lokal ausloggen und zur Login-Seite navigieren –
+ * statt dem Nutzer eine (verwirrende) Fehlermeldung zu zeigen. Vollständige
+ * Navigation, damit der aktuelle React-Baum inkl. etwaiger Toasts verworfen wird.
+ */
+function handleSessionExpired(): void {
+  if (typeof window === 'undefined' || sessionExpiredHandled) return;
+  sessionExpiredHandled = true;
+  clearSession();
+  if (!window.location.pathname.startsWith('/login')) {
+    window.location.replace('/login?reason=expired');
+  }
+}
+
 async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
   const headers: Record<string, string> = {
@@ -87,6 +111,12 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
     credentials: 'include',
   });
   if (!res.ok) {
+    // Abgelaufenes/ungültiges Token (nur wenn zuvor eingeloggt): ausloggen und
+    // zur Login-Seite weiterleiten, statt einen Fehler-Toast anzuzeigen.
+    if (res.status === 401 && token) {
+      handleSessionExpired();
+      throw Object.assign(new Error('Sitzung abgelaufen.'), { status: 401, sessionExpired: true });
+    }
     const err = await res.json().catch(() => ({ title: res.statusText }));
     throw Object.assign(new Error(err.title ?? 'API-Fehler'), { status: res.status, body: err });
   }

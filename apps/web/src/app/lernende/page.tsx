@@ -61,7 +61,7 @@ export default function LernendeMatrixPage() {
       setOpenEvidence(await evidenceApi.studentGet(evidenceId));
     } catch (e: unknown) {
       const err = e as { body?: { title?: string } };
-      toast.error(err.body?.title ?? 'Nachweis konnte nicht geladen werden.');
+      toast.error(err.body?.title ?? t('toast.evidenceLoadFailed'));
     }
   }
 
@@ -90,9 +90,9 @@ export default function LernendeMatrixPage() {
         setSelectedModuleId(firstWithModule.class.module.id);
       }
     } catch {
-      toast.error('Modulanlässe konnten nicht geladen werden.');
+      toast.error(t('toast.classesLoadFailed'));
     }
-  }, [selectedModuleId, toast]);
+  }, [selectedModuleId, toast, t]);
 
   useEffect(() => {
     void loadEnrollments();
@@ -106,20 +106,20 @@ export default function LernendeMatrixPage() {
       try {
         const res = await classes.join(c);
         setCode('');
-        toast.success(`Modulanlass „${res.class.name}" beigetreten.`);
+        toast.success(t('toast.classJoined', { name: res.class.name }));
         await loadEnrollments();
       } catch (e: unknown) {
         const err = e as { status?: number; body?: { title?: string } };
         toast.error(
           err.status === 410
-            ? 'Dieser Beitrittscode ist abgelaufen.'
-            : (err.body?.title ?? 'Beitritt fehlgeschlagen. Code prüfen.'),
+            ? t('toast.joinCodeExpired')
+            : (err.body?.title ?? t('toast.joinFailed')),
         );
       } finally {
         setJoining(false);
       }
     },
-    [loadEnrollments, toast],
+    [loadEnrollments, toast, t],
   );
 
   // Auto-Join über Beitrittslink (?code=…)
@@ -139,7 +139,7 @@ export default function LernendeMatrixPage() {
     try {
       setMatrix(await matrixApi.get(selectedModuleId));
     } catch {
-      toast.error('Matrix konnte nicht geladen werden.');
+      toast.error(t('toast.matrixLoadFailed'));
     }
   }
 
@@ -152,10 +152,10 @@ export default function LernendeMatrixPage() {
       try {
         setMatrix(await matrixApi.get(selectedModuleId));
       } catch {
-        toast.error('Matrix konnte nicht geladen werden.');
+        toast.error(t('toast.matrixLoadFailed'));
       }
     })();
-  }, [selectedModuleId, toast]);
+  }, [selectedModuleId, toast, t]);
 
   function handleJoin(e: React.FormEvent) {
     e.preventDefault();

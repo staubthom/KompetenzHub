@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import AppShell from '../../components/AppShell';
 import { useToast } from '../../components/ToastProvider';
 import { getUser } from '../../lib/session';
+import { useI18n } from '../../lib/i18n';
 import { platform, type PlatformTenant, type TenantAdmins } from '../../lib/api';
 
 /**
@@ -15,6 +16,7 @@ import { platform, type PlatformTenant, type TenantAdmins } from '../../lib/api'
 export default function PlatformPage() {
   const router = useRouter();
   const toast = useToast();
+  const { t } = useI18n();
   const [list, setList] = useState<PlatformTenant[] | null>(null);
   const [denied, setDenied] = useState(false);
   const [slug, setSlug] = useState('');
@@ -32,9 +34,9 @@ export default function PlatformPage() {
     } catch (err: unknown) {
       const e = err as { status?: number; body?: { title?: string } };
       if (e.status === 403) setDenied(true);
-      else toast.error(e.body?.title ?? 'Laden fehlgeschlagen.');
+      else toast.error(e.body?.title ?? t('toast.loadFailed'));
     }
-  }, [toast]);
+  }, [toast, t]);
 
   useEffect(() => {
     if (!getUser()) {
@@ -56,8 +58,8 @@ export default function PlatformPage() {
       });
       toast.success(
         res.adminInvited
-          ? `Schule „${res.name}" angelegt. Admin eingeladen.`
-          : `Schule „${res.name}" angelegt.`,
+          ? t('toast.schoolCreatedWithAdmin', { name: res.name })
+          : t('toast.schoolCreated', { name: res.name }),
       );
       setSlug('');
       setName('');
@@ -65,7 +67,7 @@ export default function PlatformPage() {
       await load();
     } catch (err: unknown) {
       const e = err as { body?: { title?: string } };
-      toast.error(e.body?.title ?? 'Anlegen fehlgeschlagen.');
+      toast.error(e.body?.title ?? t('toast.createFailed'));
     } finally {
       setBusy(false);
     }
@@ -74,11 +76,15 @@ export default function PlatformPage() {
   async function toggleActive(tn: PlatformTenant) {
     try {
       await platform.updateTenant(tn.id, { active: !tn.active });
-      toast.success(tn.active ? `„${tn.name}" deaktiviert.` : `„${tn.name}" aktiviert.`);
+      toast.success(
+        tn.active
+          ? t('toast.schoolDeactivated', { name: tn.name })
+          : t('toast.schoolActivated', { name: tn.name }),
+      );
       await load();
     } catch (err: unknown) {
       const e = err as { body?: { title?: string } };
-      toast.error(e.body?.title ?? 'Aktion fehlgeschlagen.');
+      toast.error(e.body?.title ?? t('common.actionFailed'));
     }
   }
 
@@ -91,12 +97,12 @@ export default function PlatformPage() {
       return;
     try {
       await platform.deleteTenant(tn.id);
-      toast.success(`Schule „${tn.name}" gelöscht.`);
+      toast.success(t('toast.schoolDeleted', { name: tn.name }));
       if (expandedId === tn.id) setExpandedId(null);
       await load();
     } catch (err: unknown) {
       const e = err as { body?: { title?: string } };
-      toast.error(e.body?.title ?? 'Löschen fehlgeschlagen.');
+      toast.error(e.body?.title ?? t('toast.deleteFailed'));
     }
   }
 
@@ -112,7 +118,7 @@ export default function PlatformPage() {
       setAdmins(await platform.listAdmins(tn.id));
     } catch (err: unknown) {
       const e = err as { body?: { title?: string } };
-      toast.error(e.body?.title ?? 'Admins konnten nicht geladen werden.');
+      toast.error(e.body?.title ?? t('toast.adminsLoadFailed'));
     }
   }
 
@@ -121,25 +127,27 @@ export default function PlatformPage() {
     if (!email) return;
     try {
       const res = await platform.addAdmin(tenantId, email);
-      toast.success(res.invited ? `Admin „${email}" eingeladen.` : `Admin „${email}" gesetzt.`);
+      toast.success(
+        res.invited ? t('toast.adminInvited', { email }) : t('toast.adminSet', { email }),
+      );
       setNewAdmin('');
       setAdmins(await platform.listAdmins(tenantId));
       await load();
     } catch (err: unknown) {
       const e = err as { body?: { title?: string } };
-      toast.error(e.body?.title ?? 'Hinzufügen fehlgeschlagen.');
+      toast.error(e.body?.title ?? t('toast.addFailed'));
     }
   }
 
   async function removeAdmin(tenantId: string, target: { userId?: string; email?: string }) {
     try {
       await platform.removeAdmin(tenantId, target);
-      toast.success('Admin entfernt.');
+      toast.success(t('toast.adminRemoved'));
       setAdmins(await platform.listAdmins(tenantId));
       await load();
     } catch (err: unknown) {
       const e = err as { body?: { title?: string } };
-      toast.error(e.body?.title ?? 'Entfernen fehlgeschlagen.');
+      toast.error(e.body?.title ?? t('toast.removeFailed'));
     }
   }
 

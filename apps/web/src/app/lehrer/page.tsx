@@ -29,9 +29,9 @@ export default function LehrerDashboardPage() {
       setList(cs);
       if (cs.length > 0 && !selectedId) setSelectedId(cs[0].id);
     } catch {
-      toast.error('Modulanlässe konnten nicht geladen werden.');
+      toast.error(t('toast.classesLoadFailed'));
     }
-  }, [selectedId, toast]);
+  }, [selectedId, toast, t]);
 
   useEffect(() => {
     void loadList();
@@ -47,10 +47,10 @@ export default function LehrerDashboardPage() {
         setProgress(await dashboard.progress(selectedId));
       } catch (e: unknown) {
         const err = e as { body?: { title?: string } };
-        toast.error(err.body?.title ?? 'Fortschritt konnte nicht geladen werden.');
+        toast.error(err.body?.title ?? t('toast.progressLoadFailed'));
       }
     })();
-  }, [selectedId, toast]);
+  }, [selectedId, toast, t]);
 
   const fields =
     progress?.bands.flatMap((b) => b.fields.map((f) => ({ ...f, band: b.code }))) ?? [];

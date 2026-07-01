@@ -21,7 +21,7 @@ export default function ModulesPage() {
     try {
       setList(await modules.list());
     } catch {
-      toast.error('Module konnten nicht geladen werden.');
+      toast.error(t('toast.modulesLoadFailed'));
     }
   }
 
@@ -41,10 +41,10 @@ export default function ModulesPage() {
       setCreating(false);
       setForm({ number: '', title: '', description: '' });
       await load();
-      toast.success(`Modul ${form.number.trim()} erstellt.`);
+      toast.success(t('toast.moduleCreated', { number: form.number.trim() }));
     } catch (e: unknown) {
       const err = e as { body?: { title?: string } };
-      toast.error(err.body?.title ?? 'Modul konnte nicht erstellt werden.');
+      toast.error(err.body?.title ?? t('toast.moduleCreateFailed'));
     }
   }
 
@@ -53,10 +53,10 @@ export default function ModulesPage() {
     try {
       const res = await importMatrixZip(file);
       await load();
-      toast.success(`Modul importiert als „${res.number}".`);
+      toast.success(t('toast.moduleImported', { number: res.number }));
     } catch (e: unknown) {
       const err = e as { body?: { title?: string } };
-      toast.error(err.body?.title ?? 'Import fehlgeschlagen.');
+      toast.error(err.body?.title ?? t('toast.importFailed'));
     } finally {
       setImporting(false);
     }
@@ -67,10 +67,10 @@ export default function ModulesPage() {
     try {
       await modules.remove(id);
       await load();
-      toast.success(`Modul ${number} gelöscht.`);
+      toast.success(t('toast.moduleDeleted', { number }));
     } catch (e: unknown) {
       const err = e as { body?: { title?: string } };
-      toast.error(err.body?.title ?? 'Löschen fehlgeschlagen.');
+      toast.error(err.body?.title ?? t('toast.deleteFailed'));
     }
   }
 

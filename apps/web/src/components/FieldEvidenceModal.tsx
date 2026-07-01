@@ -93,7 +93,7 @@ export default function FieldEvidenceModal({
 
   function showError(e: unknown) {
     const err = e as { body?: { title?: string } };
-    toast.error(err.body?.title ?? 'Aktion fehlgeschlagen.');
+    toast.error(err.body?.title ?? t('common.actionFailed'));
   }
 
   async function uploadTeacherAttachment(file: File) {

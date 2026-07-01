@@ -86,7 +86,7 @@ export default function ModuleDetailPage({ params }: { params: Promise<{ id: str
 
   function showError(e: unknown) {
     const err = e as { body?: { title?: string } };
-    toast.error(err.body?.title ?? 'Aktion fehlgeschlagen.');
+    toast.error(err.body?.title ?? t('common.actionFailed'));
   }
 
   // ── Modul bearbeiten (FA-01) ──────────────────────────────────

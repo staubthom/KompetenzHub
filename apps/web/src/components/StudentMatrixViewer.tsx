@@ -72,9 +72,9 @@ export default function StudentMatrixViewer({
     try {
       setMatrix(await matrixApi.get(moduleId, enrollmentId));
     } catch {
-      toast.error('Matrix konnte nicht geladen werden.');
+      toast.error(t('toast.matrixLoadFailed'));
     }
-  }, [moduleId, enrollmentId, toast]);
+  }, [moduleId, enrollmentId, toast, t]);
 
   useEffect(() => {
     void reload();
