@@ -52,9 +52,7 @@ export class PlatformService {
     const slug = input.slug?.trim().toLowerCase();
     const name = input.name?.trim();
     if (!slug || !SLUG_RE.test(slug)) {
-      throw new BadRequestException(
-        'Ungültiger Slug (nur a–z, 0–9, Bindestrich; 2–32 Zeichen).',
-      );
+      throw new BadRequestException('Ungültiger Slug (nur a–z, 0–9, Bindestrich; 2–32 Zeichen).');
     }
     if (RESERVED_SLUGS.has(slug)) {
       throw new BadRequestException(`Der Slug "${slug}" ist reserviert.`);

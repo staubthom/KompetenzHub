@@ -35,12 +35,12 @@ Die SPA sendet den aus dem Browser-Host abgeleiteten Slug zusätzlich als
 
 ## 2. Umgebungsvariablen
 
-| Variable | Zweck | Beispiel |
-| --- | --- | --- |
-| `TENANT_BASE_DOMAIN` | Basisdomain zum Abschneiden der Subdomain (API) | `kompetenzhub.ch` |
-| `NEXT_PUBLIC_TENANT_BASE_DOMAIN` | dito für den Browser (Web) | `kompetenzhub.ch` |
-| `DEFAULT_TENANT_SLUG` | Fallback-Mandant, wenn keine Subdomain ableitbar ist | `default` |
-| `SUPERADMIN_EMAILS` | Plattform-Admins (dürfen Schulen anlegen/verwalten) | `it@trägerschaft.ch` |
+| Variable                         | Zweck                                                | Beispiel             |
+| -------------------------------- | ---------------------------------------------------- | -------------------- |
+| `TENANT_BASE_DOMAIN`             | Basisdomain zum Abschneiden der Subdomain (API)      | `kompetenzhub.ch`    |
+| `NEXT_PUBLIC_TENANT_BASE_DOMAIN` | dito für den Browser (Web)                           | `kompetenzhub.ch`    |
+| `DEFAULT_TENANT_SLUG`            | Fallback-Mandant, wenn keine Subdomain ableitbar ist | `default`            |
+| `SUPERADMIN_EMAILS`              | Plattform-Admins (dürfen Schulen anlegen/verwalten)  | `it@trägerschaft.ch` |
 
 Bleiben die Basisdomain-Variablen **leer**, verhält sich die Instanz wie bisher
 (Single-Tenant, alles läuft auf dem Default-Mandanten) – ideal für lokale
@@ -158,12 +158,12 @@ Default-Mandant ist gegen Löschen geschützt.
 
 ## 8. Betrieb: Einzel- vs. Multi-Instanz
 
-| | Eine Instanz pro Schule | Eine Instanz für alle |
-| --- | --- | --- |
-| Datentrennung | physisch (eigene DB) | logisch (tenantId) |
-| Aufwand Betrieb | pro Schule | einmalig |
-| Onboarding neue Schule | Deploy | Klick im Super-Admin |
-| Blast-Radius | isoliert | geteilt |
+|                        | Eine Instanz pro Schule | Eine Instanz für alle |
+| ---------------------- | ----------------------- | --------------------- |
+| Datentrennung          | physisch (eigene DB)    | logisch (tenantId)    |
+| Aufwand Betrieb        | pro Schule              | einmalig              |
+| Onboarding neue Schule | Deploy                  | Klick im Super-Admin  |
+| Blast-Radius           | isoliert                | geteilt               |
 
 Beide Modi werden unterstützt. Für getrennte Trägerschaften mit hohen
 Isolationsanforderungen bleibt die Einzelinstanz möglich (Basisdomain-Variablen

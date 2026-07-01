@@ -5,7 +5,7 @@ CREATE TYPE "Role" AS ENUM ('ADMIN', 'TEACHER', 'LEARNER');
 CREATE TYPE "MembershipStatus" AS ENUM ('ACTIVE', 'INVITED', 'DISABLED');
 
 -- CreateEnum
-CREATE TYPE "AuthProvider" AS ENUM ('MICROSOFT', 'GOOGLE', 'GITHUB');
+CREATE TYPE "AuthProvider" AS ENUM ('MICROSOFT', 'GOOGLE', 'GITHUB', 'KOMPETENZHUB');
 
 -- CreateEnum
 CREATE TYPE "InvitationStatus" AS ENUM ('PENDING', 'ACCEPTED', 'REVOKED');
@@ -41,6 +41,9 @@ CREATE TYPE "EvaluationChangeType" AS ENUM ('CREATED', 'UPDATED', 'REJECTED', 'R
 CREATE TYPE "EvaluationSource" AS ENUM ('TEACHER', 'AI');
 
 -- CreateEnum
+CREATE TYPE "MailTemplateType" AS ENUM ('INVITE', 'INVITE_REMINDER', 'DIGEST', 'WEEKLY_REPORT', 'SECURITY_ALERT');
+
+-- CreateEnum
 CREATE TYPE "PluginInstallStatus" AS ENUM ('INSTALLED', 'INCOMPATIBLE', 'CONFLICT', 'DISABLED');
 
 -- CreateEnum
@@ -49,7 +52,9 @@ CREATE TYPE "PluginTenantStatus" AS ENUM ('ENABLED', 'DISABLED', 'ERROR');
 -- CreateTable
 CREATE TABLE "Tenant" (
     "id" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "active" BOOLEAN NOT NULL DEFAULT true,
     "settings" JSONB NOT NULL DEFAULT '{}',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -82,6 +87,7 @@ CREATE TABLE "User" (
     "avatarUrl" TEXT,
     "locale" "Locale" NOT NULL DEFAULT 'de',
     "theme" TEXT NOT NULL DEFAULT 'light',
+    "notifyDigest" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -110,8 +116,30 @@ CREATE TABLE "Invitation" (
     "invitedById" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "acceptedAt" TIMESTAMP(3),
+    "remindedAt" TIMESTAMP(3),
 
     CONSTRAINT "Invitation_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "DigestState" (
+    "tenantId" TEXT NOT NULL,
+    "lastRunAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "DigestState_pkey" PRIMARY KEY ("tenantId")
+);
+
+-- CreateTable
+CREATE TABLE "MailTemplate" (
+    "tenantId" TEXT NOT NULL,
+    "type" "MailTemplateType" NOT NULL,
+    "locale" "Locale" NOT NULL,
+    "subject" TEXT,
+    "body" TEXT,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "MailTemplate_pkey" PRIMARY KEY ("tenantId","type","locale")
 );
 
 -- CreateTable
@@ -480,6 +508,9 @@ CREATE TABLE "LearningPathStep" (
 );
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Tenant_slug_key" ON "Tenant"("slug");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "TenantBranding_tenantId_key" ON "TenantBranding"("tenantId");
 
 -- CreateIndex
@@ -505,6 +536,9 @@ CREATE INDEX "Invitation_email_idx" ON "Invitation"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Invitation_tenantId_email_key" ON "Invitation"("tenantId", "email");
+
+-- CreateIndex
+CREATE INDEX "MailTemplate_tenantId_idx" ON "MailTemplate"("tenantId");
 
 -- CreateIndex
 CREATE INDEX "AuditLog_tenantId_idx" ON "AuditLog"("tenantId");
@@ -648,6 +682,12 @@ ALTER TABLE "Membership" ADD CONSTRAINT "Membership_userId_fkey" FOREIGN KEY ("u
 ALTER TABLE "Invitation" ADD CONSTRAINT "Invitation_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "DigestState" ADD CONSTRAINT "DigestState_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MailTemplate" ADD CONSTRAINT "MailTemplate_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Module" ADD CONSTRAINT "Module_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -736,3 +776,4 @@ ALTER TABLE "LearningPathStep" ADD CONSTRAINT "LearningPathStep_pathId_fkey" FOR
 
 -- AddForeignKey
 ALTER TABLE "LearningPathStep" ADD CONSTRAINT "LearningPathStep_fieldId_fkey" FOREIGN KEY ("fieldId") REFERENCES "CompetenceField"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+

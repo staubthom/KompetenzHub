@@ -55,11 +55,11 @@ Hier gibt es eine Demo welche immer zur vollen Stunde zurückgesetzt wird.
 
 ## 2. Für wen ist die Software?
 
-| Zielgruppe                       | Nutzen                                                                                                                                      |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Lehrpersonen 👩‍🏫**              | Eigene Kompetenzraster erstellen, Nachweise definieren, Einreichungen bewerten, Lernfortschritt im Blick behalten, KI als Assistenz nutzen. |
-| **Lernende 👩‍🎓**                  | Übersicht über alle zu erbringenden Nachweise, einfache Einreichung, transparentes Feedback, Üben mit KI.                                   |
-| **Schulleitung / Schuladmin 🦸🏻** | Zentrale Steuerung: wer darf sich als Lehrperson anmelden, Branding (Logo/Farbe), Sprache, Betrieb/Auslastung, Backups.                     |
+| Zielgruppe                       | Nutzen                                                                                                                                                                                                                       |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Lehrpersonen 👩‍🏫**              | Eigene Kompetenzraster erstellen, Nachweise definieren, Einreichungen bewerten, Lernfortschritt im Blick behalten, KI als Assistenz nutzen.                                                                                  |
+| **Lernende 👩‍🎓**                  | Übersicht über alle zu erbringenden Nachweise, einfache Einreichung, transparentes Feedback, Üben mit KI.                                                                                                                    |
+| **Schulleitung / Schuladmin 🦸🏻** | Zentrale Steuerung: wer darf sich als Lehrperson anmelden, Branding (Logo/Farbe), Sprache, Betrieb/Auslastung, Backups.                                                                                                      |
 | **IT / Betrieb 🧑‍💻**              | Selbst-Hosting auf eigener Infrastruktur (Docker), volle Datenhoheit, Standard-Technologien. Optional **mehrere Schulen/Abteilungen in einer Instanz** ([Kapitel 22](#22-mehrere-schulen-in-einer-instanz-multi-mandanten)). |
 
 ---
@@ -627,12 +627,12 @@ Alle Einstellungen liegen in der zentralen Datei **`.env`** (Vorlage: `.env.exam
 
 Nur nötig, wenn eine Instanz **mehrere Schulen/Abteilungen** bedienen soll (siehe [Kapitel 22](#22-mehrere-schulen-in-einer-instanz-multi-mandanten)). Bleiben die Basisdomain-Variablen **leer**, läuft die Instanz wie bisher als Einzel-Schule (Default-Mandant).
 
-| Variable                         | Bedeutung                                                             | Beispiel/Default |
-| -------------------------------- | -------------------------------------------------------------------- | ---------------- |
-| `TENANT_BASE_DOMAIN`             | Basisdomain, um die Subdomain abzuschneiden (API-seitig)             | `kompetenzhub.ch` |
-| `NEXT_PUBLIC_TENANT_BASE_DOMAIN` | dieselbe Basisdomain für den Browser (Web)                           | `kompetenzhub.ch` |
-| `DEFAULT_TENANT_SLUG`            | Fallback-Mandant, wenn keine Subdomain ableitbar ist (z. B. lokal)   | `default`        |
-| `SUPERADMIN_EMAILS`              | Plattform-Admins, die Schulen anlegen/verwalten dürfen (kommagetrennt) | –                |
+| Variable                         | Bedeutung                                                              | Beispiel/Default  |
+| -------------------------------- | ---------------------------------------------------------------------- | ----------------- |
+| `TENANT_BASE_DOMAIN`             | Basisdomain, um die Subdomain abzuschneiden (API-seitig)               | `kompetenzhub.ch` |
+| `NEXT_PUBLIC_TENANT_BASE_DOMAIN` | dieselbe Basisdomain für den Browser (Web)                             | `kompetenzhub.ch` |
+| `DEFAULT_TENANT_SLUG`            | Fallback-Mandant, wenn keine Subdomain ableitbar ist (z. B. lokal)     | `default`         |
+| `SUPERADMIN_EMAILS`              | Plattform-Admins, die Schulen anlegen/verwalten dürfen (kommagetrennt) | –                 |
 
 ### KI
 
@@ -649,13 +649,13 @@ Nur nötig, wenn eine Instanz **mehrere Schulen/Abteilungen** bedienen soll (sie
 
 Aktiviert den Knopf „Mit KompetenzHub-Konto anmelden" samt Registrierung (siehe [Kapitel 10.8](#108-eigener-anmelde-anbieter-mit-selbstregistrierung-logto)). Der Provider erscheint nur, wenn alle drei Pflichtwerte gesetzt sind.
 
-| Variable                          | Bedeutung                                                  | Beispiel/Default          |
-| --------------------------------- | ---------------------------------------------------------- | ------------------------- |
-| `KOMPETENZHUB_OIDC_ISSUER`        | OIDC-Issuer des Logto-Containers (`ENDPOINT` + `/oidc`)    | `http://localhost:3011/oidc` |
-| `KOMPETENZHUB_OIDC_CLIENT_ID`     | App-Id der in Logto angelegten „Traditional Web"-App       | –                         |
-| `KOMPETENZHUB_OIDC_CLIENT_SECRET` | App-Secret derselben App                                   | –                         |
-| `KOMPETENZHUB_OIDC_ENDPOINT`      | Browser-erreichbare URL des Logto-OIDC-Endpoints           | `http://localhost:3011`   |
-| `KOMPETENZHUB_ADMIN_ENDPOINT`     | Browser-erreichbare URL der Logto-Admin-Konsole            | `http://localhost:3012`   |
+| Variable                          | Bedeutung                                               | Beispiel/Default             |
+| --------------------------------- | ------------------------------------------------------- | ---------------------------- |
+| `KOMPETENZHUB_OIDC_ISSUER`        | OIDC-Issuer des Logto-Containers (`ENDPOINT` + `/oidc`) | `http://localhost:3011/oidc` |
+| `KOMPETENZHUB_OIDC_CLIENT_ID`     | App-Id der in Logto angelegten „Traditional Web"-App    | –                            |
+| `KOMPETENZHUB_OIDC_CLIENT_SECRET` | App-Secret derselben App                                | –                            |
+| `KOMPETENZHUB_OIDC_ENDPOINT`      | Browser-erreichbare URL des Logto-OIDC-Endpoints        | `http://localhost:3011`      |
+| `KOMPETENZHUB_ADMIN_ENDPOINT`     | Browser-erreichbare URL der Logto-Admin-Konsole         | `http://localhost:3012`      |
 
 ---
 
@@ -920,11 +920,11 @@ KompetenzHub kann **eine einzelne Installation für mehrere Schulen oder Abteilu
 
 Über ihre **Subdomain**. Die Subdomain (der „Slug") bestimmt, welche Schule geladen wird:
 
-| Adresse                          | Mandant     |
-| -------------------------------- | ----------- |
-| `schule-a.kompetenzhub.ch`       | `schule-a`  |
-| `schule-b.kompetenzhub.ch`       | `schule-b`  |
-| `informatik.kompetenzhub.ch`     | `informatik` (z. B. eine Abteilung) |
+| Adresse                      | Mandant                             |
+| ---------------------------- | ----------------------------------- |
+| `schule-a.kompetenzhub.ch`   | `schule-a`                          |
+| `schule-b.kompetenzhub.ch`   | `schule-b`                          |
+| `informatik.kompetenzhub.ch` | `informatik` (z. B. eine Abteilung) |
 
 - Anmeldung, Branding und alle Inhalte richten sich automatisch nach der aufgerufenen Subdomain.
 - Ein Anmelde-Token gilt **nur** auf der Subdomain seiner Schule – ein versehentlicher oder böswilliger Zugriff über eine fremde Subdomain wird abgewiesen.

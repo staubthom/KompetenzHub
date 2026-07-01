@@ -161,11 +161,7 @@ function LoginPageInner() {
         {/* Lokale Schul-Auswahl (nur ohne Subdomain, z. B. localhost). In
             Produktion bestimmt die Subdomain die Schule automatisch. */}
         {showTenantPicker && (
-          <form
-            onSubmit={applyTenant}
-            className="login-tenant"
-            style={{ marginBottom: 12 }}
-          >
+          <form onSubmit={applyTenant} className="login-tenant" style={{ marginBottom: 12 }}>
             <div className="login-section-label">Schule (lokal, ohne Subdomain)</div>
             <div className="form-inline">
               <input

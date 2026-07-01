@@ -164,7 +164,10 @@ export default function PlatformPage() {
       <div className="page-head">
         <div>
           <h1>Schulen (Mandanten)</h1>
-          <p>Neue Schule anlegen und bestehende verwalten. Jede Schule ist über ihre Subdomain erreichbar.</p>
+          <p>
+            Neue Schule anlegen und bestehende verwalten. Jede Schule ist über ihre Subdomain
+            erreichbar.
+          </p>
         </div>
       </div>
 
