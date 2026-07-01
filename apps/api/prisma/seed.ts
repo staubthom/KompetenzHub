@@ -17,6 +17,7 @@ async function main(): Promise<void> {
     update: {},
     create: {
       id: '00000000-0000-0000-0000-000000000001',
+      slug: 'default',
       name: 'Demo-Berufsfachschule',
       branding: {
         create: {

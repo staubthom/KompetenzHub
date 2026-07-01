@@ -7,7 +7,18 @@ import { getCurrentTenantId, getRequestContext } from '../common/request-context
  * (User/Membership/AuditLog werden bewusst NICHT hier gescoped, da sie
  * tenant-übergreifend bzw. über Membership aufgelöst werden.)
  */
-const TENANT_SCOPED_MODELS = new Set<string>(['Module', 'Class', 'CompetenceEvidence']);
+// WICHTIG: Nur Modelle aufnehmen, die NICHT per zusammengesetztem Unique-Key
+// (z. B. `tenantId_number`) via findUnique abgefragt werden. Der Scope biegt
+// findUnique auf findFirst um – findFirst kennt Composite-Keys nicht und würde
+// solche Abfragen brechen. Modelle mit Composite-findUnique (Invitation,
+// MailTemplate, AiConfig, PluginTenantActivation …) werden bewusst NICHT hier
+// gescopt, sondern filtern tenantId explizit in ihren Services.
+const TENANT_SCOPED_MODELS = new Set<string>([
+  'Module',
+  'Class',
+  'CompetenceEvidence',
+  'ExpertTalkSession',
+]);
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
@@ -87,9 +98,11 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
       switch (action) {
         case 'findFirst':
+        case 'findFirstOrThrow':
         case 'findMany':
         case 'count':
         case 'aggregate':
+        case 'groupBy':
         case 'updateMany':
         case 'deleteMany': {
           params.args.where = this.andTenant(params.args.where, tenantId);
@@ -97,13 +110,22 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         }
         case 'findUnique':
         case 'findUniqueOrThrow': {
-          // findUnique erlaubt kein beliebiges where → auf findFirst umbiegen
+          // findUnique erlaubt kein beliebiges where → auf findFirst umbiegen.
+          // Achtung: Nur zulässig, solange das Modell nicht per zusammengesetztem
+          // Unique-Key (z. B. tenantId_number) abgefragt wird – siehe Kommentar
+          // an TENANT_SCOPED_MODELS.
           params.action = 'findFirst';
           params.args.where = this.andTenant(params.args.where, tenantId);
           break;
         }
         case 'create': {
           params.args.data = { ...params.args.data, tenantId };
+          break;
+        }
+        case 'upsert': {
+          // Neuer Datensatz muss dem aktiven Tenant gehören; das `where` nutzt
+          // (tenant-)eindeutige Keys der aufrufenden Services.
+          params.args.create = { ...params.args.create, tenantId };
           break;
         }
         case 'createMany': {

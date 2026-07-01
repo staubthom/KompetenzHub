@@ -35,6 +35,14 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException('Token ungueltig oder abgelaufen.');
     }
 
+    // Multi-Tenant: Ein Token gilt nur auf der Subdomain seines Mandanten.
+    // Die TenantMiddleware hat resolvedTenantId gesetzt; stimmt der Token-Tenant
+    // nicht überein, wird das Token hier abgewiesen (kein Cross-Tenant-Zugriff).
+    const resolved = requestContextStore.getStore()?.resolvedTenantId;
+    if (resolved && payload.tid !== resolved) {
+      throw new UnauthorizedException('Token gehört zu einer anderen Schule.');
+    }
+
     const ctx: RequestContext = {
       userId: payload.sub,
       tenantId: payload.tid,

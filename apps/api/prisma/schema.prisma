@@ -123,7 +123,11 @@ enum MailTemplateType {
 
 model Tenant {
   id        String   @id @default(uuid())
+  // Subdomain-Schlüssel für die Tenant-Auflösung (z. B. "schule-a" →
+  // schule-a.kompetenzhub.ch). Kleinbuchstaben/Ziffern/Bindestrich.
+  slug      String   @unique
   name      String
+  active    Boolean  @default(true)
   settings  Json     @default("{}")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

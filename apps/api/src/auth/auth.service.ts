@@ -12,6 +12,16 @@ import { TokenService } from './token.service';
 import { MailService } from '../mail/mail.service';
 import { MailTemplateService } from '../mail/mail-template.service';
 import { localeKey, webUrl } from '../mail/mail.templates';
+import { getCurrentTenantId } from '../common/request-context';
+
+/** Plattformweite Super-Admins (tenant-übergreifend). */
+function isSuperAdminEmail(email: string): boolean {
+  const list = (process.env.SUPERADMIN_EMAILS ?? '')
+    .split(/[,;\s]+/)
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return list.includes(email.trim().toLowerCase());
+}
 
 /** E-Mail-Adressen, die beim Login automatisch ADMIN-Rechte erhalten (Bootstrap). */
 function adminEmails(): string[] {
@@ -45,6 +55,7 @@ export interface AuthResult {
     notifyDigest: boolean;
     tenantId: string;
     roles: Role[];
+    isSuperAdmin: boolean;
   };
 }
 
@@ -80,12 +91,25 @@ export class AuthService {
     private readonly templates: MailTemplateService,
   ) {}
 
-  /** Stellt sicher, dass ein Default-Tenant existiert (MVP: ein aktiver Mandant). */
+  /**
+   * Aktiven Tenant für die laufende Anfrage bestimmen. Multi-Tenant: die
+   * TenantMiddleware hat den Mandanten aus der Subdomain aufgelöst und in den
+   * Request-Kontext gelegt. Fehlt er (Erstlauf mit leerer DB unter dem
+   * Default-Slug), wird der Default-Mandant angelegt.
+   */
+  async resolveActiveTenantId(): Promise<string> {
+    const fromContext = getCurrentTenantId();
+    if (fromContext) return fromContext;
+    return this.ensureDefaultTenant();
+  }
+
+  /** Legt bei Bedarf den Default-Mandanten an (Bootstrap leere DB). */
   async ensureDefaultTenant(): Promise<string> {
-    const existing = await this.prisma.tenant.findFirst();
+    const slug = (process.env.DEFAULT_TENANT_SLUG ?? 'default').toLowerCase();
+    const existing = await this.prisma.tenant.findFirst({ where: { slug } });
     if (existing) return existing.id;
     const created = await this.prisma.tenant.create({
-      data: { id: DEFAULT_TENANT_ID, name: 'KompetenzHub' },
+      data: { id: DEFAULT_TENANT_ID, slug, name: 'KompetenzHub' },
     });
     return created.id;
   }
@@ -98,7 +122,7 @@ export class AuthService {
     profile: ExternalProfile,
     opts: { bypassGate?: boolean; ip?: string; userAgent?: string } = {},
   ): Promise<AuthResult> {
-    const tenantId = await this.ensureDefaultTenant();
+    const tenantId = await this.resolveActiveTenantId();
 
     // Auth-Provider, die die Schuladmin deaktiviert hat, werden abgewiesen
     // (Dev-Login umgeht dies).
@@ -169,6 +193,7 @@ export class AuthService {
         notifyDigest: user.notifyDigest,
         tenantId,
         roles,
+        isSuperAdmin: isSuperAdminEmail(user.email),
       },
     };
   }
@@ -207,6 +232,7 @@ export class AuthService {
       notifyDigest: user.notifyDigest,
       tenantId,
       roles,
+      isSuperAdmin: isSuperAdminEmail(user.email),
     };
   }
 
@@ -253,7 +279,7 @@ export class AuthService {
 
   /** Oeffentliche Login-Optionen fuer die Login-Seite. */
   async loginOptions(): Promise<PublicLoginOptions> {
-    const tenantId = await this.ensureDefaultTenant();
+    const tenantId = await this.resolveActiveTenantId();
     return {
       authProviders: {
         microsoft:

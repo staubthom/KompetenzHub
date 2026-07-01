@@ -1,8 +1,45 @@
 import type { NextAuthOptions } from 'next-auth';
+import { headers } from 'next/headers';
 import AzureADProvider from 'next-auth/providers/azure-ad';
 import GitHubProvider from 'next-auth/providers/github';
 import GoogleProvider from 'next-auth/providers/google';
 import type { SessionUser } from './session';
+
+const RESERVED_SUBDOMAINS = new Set(['www', 'api', 'app', 'admin', 'static', 'assets']);
+
+/**
+ * Tenant-Slug aus dem Host des laufenden Requests (Multi-Tenant per Subdomain).
+ * Wird beim Token-Exchange als X-Tenant-Slug an die API gereicht, da deren
+ * interner Host keine Schul-Subdomain trägt.
+ */
+async function tenantSlugFromRequest(): Promise<string | null> {
+  try {
+    const h = await headers();
+    const hostRaw = h.get('x-forwarded-host') ?? h.get('host') ?? '';
+    const host = hostRaw.split(':')[0].trim().toLowerCase();
+    const noSubdomain =
+      !host || host === 'localhost' || /^[0-9.]+$/.test(host) || host.endsWith('.localhost');
+    if (!noSubdomain) {
+      const base = process.env.NEXT_PUBLIC_TENANT_BASE_DOMAIN?.trim().toLowerCase();
+      let sub: string | undefined;
+      if (base && host.endsWith(`.${base}`)) {
+        sub = host.slice(0, host.length - base.length - 1).split('.')[0];
+      } else if (base && host === base) {
+        sub = undefined;
+      } else {
+        const labels = host.split('.');
+        if (labels.length >= 3) sub = labels[0];
+      }
+      if (sub && !RESERVED_SUBDOMAINS.has(sub)) return sub;
+    }
+    // Kein Subdomain-Treffer → lokaler Override-Cookie (Entwicklung/Test).
+    const cookie = h.get('cookie') ?? '';
+    const m = cookie.match(/(?:^|;\s*)kh_tenant=([^;]+)/);
+    return m ? decodeURIComponent(m[1]).trim().toLowerCase() || null : null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * FA-08: NextAuth.js-Konfiguration für Microsoft (Azure AD), Google und GitHub.
@@ -130,6 +167,8 @@ export const authOptions: NextAuthOptions = {
         const headers: Record<string, string> = { 'Content-Type': 'application/json' };
         const secret = process.env.AUTH_EXCHANGE_SECRET;
         if (secret) headers['x-auth-exchange'] = secret;
+        const tenantSlug = await tenantSlugFromRequest();
+        if (tenantSlug) headers['x-tenant-slug'] = tenantSlug;
 
         try {
           const res = await fetch(`${API_BASE}/api/v1/auth/exchange`, {

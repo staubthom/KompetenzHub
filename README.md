@@ -28,6 +28,7 @@
 19. [Plugins aktivierenz](#19-plugins-aktivieren)
 20. [Testing](#20-testing)
 21. [Plugins selbst entwickeln](#21-plugins-selbst-entwickeln)
+22. [Mehrere Schulen in einer Instanz (Multi-Mandanten)](#22-mehrere-schulen-in-einer-instanz-multi-mandanten)
 
 ---
 
@@ -59,7 +60,7 @@ Hier gibt es eine Demo welche immer zur vollen Stunde zurückgesetzt wird.
 | **Lehrpersonen 👩‍🏫**              | Eigene Kompetenzraster erstellen, Nachweise definieren, Einreichungen bewerten, Lernfortschritt im Blick behalten, KI als Assistenz nutzen. |
 | **Lernende 👩‍🎓**                  | Übersicht über alle zu erbringenden Nachweise, einfache Einreichung, transparentes Feedback, Üben mit KI.                                   |
 | **Schulleitung / Schuladmin 🦸🏻** | Zentrale Steuerung: wer darf sich als Lehrperson anmelden, Branding (Logo/Farbe), Sprache, Betrieb/Auslastung, Backups.                     |
-| **IT / Betrieb 🧑‍💻**              | Selbst-Hosting auf eigener Infrastruktur (Docker), volle Datenhoheit, Standard-Technologien.                                                |
+| **IT / Betrieb 🧑‍💻**              | Selbst-Hosting auf eigener Infrastruktur (Docker), volle Datenhoheit, Standard-Technologien. Optional **mehrere Schulen/Abteilungen in einer Instanz** ([Kapitel 22](#22-mehrere-schulen-in-einer-instanz-multi-mandanten)). |
 
 ---
 
@@ -622,6 +623,17 @@ Alle Einstellungen liegen in der zentralen Datei **`.env`** (Vorlage: `.env.exam
 | `ADMIN_EMAILS`         | Bootstrap-Admins (kommagetrennt)            | siehe [10.6](#106-erste-schuladmin-einrichten) |
 | `DEFAULT_TENANT_ID`    | Standard-Mandant                            | vorbelegt                                      |
 
+### Multi-Mandanten (mehrere Schulen in einer Instanz) – optional
+
+Nur nötig, wenn eine Instanz **mehrere Schulen/Abteilungen** bedienen soll (siehe [Kapitel 22](#22-mehrere-schulen-in-einer-instanz-multi-mandanten)). Bleiben die Basisdomain-Variablen **leer**, läuft die Instanz wie bisher als Einzel-Schule (Default-Mandant).
+
+| Variable                         | Bedeutung                                                             | Beispiel/Default |
+| -------------------------------- | -------------------------------------------------------------------- | ---------------- |
+| `TENANT_BASE_DOMAIN`             | Basisdomain, um die Subdomain abzuschneiden (API-seitig)             | `kompetenzhub.ch` |
+| `NEXT_PUBLIC_TENANT_BASE_DOMAIN` | dieselbe Basisdomain für den Browser (Web)                           | `kompetenzhub.ch` |
+| `DEFAULT_TENANT_SLUG`            | Fallback-Mandant, wenn keine Subdomain ableitbar ist (z. B. lokal)   | `default`        |
+| `SUPERADMIN_EMAILS`              | Plattform-Admins, die Schulen anlegen/verwalten dürfen (kommagetrennt) | –                |
+
 ### KI
 
 | Variable            | Bedeutung                                               | Hinweis                                         |
@@ -895,6 +907,63 @@ plugins/packages/<pluginId>/
 ```
 
 Eine leere Vorlage steht unter `plugins/packages/_example` bereit.
+
+---
+
+## 22. Mehrere Schulen in einer Instanz (Multi-Mandanten)
+
+KompetenzHub kann **eine einzelne Installation für mehrere Schulen oder Abteilungen** betreiben. Jede Schule ist ein eigener **Mandant (Tenant)** mit vollständig getrennten Daten (Module, Klassen, Personen, Nachweise, Branding). Alternativ lässt sich weiterhin **eine Instanz pro Schule** betreiben – beide Betriebsarten werden unterstützt.
+
+> Ausführliche Betriebsanleitung (DNS, TLS, Reverse-Proxy, OAuth): **[`docs/multi-tenant.md`](docs/multi-tenant.md)**.
+
+### 22.1 Wie wird eine Schule angesprochen?
+
+Über ihre **Subdomain**. Die Subdomain (der „Slug") bestimmt, welche Schule geladen wird:
+
+| Adresse                          | Mandant     |
+| -------------------------------- | ----------- |
+| `schule-a.kompetenzhub.ch`       | `schule-a`  |
+| `schule-b.kompetenzhub.ch`       | `schule-b`  |
+| `informatik.kompetenzhub.ch`     | `informatik` (z. B. eine Abteilung) |
+
+- Anmeldung, Branding und alle Inhalte richten sich automatisch nach der aufgerufenen Subdomain.
+- Ein Anmelde-Token gilt **nur** auf der Subdomain seiner Schule – ein versehentlicher oder böswilliger Zugriff über eine fremde Subdomain wird abgewiesen.
+- Eine **unbekannte** Subdomain führt zu „Unbekannte Schule".
+
+> **Lokal / ohne Subdomain:** Bleiben `TENANT_BASE_DOMAIN` und `NEXT_PUBLIC_TENANT_BASE_DOMAIN` leer, verhält sich die Instanz wie eine Einzel-Schule und nutzt den Default-Mandanten (`http://localhost:3000`). So bleibt der bisherige Betrieb unverändert.
+
+### 22.2 Voraussetzungen (Betrieb)
+
+1. **Wildcard-DNS:** `*.kompetenzhub.ch` zeigt auf die Instanz.
+2. **Wildcard-TLS-Zertifikat:** `*.kompetenzhub.ch` (Let's Encrypt via DNS-01).
+3. **Reverse-Proxy**, der `Host`/`X-Forwarded-Host` durchreicht (Beispiel Caddy in [`docs/multi-tenant.md`](docs/multi-tenant.md)).
+4. In der `.env`: `TENANT_BASE_DOMAIN`, `NEXT_PUBLIC_TENANT_BASE_DOMAIN` und `SUPERADMIN_EMAILS` setzen (siehe [Kapitel 11](#11-konfiguration-umgebungsvariablen)).
+
+### 22.3 Eine neue Schule anlegen (Plattform-Admin)
+
+„Plattform-Admins" (in `SUPERADMIN_EMAILS` eingetragen) verwalten die Schulen mandantenübergreifend – im Unterschied zur **Schuladmin**, die nur die eigene Schule verwaltet.
+
+1. Als Plattform-Admin anmelden. In der Navigation erscheint der Punkt **„Schulen"** (`/platform`).
+2. Neue Schule mit **Slug** (wird zur Subdomain), **Name** und optionaler **Admin-E-Mail** anlegen.
+3. Die angegebene Admin-E-Mail erhält beim **ersten Login** automatisch Schuladmin-Rechte und richtet danach ihre Schule selbst ein (Personen, Branding, Anmelde-Anbieter …).
+4. Dank Wildcard-DNS ist die neue Subdomain **sofort erreichbar** – kein erneutes Deployment nötig.
+
+Alternativ per API:
+
+```bash
+POST /api/v1/platform/tenants
+{ "slug": "schule-a", "name": "Schule A", "adminEmail": "admin@schule-a.ch" }
+```
+
+**Schuladmin bearbeiten:** Über den Knopf **„Admins"** je Schule lässt sich der/die Schuladmin verwalten – weitere Admins per E-Mail hinzufügen (bestehende Konten werden sofort befördert, sonst wird eine Einladung erstellt) sowie Admins entfernen bzw. Einladungen widerrufen. Die Schule behält immer **mindestens eine:n aktive:n Admin**.
+
+**Schule deaktivieren/löschen:** Schulen lassen sich **deaktivieren** (Zugriff gesperrt, Daten bleiben) oder **endgültig löschen** – beim Löschen werden **alle** Daten der Schule (Personen, Module, Klassen, Nachweise, Fachgespräche, Plugin-/KI-Daten) unwiderruflich entfernt. Der Default-Mandant kann nicht gelöscht werden.
+
+### 22.4 Datentrennung & Sicherheit
+
+- Jeder Datensatz ist fest an eine Schule gebunden; eine zentrale Scoping-Schicht verhindert schulübergreifende Zugriffe.
+- Personen können grundsätzlich Mitglied mehrerer Schulen sein (getrennte Rollen je Schule); der Zugriff erfolgt jeweils über die passende Subdomain.
+- Für strikt getrennte Trägerschaften bleibt die **Einzelinstanz pro Schule** möglich (Basisdomain-Variablen leer lassen).
 
 ---
 

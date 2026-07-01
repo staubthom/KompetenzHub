@@ -11,6 +11,13 @@ export interface RequestContext {
   tenantId: string;
   roles: Role[];
   locale: string;
+  /**
+   * Der aus der Subdomain (bzw. X-Tenant-Slug) aufgelöste Tenant der Anfrage.
+   * Wird von der TenantMiddleware gesetzt – noch bevor das JWT geprüft ist.
+   * Der JwtAuthGuard verlangt anschliessend, dass `payload.tid` hiermit
+   * übereinstimmt (verhindert die Nutzung eines Tokens auf fremder Subdomain).
+   */
+  resolvedTenantId?: string;
   /** Client-IP der Anfrage (fürs Audit-Log). */
   ip?: string;
   /** User-Agent der Anfrage (fürs Audit-Log). */

@@ -2,6 +2,75 @@ import { getToken, saveSession, saveUser, type Role, type SessionUser } from './
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
+const RESERVED_SUBDOMAINS = new Set(['www', 'api', 'app', 'admin', 'static', 'assets']);
+
+const TENANT_OVERRIDE_KEY = 'kh_tenant';
+
+/** Slug allein aus dem Browser-Host (Subdomain) – ohne lokalen Override. */
+function slugFromHost(): string | null {
+  if (typeof window === 'undefined') return null;
+  const host = window.location.hostname.toLowerCase();
+  if (!host || host === 'localhost' || /^[0-9.]+$/.test(host) || host.endsWith('.localhost')) {
+    return null;
+  }
+  const base = process.env.NEXT_PUBLIC_TENANT_BASE_DOMAIN?.trim().toLowerCase();
+  let sub: string | undefined;
+  if (base && host.endsWith(`.${base}`)) {
+    sub = host.slice(0, host.length - base.length - 1).split('.')[0];
+  } else if (base && host === base) {
+    return null;
+  } else {
+    const labels = host.split('.');
+    if (labels.length >= 3) sub = labels[0];
+  }
+  if (!sub || RESERVED_SUBDOMAINS.has(sub)) return null;
+  return sub;
+}
+
+/**
+ * Lokaler Tenant-Override (nur relevant OHNE Subdomain, z. B. localhost): erlaubt
+ * das gezielte Einloggen in eine bestimmte Schule zum Testen. Wird zusätzlich als
+ * Cookie gesetzt, damit der serverseitige NextAuth-Exchange (OAuth) ihn kennt.
+ */
+export function getTenantOverride(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(TENANT_OVERRIDE_KEY);
+}
+
+export function setTenantOverride(slug: string | null): void {
+  if (typeof window === 'undefined') return;
+  const clean = slug?.trim().toLowerCase() || null;
+  if (clean) {
+    localStorage.setItem(TENANT_OVERRIDE_KEY, clean);
+    document.cookie = `${TENANT_OVERRIDE_KEY}=${encodeURIComponent(clean)}; path=/; SameSite=Lax`;
+  } else {
+    localStorage.removeItem(TENANT_OVERRIDE_KEY);
+    document.cookie = `${TENANT_OVERRIDE_KEY}=; path=/; Max-Age=0; SameSite=Lax`;
+  }
+}
+
+/** Slug aus der Subdomain (falls vorhanden) – für die Login-Seite. */
+export function subdomainTenantSlug(): string | null {
+  return slugFromHost();
+}
+
+/**
+ * Aktiver Tenant-Slug für X-Tenant-Slug: Subdomain hat Vorrang (Produktion);
+ * ohne Subdomain greift der lokale Override (Entwicklung/Test).
+ */
+export function currentTenantSlug(): string | null {
+  return slugFromHost() ?? getTenantOverride();
+}
+
+/** Auth- + Tenant-Header für direkte fetch()-Aufrufe (Datei-Up-/Downloads). */
+function tenantAuthHeaders(token: string | null): Record<string, string> {
+  const h: Record<string, string> = {};
+  if (token) h['Authorization'] = `Bearer ${token}`;
+  const slug = currentTenantSlug();
+  if (slug) h['X-Tenant-Slug'] = slug;
+  return h;
+}
+
 async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
   const headers: Record<string, string> = {
@@ -9,6 +78,8 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
     ...(options.headers as Record<string, string>),
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
+  const slug = currentTenantSlug();
+  if (slug) headers['X-Tenant-Slug'] = slug;
 
   const res = await fetch(`${API_BASE}/api/v1${path}`, {
     ...options,
@@ -41,9 +112,13 @@ export interface LoginOptions {
 
 // Auth (Dev-Login für lokale Entwicklung; speichert die Session)
 export async function devLogin(email: string, role: Role): Promise<AuthResult> {
+  const slug = currentTenantSlug();
   const res = await fetch(`${API_BASE}/api/v1/auth/dev-login`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(slug ? { 'X-Tenant-Slug': slug } : {}),
+    },
     body: JSON.stringify({ email, role }),
     credentials: 'include',
   });
@@ -54,9 +129,13 @@ export async function devLogin(email: string, role: Role): Promise<AuthResult> {
 }
 
 export async function getLoginOptions(): Promise<LoginOptions> {
+  const slug = currentTenantSlug();
   const res = await fetch(`${API_BASE}/api/v1/auth/options`, {
     method: 'GET',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(slug ? { 'X-Tenant-Slug': slug } : {}),
+    },
     credentials: 'include',
   });
   if (!res.ok) throw new Error('Login-Optionen konnten nicht geladen werden');
@@ -488,7 +567,7 @@ export async function uploadRichTextImage(file: File): Promise<string> {
 export async function exportMatrixZip(matrixId: string): Promise<{ blob: Blob; filename: string }> {
   const token = getToken();
   const res = await fetch(`${API_BASE}/api/v1/matrices/${matrixId}/export`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers: tenantAuthHeaders(token),
     credentials: 'include',
   });
   if (!res.ok) {
@@ -510,7 +589,7 @@ export async function exportClassArchiveZip(
 ): Promise<{ blob: Blob; filename: string }> {
   const token = getToken();
   const res = await fetch(`${API_BASE}/api/v1/classes/${classId}/archive-export`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers: tenantAuthHeaders(token),
     credentials: 'include',
   });
   if (!res.ok) {
@@ -535,7 +614,7 @@ export async function importClassArchiveZip(
   form.append('file', file);
   const res = await fetch(`${API_BASE}/api/v1/classes/archive-import`, {
     method: 'POST',
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers: tenantAuthHeaders(token),
     body: form,
     credentials: 'include',
   });
@@ -558,7 +637,7 @@ export async function importMatrixZip(
   form.append('file', file);
   const res = await fetch(`${API_BASE}/api/v1/matrices/import`, {
     method: 'POST',
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers: tenantAuthHeaders(token),
     body: form,
     credentials: 'include',
   });
@@ -1152,7 +1231,7 @@ export interface MailTemplate {
 export async function exportBackupZip(): Promise<{ blob: Blob; filename: string }> {
   const token = getToken();
   const res = await fetch(`${API_BASE}/api/v1/admin/backup`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers: tenantAuthHeaders(token),
     credentials: 'include',
   });
   if (!res.ok) {
@@ -1167,3 +1246,57 @@ export async function exportBackupZip(): Promise<{ blob: Blob; filename: string 
   const m = cd.match(/filename="?([^"]+)"?/);
   return { blob, filename: m?.[1] ?? 'kompetenzhub-backup.zip' };
 }
+
+// ── Plattform-Verwaltung (Super-Admin: Mandanten/Schulen) ──────────────
+export interface PlatformTenant {
+  id: string;
+  slug: string;
+  name: string;
+  active: boolean;
+  createdAt: string;
+  memberships: number;
+  modules: number;
+  classes: number;
+}
+
+export interface TenantAdmin {
+  membershipId: string;
+  userId: string;
+  email: string;
+  displayName: string;
+}
+
+export interface TenantAdmins {
+  admins: TenantAdmin[];
+  pendingInvites: { id: string; email: string }[];
+}
+
+export const platform = {
+  listTenants: () => apiFetch<PlatformTenant[]>('/platform/tenants'),
+  createTenant: (data: { slug: string; name: string; adminEmail?: string }) =>
+    apiFetch<PlatformTenant & { adminInvited: boolean }>('/platform/tenants', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  updateTenant: (id: string, data: { name?: string; active?: boolean }) =>
+    apiFetch<PlatformTenant>(`/platform/tenants/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+  deleteTenant: (id: string) =>
+    apiFetch<{ deleted: boolean }>(`/platform/tenants/${id}`, { method: 'DELETE' }),
+  listAdmins: (id: string) => apiFetch<TenantAdmins>(`/platform/tenants/${id}/admins`),
+  addAdmin: (id: string, email: string) =>
+    apiFetch<{ added: boolean; invited: boolean }>(`/platform/tenants/${id}/admins`, {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+  removeAdmin: (id: string, target: { userId?: string; email?: string }) => {
+    const qs = new URLSearchParams(
+      target.userId ? { userId: target.userId } : { email: target.email ?? '' },
+    ).toString();
+    return apiFetch<{ removed: boolean }>(`/platform/tenants/${id}/admins?${qs}`, {
+      method: 'DELETE',
+    });
+  },
+};

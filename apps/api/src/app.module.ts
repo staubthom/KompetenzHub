@@ -1,5 +1,6 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule, RequestMethod } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
+import { TenantMiddleware } from './common/tenant.middleware';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { HealthController } from './health/health.controller';
@@ -23,6 +24,7 @@ import { AdminModule } from './admin/admin.module';
 import { BrandingModule } from './branding/branding.module';
 import { MailModule } from './mail/mail.module';
 import { PluginsCoreModule } from './plugins/plugins.module';
+import { PlatformModule } from './platform/platform.module';
 
 @Module({
   imports: [
@@ -39,6 +41,7 @@ import { PluginsCoreModule } from './plugins/plugins.module';
     // Global: stellt MailService/DigestService bereit (vor Modulen, die sie nutzen).
     MailModule,
     AuthModule,
+    PlatformModule,
     AdminModule,
     BrandingModule,
     ModulesModule,
@@ -67,4 +70,13 @@ import { PluginsCoreModule } from './plugins/plugins.module';
     { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    // Tenant-Auflösung für alle Routen – ausser Health (muss auch ohne
+    // gültige Subdomain, z. B. beim internen Container-Check, erreichbar sein).
+    consumer
+      .apply(TenantMiddleware)
+      .exclude({ path: 'health', method: RequestMethod.ALL })
+      .forRoutes('*');
+  }
+}

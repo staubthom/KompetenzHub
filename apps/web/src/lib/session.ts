@@ -18,6 +18,8 @@ export interface SessionUser {
   notifyDigest?: boolean;
   tenantId: string;
   roles: Role[];
+  /** Plattformweite Super-Admin-Rechte (Mandantenverwaltung). */
+  isSuperAdmin?: boolean;
 }
 
 const TOKEN_KEY = 'kh_token';

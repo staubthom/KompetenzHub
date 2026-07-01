@@ -3,7 +3,14 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
-import { devLogin, getLoginOptions, type LoginOptions } from '../../lib/api';
+import {
+  devLogin,
+  getLoginOptions,
+  getTenantOverride,
+  setTenantOverride,
+  subdomainTenantSlug,
+  type LoginOptions,
+} from '../../lib/api';
 import { useToast } from '../../components/ToastProvider';
 import { getUser, homePathForRole, type Role } from '../../lib/session';
 import { useI18n } from '../../lib/i18n';
@@ -23,6 +30,9 @@ function LoginPageInner() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [loginOptions, setLoginOptions] = useState<LoginOptions | null>(null);
+  // Lokale Schul-Auswahl (nur ohne Subdomain sichtbar, z. B. localhost)
+  const [showTenantPicker, setShowTenantPicker] = useState(false);
+  const [tenantSlug, setTenantSlug] = useState('');
 
   // Effektive Login-Optionen von der API laden
   useEffect(() => {
@@ -32,6 +42,24 @@ function LoginPageInner() {
         /* Fehler ignorieren – Seite bleibt nutzbar */
       });
   }, []);
+
+  // Ohne Subdomain (localhost) eine manuelle Schul-Auswahl anbieten.
+  useEffect(() => {
+    setShowTenantPicker(subdomainTenantSlug() === null);
+    setTenantSlug(getTenantOverride() ?? '');
+  }, []);
+
+  function applyTenant(e: React.FormEvent) {
+    e.preventDefault();
+    setTenantOverride(tenantSlug || null);
+    // Login-Optionen (Anbieter sind pro Schule) neu laden.
+    getLoginOptions()
+      .then(setLoginOptions)
+      .catch(() => {
+        /* ignorieren */
+      });
+    toast.success(tenantSlug ? `Schule „${tenantSlug}" gewählt.` : 'Standard-Schule gewählt.');
+  }
 
   // Bereits eingeloggt? → direkt weiterleiten
   useEffect(() => {
@@ -117,6 +145,30 @@ function LoginPageInner() {
           Kompetenz<span>Hub</span>
         </h1>
         <p className="login-sub">{t('login.subtitle')}</p>
+
+        {/* Lokale Schul-Auswahl (nur ohne Subdomain, z. B. localhost). In
+            Produktion bestimmt die Subdomain die Schule automatisch. */}
+        {showTenantPicker && (
+          <form
+            onSubmit={applyTenant}
+            className="login-tenant"
+            style={{ marginBottom: 12 }}
+          >
+            <div className="login-section-label">Schule (lokal, ohne Subdomain)</div>
+            <div className="form-inline">
+              <input
+                placeholder="Schul-Kürzel (leer = Standard)"
+                aria-label="Schul-Kürzel"
+                value={tenantSlug}
+                onChange={(e) => setTenantSlug(e.target.value)}
+                style={{ flex: 1, minWidth: 160 }}
+              />
+              <button type="submit" className="btn">
+                Übernehmen
+              </button>
+            </div>
+          </form>
+        )}
 
         {/* OAuth-Provider (FA-08) */}
         {loginOptions?.authProviders.microsoft && (

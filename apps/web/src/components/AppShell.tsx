@@ -364,6 +364,20 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 })}
               </>
             )}
+
+            {user?.isSuperAdmin && (
+              <Link
+                href="/platform"
+                className={pathname.startsWith('/platform') ? 'active' : ''}
+                aria-current={pathname.startsWith('/platform') ? 'page' : undefined}
+                onClick={closeMenu}
+              >
+                <span className="ic" aria-hidden="true">
+                  🏫
+                </span>{' '}
+                Schulen
+              </Link>
+            )}
           </nav>
           <div className="mobile-menu-tools">
             <div className="mobile-menu-group">
