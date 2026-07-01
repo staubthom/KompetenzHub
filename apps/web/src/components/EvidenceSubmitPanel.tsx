@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   evidence,
   expertTalk,
@@ -18,8 +18,8 @@ import { useI18n, localized } from '../lib/i18n';
 interface PendingFile {
   key: string;
   name: string;
-  kind: 'file' | 'screenshot';
-  previewUrl?: string; // lokale Vorschau (Object-URL) für Bilder/Screenshots
+  kind: 'file' | 'screenshot' | 'screencast';
+  previewUrl?: string; // lokale Vorschau (Object-URL) für Bilder/Screenshots/Screencasts
 }
 
 /**
@@ -40,6 +40,11 @@ export default function EvidenceSubmitPanel({
   const [files, setFiles] = useState<PendingFile[]>([]);
   const [busy, setBusy] = useState(false);
   const [shotBusy, setShotBusy] = useState(false);
+  const [castBusy, setCastBusy] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const streamsRef = useRef<MediaStream[]>([]);
   const [justSubmitted, setJustSubmitted] = useState(false);
   const [celebration, setCelebration] = useState<number | null>(null);
   const [talkAvailable, setTalkAvailable] = useState<boolean | null>(null);
@@ -151,6 +156,90 @@ export default function EvidenceSubmitPanel({
       showError(e);
     } finally {
       setShotBusy(false);
+    }
+  }
+
+  // Screencast: Bildschirm-Video inkl. Audio direkt im Browser aufnehmen.
+  async function startScreencast() {
+    try {
+      const md = navigator.mediaDevices as MediaDevices & {
+        getDisplayMedia?: (c: MediaStreamConstraints) => Promise<MediaStream>;
+      };
+      if (!md?.getDisplayMedia || typeof MediaRecorder === 'undefined') {
+        toast.error('Screencast wird von diesem Browser nicht unterstützt.');
+        return;
+      }
+      const display = await md.getDisplayMedia({ video: true, audio: true });
+      // Mikrofon zusätzlich aufnehmen (Bildschirm-Audio ist optional und oft nicht verfügbar).
+      let mic: MediaStream | null = null;
+      try {
+        mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch {
+        /* Ohne Mikrofon fortfahren – nur Bild (und ggf. System-Audio). */
+      }
+      const tracks = [
+        ...display.getVideoTracks(),
+        ...display.getAudioTracks(),
+        ...(mic ? mic.getAudioTracks() : []),
+      ];
+      const combined = new MediaStream(tracks);
+      streamsRef.current = mic ? [display, mic] : [display];
+      chunksRef.current = [];
+      const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
+        ? 'video/webm;codecs=vp9,opus'
+        : MediaRecorder.isTypeSupported('video/webm')
+          ? 'video/webm'
+          : '';
+      const rec = new MediaRecorder(combined, mimeType ? { mimeType } : undefined);
+      rec.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+      rec.onstop = () => {
+        void finishScreencast();
+      };
+      recorderRef.current = rec;
+      rec.start();
+      setRecording(true);
+      // Beendet die lernende Person die Freigabe über die Browser-Leiste, Aufnahme stoppen.
+      display.getVideoTracks()[0]?.addEventListener('ended', () => stopScreencast());
+      toast.info('Aufnahme läuft – klicke auf „Aufnahme stoppen", wenn du fertig bist.');
+    } catch (e: unknown) {
+      const err = e as { name?: string };
+      if (err?.name === 'NotAllowedError') return; // Nutzer hat abgebrochen
+      showError(e);
+    }
+  }
+
+  function stopScreencast() {
+    const rec = recorderRef.current;
+    if (rec && rec.state !== 'inactive') rec.stop();
+  }
+
+  async function finishScreencast() {
+    setRecording(false);
+    streamsRef.current.forEach((s) => s.getTracks().forEach((t) => t.stop()));
+    streamsRef.current = [];
+    recorderRef.current = null;
+    const blob = new Blob(chunksRef.current, { type: 'video/webm' });
+    chunksRef.current = [];
+    if (blob.size === 0) return;
+    // Screencast-Obergrenze: 50 MB (bzw. grössere Datei-Obergrenze der Lehrperson).
+    const maxMb = Math.max(50, cfg.maxFileSizeMb ?? 0);
+    if (blob.size > maxMb * 1024 * 1024) {
+      toast.error(`Video zu gross (max. ${maxMb} MB). Bitte kürzer aufnehmen.`);
+      return;
+    }
+    setCastBusy(true);
+    try {
+      const name = `screencast-${Date.now()}.webm`;
+      const key = await uploadSubmissionFile(ev.id, blob, name, 'screencast');
+      const previewUrl = URL.createObjectURL(blob);
+      setFiles((f) => [...f, { key, name, kind: 'screencast', previewUrl }]);
+      toast.success('Screencast aufgenommen – du kannst ihn vor der Abgabe ansehen.');
+    } catch (e: unknown) {
+      showError(e);
+    } finally {
+      setCastBusy(false);
     }
   }
 
@@ -349,7 +438,7 @@ export default function EvidenceSubmitPanel({
               {submitted.files!.map((f, i) => (
                 <li key={i} className="hz-item" style={{ alignItems: 'center', padding: '6px 0' }}>
                   <span style={{ flex: 1 }}>
-                    {f.kind === 'screenshot' ? '🖼 ' : '📄 '}
+                    {f.kind === 'screenshot' ? '🖼 ' : f.kind === 'screencast' ? '🎬 ' : '📄 '}
                     {f.name}
                   </span>
                   <a className="btn sm" href={f.url} target="_blank" rel="noopener">
@@ -377,7 +466,21 @@ export default function EvidenceSubmitPanel({
             <ul className="hz-list" style={{ border: '1px solid var(--border)', borderRadius: 8 }}>
               {files.map((f) => (
                 <li key={f.key} className="hz-item" style={{ alignItems: 'center' }}>
-                  {f.previewUrl ? (
+                  {f.kind === 'screencast' && f.previewUrl ? (
+                    <video
+                      src={f.previewUrl}
+                      controls
+                      style={{
+                        width: 96,
+                        height: 54,
+                        objectFit: 'cover',
+                        borderRadius: 6,
+                        border: '1px solid var(--border)',
+                        display: 'block',
+                        background: '#000',
+                      }}
+                    />
+                  ) : f.previewUrl ? (
                     <a
                       href={f.previewUrl}
                       target="_blank"
@@ -402,7 +505,7 @@ export default function EvidenceSubmitPanel({
                     <span>📄</span>
                   )}
                   <span style={{ flex: 1 }}>
-                    {f.kind === 'screenshot' ? '🖼 ' : ''}
+                    {f.kind === 'screenshot' ? '🖼 ' : f.kind === 'screencast' ? '🎬 ' : ''}
                     {f.name}
                   </span>
                   {f.previewUrl && (
@@ -447,6 +550,18 @@ export default function EvidenceSubmitPanel({
                 }}
               >
                 {shotBusy ? '…' : t('sub.screenshot')}
+              </button>
+            )}
+            {cfg.allowScreencast && (
+              <button
+                className={`btn sm${recording ? ' danger' : ''}`}
+                disabled={castBusy}
+                onClick={() => {
+                  if (recording) stopScreencast();
+                  else void startScreencast();
+                }}
+              >
+                {castBusy ? '…' : recording ? t('sub.screencastStop') : t('sub.screencast')}
               </button>
             )}
           </div>

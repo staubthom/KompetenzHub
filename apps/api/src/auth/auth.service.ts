@@ -1,10 +1,11 @@
-import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import {
   AuthProvider,
   InvitationStatus,
   Locale,
   MailTemplateType,
   MembershipStatus,
+  Prisma,
   Role,
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -13,6 +14,22 @@ import { MailService } from '../mail/mail.service';
 import { MailTemplateService } from '../mail/mail-template.service';
 import { localeKey, webUrl } from '../mail/mail.templates';
 import { getCurrentTenantId } from '../common/request-context';
+
+/** Menschlich lesbarer Name eines Anmelde-Anbieters (für Fehlermeldungen). */
+function providerLabel(provider: AuthProvider): string {
+  switch (provider) {
+    case AuthProvider.MICROSOFT:
+      return 'Microsoft';
+    case AuthProvider.GOOGLE:
+      return 'Google';
+    case AuthProvider.GITHUB:
+      return 'GitHub';
+    case AuthProvider.KOMPETENZHUB:
+      return 'KompetenzHub-Konto';
+    default:
+      return String(provider);
+  }
+}
 
 /** Plattformweite Super-Admins (tenant-übergreifend). */
 function isSuperAdminEmail(email: string): boolean {
@@ -133,29 +150,54 @@ export class AuthService {
 
     // Neue Konten erben die Default-Sprache der Schule (Schuladmin-Einstellung).
     const fallbackLocale = profile.locale ?? (await this.tenantDefaultLocale(tenantId));
-    const user = await this.prisma.user.upsert({
-      where: {
-        authProvider_externalId: {
+    let user: Awaited<ReturnType<typeof this.prisma.user.upsert>>;
+    try {
+      user = await this.prisma.user.upsert({
+        where: {
+          authProvider_externalId: {
+            authProvider: profile.provider,
+            externalId: profile.externalId,
+          },
+        },
+        update: {
+          // displayName wird bewusst NICHT überschrieben: der/die Nutzer:in kann den
+          // Anzeigenamen selbst in den Einstellungen pflegen (sonst würde er bei jedem
+          // Login durch den Namen des Identity-Providers zurückgesetzt).
+          email: profile.email,
+          avatarUrl: profile.avatarUrl,
+        },
+        create: {
+          email: profile.email,
+          displayName: profile.displayName,
           authProvider: profile.provider,
           externalId: profile.externalId,
+          avatarUrl: profile.avatarUrl,
+          locale: fallbackLocale,
         },
-      },
-      update: {
-        // displayName wird bewusst NICHT überschrieben: der/die Nutzer:in kann den
-        // Anzeigenamen selbst in den Einstellungen pflegen (sonst würde er bei jedem
-        // Login durch den Namen des Identity-Providers zurückgesetzt).
-        email: profile.email,
-        avatarUrl: profile.avatarUrl,
-      },
-      create: {
-        email: profile.email,
-        displayName: profile.displayName,
-        authProvider: profile.provider,
-        externalId: profile.externalId,
-        avatarUrl: profile.avatarUrl,
-        locale: fallbackLocale,
-      },
-    });
+      });
+    } catch (err) {
+      // Die E-Mail ist global eindeutig: Wird sie bereits von einem anderen
+      // Anmelde-Anbieter genutzt (z. B. Google vs. Microsoft/Dev-Login), schlägt
+      // das Anlegen fehl. Klare Meldung statt generischem 500.
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+        const existing = await this.prisma.user.findUnique({
+          where: { email: profile.email },
+          select: { authProvider: true },
+        });
+        const provider = existing
+          ? providerLabel(existing.authProvider)
+          : 'einem anderen Anmelde-Anbieter';
+        await this.audit(tenantId, null, 'auth.denied', {
+          reason: 'email_conflict',
+          provider: profile.provider,
+        });
+        throw new ConflictException(
+          `Diese E-Mail-Adresse ist bereits über ${provider} registriert. ` +
+            `Bitte mit ${provider} anmelden.`,
+        );
+      }
+      throw err;
+    }
 
     await this.applyAccessGate(tenantId, user.id, profile, opts.bypassGate ?? false);
 

@@ -84,7 +84,19 @@ function LoginPageInner() {
       OAuthCreateAccount: 'Konto konnte nicht erstellt werden.',
       AccessDenied: 'Zugriff verweigert.',
     };
-    toast.error(messages[error] ?? 'Anmeldung fehlgeschlagen.');
+    // Bei Exchange-Fehlern die konkrete Server-Meldung (RFC 7807) bevorzugen,
+    // z. B. „E-Mail bereits über Google registriert". 500er bleiben generisch.
+    let message = messages[error] ?? 'Anmeldung fehlgeschlagen.';
+    const detail = searchParams.get('detail');
+    if (error === 'exchange' && detail) {
+      try {
+        const parsed = JSON.parse(detail) as { title?: string; status?: number };
+        if (parsed.title && parsed.status && parsed.status < 500) message = parsed.title;
+      } catch {
+        /* kein JSON – generische Meldung behalten */
+      }
+    }
+    toast.error(message);
   }, [searchParams, toast]);
 
   async function handleDevLogin(e: React.FormEvent) {

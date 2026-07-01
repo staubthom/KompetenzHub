@@ -292,7 +292,7 @@ export const evidence = {
     fileName: string,
     contentType: string,
     sizeBytes: number,
-    kind: 'file' | 'screenshot' = 'file',
+    kind: 'file' | 'screenshot' | 'screencast' = 'file',
   ) =>
     apiFetch<{ uploadUrl: string; key: string }>(`/evidence/${id}/upload-url`, {
       method: 'POST',
@@ -304,7 +304,7 @@ export const evidence = {
     payload: {
       text?: string;
       link?: string;
-      files?: { key: string; name: string; kind: 'file' | 'screenshot' }[];
+      files?: { key: string; name: string; kind: 'file' | 'screenshot' | 'screencast' }[];
     },
   ) =>
     apiFetch<{ submissionId: string; status: string }>(`/evidence/${id}/submit`, {
@@ -338,10 +338,15 @@ export async function uploadSubmissionFile(
   evidenceId: string,
   file: Blob,
   fileName: string,
-  kind: 'file' | 'screenshot' = 'file',
+  kind: 'file' | 'screenshot' | 'screencast' = 'file',
 ): Promise<string> {
   const contentType =
-    file.type || (kind === 'screenshot' ? 'image/png' : 'application/octet-stream');
+    file.type ||
+    (kind === 'screenshot'
+      ? 'image/png'
+      : kind === 'screencast'
+        ? 'video/webm'
+        : 'application/octet-stream');
   const { uploadUrl, key } = await evidence.requestUpload(
     evidenceId,
     fileName,
@@ -898,6 +903,7 @@ export interface EvidenceConfig {
   allowLink?: boolean;
   allowText?: boolean;
   allowScreenshot?: boolean;
+  allowScreencast?: boolean;
   allowPaste?: boolean;
   allowExpertTalk?: boolean;
   /** Einreichungsart „von Lehrperson angefügt" – Lernende reichen nichts ein. */

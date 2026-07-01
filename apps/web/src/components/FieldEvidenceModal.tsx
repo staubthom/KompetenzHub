@@ -16,6 +16,7 @@ interface Draft {
   allowLink: boolean;
   allowText: boolean;
   allowScreenshot: boolean;
+  allowScreencast: boolean;
   allowPaste: boolean;
   allowExpertTalk: boolean;
   allowTeacherAttached: boolean;
@@ -36,10 +37,11 @@ function emptyDraft(): Draft {
     allowLink: true,
     allowText: true,
     allowScreenshot: false,
+    allowScreencast: false,
     allowPaste: false,
     allowExpertTalk: false,
     allowTeacherAttached: false,
-    allowedFileTypes: 'pdf, png, jpg',
+    allowedFileTypes: 'pdf, png, jpg, zip',
     maxFileSizeMb: '10',
     maxPoints: '',
     attachmentKey: '',
@@ -124,6 +126,7 @@ export default function FieldEvidenceModal({
       allowLink: ev.config.allowLink !== false,
       allowText: ev.config.allowText !== false,
       allowScreenshot: ev.config.allowScreenshot === true,
+      allowScreencast: ev.config.allowScreencast === true,
       allowPaste: ev.config.allowPaste === true,
       allowExpertTalk: ev.config.allowExpertTalk === true,
       allowTeacherAttached: ev.config.allowTeacherAttached === true,
@@ -152,6 +155,7 @@ export default function FieldEvidenceModal({
         allowLink: draft.allowLink,
         allowText: draft.allowText,
         allowScreenshot: draft.allowScreenshot,
+        allowScreencast: draft.allowScreencast,
         allowPaste: draft.allowPaste,
         allowExpertTalk: draft.allowExpertTalk,
         allowTeacherAttached: draft.allowTeacherAttached,
@@ -353,6 +357,7 @@ export default function FieldEvidenceModal({
                               allowLink: false,
                               allowText: false,
                               allowScreenshot: false,
+                              allowScreencast: false,
                               allowPaste: false,
                               allowExpertTalk: false,
                             }
@@ -407,6 +412,16 @@ export default function FieldEvidenceModal({
                       <label className="goal-check">
                         <input
                           type="checkbox"
+                          checked={draft.allowScreencast}
+                          onChange={(e) =>
+                            setDraft({ ...draft, allowScreencast: e.target.checked })
+                          }
+                        />
+                        {t('fe.typeScreencast')}
+                      </label>
+                      <label className="goal-check">
+                        <input
+                          type="checkbox"
                           checked={draft.allowExpertTalk}
                           onChange={(e) =>
                             setDraft({ ...draft, allowExpertTalk: e.target.checked })
@@ -442,7 +457,7 @@ export default function FieldEvidenceModal({
                     <input
                       value={draft.allowedFileTypes}
                       onChange={(e) => setDraft({ ...draft, allowedFileTypes: e.target.value })}
-                      placeholder="pdf, png, jpg"
+                      placeholder="pdf, png, jpg, zip"
                     />
                   </label>
                   <label style={{ width: 140 }}>

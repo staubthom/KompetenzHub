@@ -109,7 +109,12 @@ export class EvidenceController {
   requestUpload(
     @Param('id') id: string,
     @Body()
-    dto: { fileName: string; contentType: string; sizeBytes: number; kind?: 'file' | 'screenshot' },
+    dto: {
+      fileName: string;
+      contentType: string;
+      sizeBytes: number;
+      kind?: 'file' | 'screenshot' | 'screencast';
+    },
     @CurrentUser() user: RequestContext,
   ) {
     return this.evidence.requestUpload(
@@ -119,7 +124,7 @@ export class EvidenceController {
       dto?.fileName ?? 'datei',
       dto?.contentType ?? 'application/octet-stream',
       Number(dto?.sizeBytes ?? 0),
-      dto?.kind === 'screenshot' ? 'screenshot' : 'file',
+      dto?.kind === 'screenshot' || dto?.kind === 'screencast' ? dto.kind : 'file',
     );
   }
 
@@ -132,7 +137,7 @@ export class EvidenceController {
     dto: {
       text?: string;
       link?: string;
-      files?: { key: string; name: string; kind: 'file' | 'screenshot' }[];
+      files?: { key: string; name: string; kind: 'file' | 'screenshot' | 'screencast' }[];
     },
     @CurrentUser() user: RequestContext,
   ) {

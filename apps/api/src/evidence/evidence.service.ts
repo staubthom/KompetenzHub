@@ -25,6 +25,8 @@ interface UploadConfig {
   allowLink?: boolean;
   allowText?: boolean;
   allowScreenshot?: boolean;
+  /** Einreichungsart Screencast (FA): Bildschirm-Video inkl. Audio im Browser aufnehmen. */
+  allowScreencast?: boolean;
   /** Einfügen (Paste) im Text-Feld erlauben (Default: nein). */
   allowPaste?: boolean;
   /** Einreichungsart Fachgespräch/Präsentation (FA-80): KI-Übung im Abgabe-Dialog. */
@@ -43,8 +45,11 @@ interface UploadConfig {
 interface SubmissionFile {
   key: string;
   name: string;
-  kind: 'file' | 'screenshot';
+  kind: 'file' | 'screenshot' | 'screencast';
 }
+
+/** Standard-Obergrenze für Screencast-Videos (MB). */
+const SCREENCAST_MAX_MB = 50;
 
 export interface CreateEvidenceDto {
   moduleId: string;
@@ -247,7 +252,7 @@ export class EvidenceService {
     fileName: string,
     contentType: string,
     sizeBytes: number,
-    kind: 'file' | 'screenshot' = 'file',
+    kind: 'file' | 'screenshot' | 'screencast' = 'file',
   ) {
     const ev = await this.loadVisibleEvidence(id, tenantId);
     const cfg = (ev.config ?? {}) as UploadConfig;
@@ -260,6 +265,16 @@ export class EvidenceService {
       }
       if (cfg.maxFileSizeMb && sizeBytes > cfg.maxFileSizeMb * 1024 * 1024) {
         throw new UnprocessableEntityException(`Bild zu gross (max. ${cfg.maxFileSizeMb} MB).`);
+      }
+    } else if (kind === 'screencast') {
+      if (cfg.allowScreencast === false || cfg.allowScreencast === undefined) {
+        throw new BadRequestException('Screencast ist nicht erlaubt.');
+      }
+      // Screencasts sind Videos und werden schnell gross → eigener, höherer Default
+      // (50 MB). Hat die Lehrperson eine grössere Datei-Obergrenze gesetzt, gilt diese.
+      const maxMb = Math.max(SCREENCAST_MAX_MB, cfg.maxFileSizeMb ?? 0);
+      if (sizeBytes > maxMb * 1024 * 1024) {
+        throw new UnprocessableEntityException(`Video zu gross (max. ${maxMb} MB).`);
       }
     } else {
       if (cfg.allowFile === false) throw new BadRequestException('Datei-Upload ist nicht erlaubt.');
@@ -591,6 +606,7 @@ export class EvidenceService {
       allowLink: teacherAttached ? false : (cfg.allowLink ?? true),
       allowText: teacherAttached ? false : (cfg.allowText ?? true),
       allowScreenshot: teacherAttached ? false : (cfg.allowScreenshot ?? false),
+      allowScreencast: teacherAttached ? false : (cfg.allowScreencast ?? false),
       // Einfügen standardmässig gesperrt (Lernende sollen selbst schreiben)
       allowPaste: teacherAttached ? false : (cfg.allowPaste ?? false),
       // Fachgespräch/Präsentation optional (KI-Übung im Abgabe-Dialog)

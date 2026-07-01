@@ -220,14 +220,31 @@ export default function SubmissionGrader({
               {files.length > 0 && (
                 <ul className="hz-list" style={{ margin: 0 }}>
                   {files.map((f, i) => (
-                    <li key={i} className="hz-item" style={{ alignItems: 'center', gap: 10 }}>
+                    <li
+                      key={i}
+                      className="hz-item"
+                      style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}
+                    >
                       <span style={{ flex: 1 }}>
-                        {f.kind === 'screenshot' ? '🖼 ' : '📄 '}
+                        {f.kind === 'screenshot' ? '🖼 ' : f.kind === 'screencast' ? '🎬 ' : '📄 '}
                         {f.name}
                       </span>
                       <a className="btn sm" href={f.url} target="_blank" rel="noopener">
                         ⬇ {t('sub.view')}
                       </a>
+                      {f.kind === 'screencast' && (
+                        <video
+                          src={f.url}
+                          controls
+                          style={{
+                            width: '100%',
+                            maxHeight: 320,
+                            borderRadius: 6,
+                            border: '1px solid var(--border)',
+                            background: '#000',
+                          }}
+                        />
+                      )}
                     </li>
                   ))}
                 </ul>
