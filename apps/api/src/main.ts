@@ -34,6 +34,66 @@ function assertSecureSecrets(): void {
   }
 }
 
+/**
+ * Basisdomain für die CORS-Freigabe der Schul-Subdomains. Bevorzugt die explizite
+ * `TENANT_BASE_DOMAIN`; ist sie leer, wird sie aus `NEXT_PUBLIC_WEB_URL` abgeleitet
+ * (z. B. https://demo.kompetenzhub.ch → "kompetenzhub.ch"), sofern dabei noch
+ * mindestens zwei Labels übrig bleiben (verhindert eine zu breite Freigabe wie "ch").
+ */
+function tenantBaseDomain(): string | undefined {
+  const explicit = process.env.TENANT_BASE_DOMAIN?.trim().toLowerCase();
+  if (explicit) return explicit;
+  const web = process.env.NEXT_PUBLIC_WEB_URL;
+  if (!web) return undefined;
+  try {
+    const host = new URL(web).hostname.toLowerCase();
+    const dot = host.indexOf('.');
+    if (dot > 0) {
+      const base = host.slice(dot + 1);
+      if (base.includes('.')) return base;
+    }
+  } catch {
+    /* ungültige URL → keine Ableitung */
+  }
+  return undefined;
+}
+
+/**
+ * CORS-Origin-Prüfung für den Multi-Tenant-Betrieb: Neben der konfigurierten
+ * Web-URL (Single-Tenant/lokal) werden localhost sowie alle Subdomains der
+ * Basisdomain über https erlaubt, damit jede Schule (schule.kompetenzhub.ch)
+ * auf die zentrale API zugreifen darf. Zusätzlich kann eine explizite Komma-Liste
+ * über `CORS_ALLOWED_ORIGINS` freigegeben werden.
+ */
+function isAllowedOrigin(origin: string): boolean {
+  const configured = process.env.NEXT_PUBLIC_WEB_URL;
+  if (configured && origin === configured) return true;
+
+  let host: string;
+  let protocol: string;
+  try {
+    const u = new URL(origin);
+    host = u.hostname.toLowerCase();
+    protocol = u.protocol;
+  } catch {
+    return false;
+  }
+
+  // Lokale Entwicklung.
+  if (host === 'localhost' || host.endsWith('.localhost') || host === '127.0.0.1') return true;
+
+  // Multi-Tenant: jede Subdomain (und die Apex) der Basisdomain, nur über https.
+  const base = tenantBaseDomain();
+  if (base && protocol === 'https:' && (host === base || host.endsWith(`.${base}`))) return true;
+
+  // Optionale, explizit erlaubte Origins.
+  const extra = (process.env.CORS_ALLOWED_ORIGINS ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return extra.includes(origin);
+}
+
 /** Schlanker Cookie-Parser (vermeidet zusätzliche Abhängigkeit). */
 function cookieParser(
   req: Request & { cookies?: Record<string, string> },
@@ -89,9 +149,13 @@ async function bootstrap(): Promise<void> {
   // Einheitliche Fehlerantworten (RFC 7807)
   app.useGlobalFilters(new ProblemExceptionFilter());
 
-  // CORS für die lokale Next.js-App erlauben (Cookies durchlassen)
+  // CORS: konfigurierte Web-URL, localhost und alle Schul-Subdomains der
+  // Basisdomain zulassen (Multi-Tenant), Cookies durchlassen.
   app.enableCors({
-    origin: process.env.NEXT_PUBLIC_WEB_URL ?? 'http://localhost:3000',
+    origin: (origin, callback) => {
+      // Kein Origin (Server-zu-Server, curl, same-origin) → zulassen.
+      callback(null, !origin || isAllowedOrigin(origin));
+    },
     credentials: true,
   });
 
