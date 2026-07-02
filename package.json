@@ -25,7 +25,9 @@
     "prisma:generate": "npm run prisma:generate --workspace apps/api"
   },
   "overrides": {
-    "multer": "^2.2.0"
+    "multer": "^2.2.0",
+    "nodemailer": "^9.0.3",
+    "postcss": "^8.5.10"
   },
   "devDependencies": {
     "@eslint/compat": "^2.1.0",
