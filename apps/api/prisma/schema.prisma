@@ -299,6 +299,18 @@ model AuditLog {
   @@index([action])
 }
 
+// Einmal-Einlösung von Superadmin-Impersonations-Handoff-Codes. Der Primärschlüssel
+// auf jti erzwingt Single-Use atomar und über mehrere API-Instanzen/Neustarts hinweg
+// (löst den früheren, nur prozesslokalen In-Memory-Schutz ab). Abgelaufene Einträge
+// werden beim Einlösen best-effort aufgeräumt.
+model ConsumedHandoff {
+  jti       String   @id
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+}
+
 // ============================================================
 // Modul & Kompetenzmatrix
 // ============================================================

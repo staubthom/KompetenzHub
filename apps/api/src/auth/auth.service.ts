@@ -262,6 +262,10 @@ export class AuthService {
     if (!email) return false;
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) return false;
+    // Sicherheitsschranke: ausschliesslich per Dev-Login angelegte Testkonten löschbar
+    // (deren externalId lautet `dev:<email>`). So kann dieser Endpunkt selbst bei
+    // Fehlkonfiguration (Dev-Login versehentlich aktiv) keine echten SSO-Konten treffen.
+    if (!user.externalId.startsWith('dev:')) return false;
     await this.prisma.user.delete({ where: { id: user.id } });
     return true;
   }
@@ -294,16 +298,28 @@ export class AuthService {
   // beim Einlösen wird die ADMIN-Rolle frisch aus der DB gelesen. Single-Use +
   // kurzer TTL begrenzen das Zeitfenster, falls der Code je durchsickert.
 
-  /** Best-effort Single-Use-Sperre: bereits eingelöste Handoff-jti (mit Ablauf). */
-  private readonly consumedHandoffJti = new Map<string, number>();
-
-  private rememberConsumed(jti: string, expEpoch: number): void {
-    const now = Math.floor(Date.now() / 1000);
-    // Abgelaufene Einträge nebenbei aufräumen (der Speicher bleibt winzig).
-    for (const [key, exp] of this.consumedHandoffJti) {
-      if (exp < now) this.consumedHandoffJti.delete(key);
+  /**
+   * Atomarer Single-Use-Claim eines Handoff-Codes über die DB: legt den `jti` an
+   * und meldet `false`, falls er bereits eingelöst wurde (Primärschlüssel-Konflikt).
+   * Ersetzt den früheren prozesslokalen In-Memory-Schutz und wirkt damit über alle
+   * API-Instanzen und Neustarts hinweg – auch race-frei bei gleichzeitigen Redeems.
+   */
+  private async claimHandoffOnce(jti: string, expEpoch: number): Promise<boolean> {
+    // Abgelaufene Einträge nebenbei aufräumen (die Tabelle bleibt klein).
+    await this.prisma.consumedHandoff
+      .deleteMany({ where: { expiresAt: { lt: new Date() } } })
+      .catch(() => undefined);
+    try {
+      await this.prisma.consumedHandoff.create({
+        data: { jti, expiresAt: new Date(expEpoch * 1000) },
+      });
+      return true;
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+        return false; // bereits eingelöst
+      }
+      throw err;
     }
-    this.consumedHandoffJti.set(jti, expEpoch);
   }
 
   /**
@@ -358,10 +374,6 @@ export class AuthService {
     if (!payload) {
       throw new UnauthorizedException('Impersonations-Code ungültig oder abgelaufen.');
     }
-    // Single-Use: bereits eingelöst?
-    if (this.consumedHandoffJti.has(payload.jti)) {
-      throw new UnauthorizedException('Impersonations-Code wurde bereits verwendet.');
-    }
     // Defense-in-depth: nur auf der Subdomain der Zielschule einlösbar (falls
     // die Middleware einen Tenant aufgelöst hat – lokal ohne Subdomain entfällt es).
     const resolved = getRequestContext()?.resolvedTenantId;
@@ -377,7 +389,11 @@ export class AuthService {
       throw new ForbiddenException('Nur für Plattform-Administrator:innen.');
     }
 
-    this.rememberConsumed(payload.jti, payload.exp);
+    // Single-Use atomar beanspruchen (race-frei über den PK auf jti).
+    const claimed = await this.claimHandoffOnce(payload.jti, payload.exp);
+    if (!claimed) {
+      throw new UnauthorizedException('Impersonations-Code wurde bereits verwendet.');
+    }
 
     // ADMIN-Rolle in der Zielschule sicherstellen und Token ausstellen.
     await this.grantRole(payload.tid, payload.sub, Role.ADMIN);
