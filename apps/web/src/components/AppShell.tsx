@@ -25,7 +25,11 @@ import {
   isTeacher,
   isAdmin,
   initials,
+  getImpersonationMarker,
+  restorePreviousSession,
+  clearImpersonation,
   type SessionUser,
+  type ImpersonationMarker,
 } from '../lib/session';
 import {
   logout as apiLogout,
@@ -115,6 +119,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [pluginNav, setPluginNav] = useState<{ pluginId: string; item: PluginNavItem }[]>([]);
+  const [imp, setImp] = useState<ImpersonationMarker | null>(null);
 
   // Session prüfen – ohne Login zur Login-Seite; Sprache & Theme aus dem Konto anwenden.
   useEffect(() => {
@@ -125,6 +130,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     }
     setUser(u);
     setReady(true);
+    setImp(getImpersonationMarker());
 
     setLocale(normalizeLocale(u.locale));
 
@@ -207,6 +213,20 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     router.replace('/login');
   }
 
+  /**
+   * Impersonation beenden: Same-Origin (localhost) stellt die gesicherte
+   * Superadmin-Session wieder her; bei echten Subdomains wird die Admin-Session
+   * auf diesem Origin verworfen – die Superadmin-Session lebt unberührt auf dem
+   * Plattform-Origin weiter. Anschliessend zurück zur Plattform.
+   */
+  function exitImpersonation() {
+    const returnUrl = imp?.returnUrl || '/platform';
+    const restored = restorePreviousSession();
+    clearImpersonation();
+    if (!restored) clearSession();
+    window.location.href = returnUrl;
+  }
+
   if (!ready || !user) {
     return <div className="loading">{t('common.loading')}</div>;
   }
@@ -232,6 +252,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <a className="skip-link" href="#main">
         {t('a11y.skip')}
       </a>
+      {imp && (
+        <div className="impersonation-bar" role="status">
+          <span>
+            <span aria-hidden="true">🛡</span>{' '}
+            {t('impersonation.banner', { school: imp.tenantName })}
+          </span>
+          <button type="button" className="btn sm" onClick={exitImpersonation}>
+            {t('impersonation.exit')}
+          </button>
+        </div>
+      )}
       <header className="appbar">
         <button
           className="hamburger"

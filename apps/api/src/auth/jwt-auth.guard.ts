@@ -48,6 +48,7 @@ export class JwtAuthGuard implements CanActivate {
       tenantId: payload.tid,
       roles: payload.roles,
       locale: payload.locale,
+      impersonatorId: payload.imp,
       ip: req.ip ?? req.socket?.remoteAddress ?? undefined,
       userAgent: req.headers['user-agent']?.slice(0, 400),
     };

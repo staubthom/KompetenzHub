@@ -12,6 +12,12 @@ export interface RequestContext {
   roles: Role[];
   locale: string;
   /**
+   * Impersonation: Ist gesetzt, wenn die Sitzung von einem Superadmin per
+   * „In-Rolle-schlüpfen" erzeugt wurde – enthält dessen userId. Für die
+   * Audit-Zuordnung (jede Aktion trägt die Herkunft) genutzt.
+   */
+  impersonatorId?: string;
+  /**
    * Der aus der Subdomain (bzw. X-Tenant-Slug) aufgelöste Tenant der Anfrage.
    * Wird von der TenantMiddleware gesetzt – noch bevor das JWT geprüft ist.
    * Der JwtAuthGuard verlangt anschliessend, dass `payload.tid` hiermit

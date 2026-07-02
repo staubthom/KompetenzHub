@@ -14,12 +14,13 @@ import {
   Prisma,
   Role,
 } from '@prisma/client';
+import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { TokenService } from './token.service';
 import { MailService } from '../mail/mail.service';
 import { MailTemplateService } from '../mail/mail-template.service';
 import { localeKey, webUrl } from '../mail/mail.templates';
-import { getCurrentTenantId } from '../common/request-context';
+import { getCurrentTenantId, getRequestContext } from '../common/request-context';
 
 /** Menschlich lesbarer Name eines Anmelde-Anbieters (für Fehlermeldungen). */
 function providerLabel(provider: AuthProvider): string {
@@ -281,6 +282,132 @@ export class AuthService {
       tenantId,
       roles,
       isSuperAdmin: isSuperAdminEmail(user.email),
+    };
+  }
+
+  // ── Superadmin-Impersonation („in eine Schul-Admin-Rolle schlüpfen") ─────────
+  //
+  // Ablauf: Der Superadmin fordert auf seinem Origin einen kurzlebigen Handoff-
+  // Code an (issueImpersonationCode). Dieser wird über das URL-Fragment an die
+  // Ziel-Subdomain übergeben und dort sofort gegen ein echtes ADMIN-Session-JWT
+  // getauscht (redeemImpersonation). Der Code selbst trägt keine Rechte – erst
+  // beim Einlösen wird die ADMIN-Rolle frisch aus der DB gelesen. Single-Use +
+  // kurzer TTL begrenzen das Zeitfenster, falls der Code je durchsickert.
+
+  /** Best-effort Single-Use-Sperre: bereits eingelöste Handoff-jti (mit Ablauf). */
+  private readonly consumedHandoffJti = new Map<string, number>();
+
+  private rememberConsumed(jti: string, expEpoch: number): void {
+    const now = Math.floor(Date.now() / 1000);
+    // Abgelaufene Einträge nebenbei aufräumen (der Speicher bleibt winzig).
+    for (const [key, exp] of this.consumedHandoffJti) {
+      if (exp < now) this.consumedHandoffJti.delete(key);
+    }
+    this.consumedHandoffJti.set(jti, expEpoch);
+  }
+
+  /**
+   * Erzeugt einen kurzlebigen Impersonations-Handoff-Code für Schule `tenantId`.
+   * Nur für Superadmins. Legt idempotent eine ADMIN-Membership für den Superadmin
+   * in der Zielschule an (saubere Audit-/Attribution-Zuordnung).
+   *
+   * @returns Code (fürs URL-Fragment) + Slug/Name der Zielschule (für den Redirect).
+   */
+  async issueImpersonationCode(
+    superAdminUserId: string,
+    tenantId: string,
+    meta: { ip?: string; userAgent?: string } = {},
+  ): Promise<{ code: string; slug: string; tenantName: string }> {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: superAdminUserId },
+      select: { email: true },
+    });
+    if (!admin || !isSuperAdminEmail(admin.email)) {
+      throw new ForbiddenException('Nur für Plattform-Administrator:innen.');
+    }
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { slug: true, name: true, active: true },
+    });
+    if (!tenant) throw new UnauthorizedException('Unbekannte Schule.');
+    if (!tenant.active) {
+      // Die Tenant-Middleware löst inaktive Subdomains gar nicht auf (404) – hier
+      // früh mit klarer Meldung abweisen.
+      throw new ForbiddenException('Deaktivierte Schule – kein Login möglich.');
+    }
+
+    // Idempotent ADMIN werden (bewusste Entscheidung: hinterlässt Membership).
+    await this.grantRole(tenantId, superAdminUserId, Role.ADMIN);
+
+    const jti = randomUUID();
+    const code = this.tokens.signHandoff({ superAdminId: superAdminUserId, tenantId, jti });
+    await this.audit(tenantId, superAdminUserId, 'auth.impersonate.issue', { jti }, meta);
+    return { code, slug: tenant.slug, tenantName: tenant.name };
+  }
+
+  /**
+   * Löst einen Handoff-Code ein und stellt ein ADMIN-Session-JWT für die
+   * Zielschule aus. Läuft auf der Ziel-Subdomain (@Public). Das ausgestellte
+   * Token trägt den `imp`-Claim (Herkunft = Superadmin) für die Audit-Spur.
+   */
+  async redeemImpersonation(
+    codeRaw: string,
+    meta: { ip?: string; userAgent?: string } = {},
+  ): Promise<AuthResult> {
+    const payload = codeRaw ? this.tokens.verifyHandoff(codeRaw.trim()) : null;
+    if (!payload) {
+      throw new UnauthorizedException('Impersonations-Code ungültig oder abgelaufen.');
+    }
+    // Single-Use: bereits eingelöst?
+    if (this.consumedHandoffJti.has(payload.jti)) {
+      throw new UnauthorizedException('Impersonations-Code wurde bereits verwendet.');
+    }
+    // Defense-in-depth: nur auf der Subdomain der Zielschule einlösbar (falls
+    // die Middleware einen Tenant aufgelöst hat – lokal ohne Subdomain entfällt es).
+    const resolved = getRequestContext()?.resolvedTenantId;
+    if (resolved && resolved !== payload.tid) {
+      throw new UnauthorizedException('Code gehört zu einer anderen Schule.');
+    }
+    // Superadmin-Status frisch prüfen (Rechteentzug wirkt sofort).
+    const admin = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+      select: { email: true },
+    });
+    if (!admin || !isSuperAdminEmail(admin.email)) {
+      throw new ForbiddenException('Nur für Plattform-Administrator:innen.');
+    }
+
+    this.rememberConsumed(payload.jti, payload.exp);
+
+    // ADMIN-Rolle in der Zielschule sicherstellen und Token ausstellen.
+    await this.grantRole(payload.tid, payload.sub, Role.ADMIN);
+    const roles = await this.rolesFor(payload.sub, payload.tid);
+    const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
+    if (!user) throw new UnauthorizedException('Benutzer nicht gefunden.');
+
+    const token = this.tokens.sign({
+      userId: user.id,
+      tenantId: payload.tid,
+      roles,
+      locale: user.locale,
+      impersonatorId: payload.sub,
+    });
+    await this.audit(payload.tid, payload.sub, 'auth.impersonate.redeem', { jti: payload.jti }, meta);
+
+    return {
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        displayName: user.displayName,
+        avatarUrl: user.avatarUrl,
+        locale: user.locale,
+        theme: user.theme,
+        notifyDigest: user.notifyDigest,
+        tenantId: payload.tid,
+        roles,
+        isSuperAdmin: isSuperAdminEmail(user.email),
+      },
     };
   }
 

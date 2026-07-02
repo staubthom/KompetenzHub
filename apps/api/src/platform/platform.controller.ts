@@ -8,11 +8,16 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { IsBoolean, IsEmail, IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 import { PlatformService } from './platform.service';
 import { SuperAdminGuard } from './super-admin.guard';
+import { AuthService } from '../auth/auth.service';
+import { CurrentUser } from '../auth/decorators';
+import type { RequestContext } from '../common/request-context';
 
 class CreateTenantDto {
   @IsString()
@@ -50,6 +55,14 @@ class AddAdminDto {
   email!: string;
 }
 
+/** Client-IP (hinter Proxy: erster X-Forwarded-For-Eintrag) + User-Agent fürs Audit. */
+function clientMeta(req: Request): { ip?: string; userAgent?: string } {
+  const fwd = req.headers['x-forwarded-for'];
+  const ip = (Array.isArray(fwd) ? fwd[0] : fwd)?.split(',')[0]?.trim() || req.ip || undefined;
+  const ua = req.headers['user-agent'];
+  return { ip, userAgent: typeof ua === 'string' ? ua.slice(0, 250) : undefined };
+}
+
 /**
  * Plattform-Verwaltung: Anlegen/Verwalten von Schulen (Mandanten). Nur für
  * Super-Admins (SUPERADMIN_EMAILS) – tenant-übergreifend.
@@ -57,7 +70,21 @@ class AddAdminDto {
 @Controller('platform/tenants')
 @UseGuards(SuperAdminGuard)
 export class PlatformController {
-  constructor(private readonly platform: PlatformService) {}
+  constructor(
+    private readonly platform: PlatformService,
+    private readonly auth: AuthService,
+  ) {}
+
+  /**
+   * Superadmin schlüpft in die ADMIN-Rolle einer Schule: erzeugt einen
+   * kurzlebigen Handoff-Code, den das Frontend im URL-Fragment an die
+   * Ziel-Subdomain übergibt und dort gegen ein Session-JWT tauscht.
+   */
+  @Post(':id/impersonate')
+  @HttpCode(200)
+  impersonate(@Param('id') id: string, @CurrentUser() user: RequestContext, @Req() req: Request) {
+    return this.auth.issueImpersonationCode(user.userId, id, clientMeta(req));
+  }
 
   @Get()
   list() {

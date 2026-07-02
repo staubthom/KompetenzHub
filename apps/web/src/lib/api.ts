@@ -62,6 +62,18 @@ export function subdomainTenantSlug(): string | null {
 }
 
 /**
+ * Origin einer Schule: mit konfigurierter Basisdomain die Tenant-Subdomain
+ * (`slug.basis`), sonst der aktuelle Origin (localhost / Single-Host). Für den
+ * Impersonations-Redirect auf die Ziel-Subdomain.
+ */
+export function tenantOrigin(slug: string): string {
+  if (typeof window === 'undefined') return '';
+  const base = process.env.NEXT_PUBLIC_TENANT_BASE_DOMAIN?.trim().toLowerCase();
+  if (base) return `${window.location.protocol}//${slug}.${base}`;
+  return window.location.origin;
+}
+
+/**
  * Aktiver Tenant-Slug für X-Tenant-Slug: Subdomain hat Vorrang (Produktion);
  * ohne Subdomain greift der lokale Override (Entwicklung/Test).
  */
@@ -1378,7 +1390,40 @@ export const platform = {
       method: 'DELETE',
     });
   },
+  /** Superadmin: kurzlebigen Handoff-Code fürs Einschlüpfen in die Schul-Admin-Rolle. */
+  impersonate: (id: string) =>
+    apiFetch<{ code: string; slug: string; tenantName: string }>(
+      `/platform/tenants/${id}/impersonate`,
+      { method: 'POST' },
+    ),
 };
+
+/**
+ * Löst einen Impersonations-Handoff-Code auf der Ziel-Subdomain ein. Sendet den
+ * Slug der Zielschule explizit als X-Tenant-Slug (lokal ohne Subdomain nötig)
+ * und speichert die zurückgegebene Admin-Session.
+ */
+export async function redeemImpersonation(code: string, slug: string): Promise<AuthResult> {
+  const res = await fetch(`${API_BASE}/api/v1/auth/impersonate/redeem`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(slug ? { 'X-Tenant-Slug': slug } : {}),
+    },
+    body: JSON.stringify({ code }),
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ title: res.statusText }));
+    throw Object.assign(new Error(err.title ?? 'Impersonation fehlgeschlagen'), {
+      status: res.status,
+      body: err,
+    });
+  }
+  const result = (await res.json()) as AuthResult;
+  saveSession(result.token, result.user);
+  return result;
+}
 
 export interface GcResult {
   scanned: number;

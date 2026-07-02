@@ -65,6 +65,12 @@ class DevDeleteDto {
   email!: string;
 }
 
+class ImpersonateRedeemDto {
+  @IsString()
+  @MaxLength(2048)
+  code!: string;
+}
+
 class ExchangeDto {
   @IsEnum(AuthProvider)
   provider!: AuthProvider;
@@ -226,6 +232,25 @@ export class AuthController {
       },
       this.clientMeta(req),
     );
+    this.setCookie(res, result.token);
+    return result;
+  }
+
+  /**
+   * Löst einen Superadmin-Impersonations-Handoff-Code ein (auf der Ziel-
+   * Subdomain) und stellt ein ADMIN-Session-JWT aus. Öffentlich, da der Code
+   * selbst das (kurzlebige, einmalige) Credential ist; gedrosselt gegen Brute-Force.
+   */
+  @Public()
+  @Throttle(AUTH_THROTTLE)
+  @Post('impersonate/redeem')
+  @HttpCode(200)
+  async impersonateRedeem(
+    @Body() dto: ImpersonateRedeemDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<unknown> {
+    const result = await this.auth.redeemImpersonation(dto.code, this.clientMeta(req));
     this.setCookie(res, result.token);
     return result;
   }

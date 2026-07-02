@@ -4,10 +4,11 @@ import { Fragment, useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell from '../../components/AppShell';
 import { useToast } from '../../components/ToastProvider';
-import { getUser } from '../../lib/session';
+import { getUser, stashPreviousSession } from '../../lib/session';
 import { useI18n } from '../../lib/i18n';
 import {
   platform,
+  tenantOrigin,
   type PlatformTenant,
   type TenantAdmins,
   type TenantStorage,
@@ -213,6 +214,34 @@ export default function PlatformPage() {
     }
   }
 
+  /**
+   * Superadmin schlüpft in die ADMIN-Rolle einer Schule: Handoff-Code holen,
+   * Ursprungs-Session sichern (Same-Origin-Fall) und auf die Ziel-Subdomain
+   * umleiten. Der Code reist im URL-Fragment (nicht im Query → landet nicht in
+   * Server-Logs/Referer) und wird dort sofort eingelöst.
+   */
+  async function impersonate(tn: PlatformTenant) {
+    try {
+      const { code, slug: targetSlug, tenantName } = await platform.impersonate(tn.id);
+      const origin = tenantOrigin(targetSlug);
+      const returnUrl = `${window.location.origin}/platform`;
+      // Same-Origin (z. B. localhost): Superadmin-Session sichern, sonst bleibt
+      // sie auf dem Plattform-Origin ohnehin erhalten. Den Banner-Marker schreibt
+      // die Redeem-Seite auf dem Ziel-Origin (bei echten Subdomains ein anderer).
+      if (origin === window.location.origin) stashPreviousSession();
+      const params = new URLSearchParams({
+        code,
+        slug: targetSlug,
+        name: tenantName,
+        ret: returnUrl,
+      });
+      window.location.href = `${origin}/login/impersonate#${params.toString()}`;
+    } catch (err: unknown) {
+      const e = err as { body?: { title?: string } };
+      toast.error(e.body?.title ?? t('common.actionFailed'));
+    }
+  }
+
   if (denied) {
     return (
       <AppShell>
@@ -357,6 +386,21 @@ export default function PlatformPage() {
                         }}
                       >
                         Admins
+                      </button>{' '}
+                      <button
+                        type="button"
+                        className="btn"
+                        disabled={!tn.active}
+                        title={
+                          tn.active
+                            ? 'Als Admin dieser Schule anmelden'
+                            : 'Deaktivierte Schule – kein Login möglich'
+                        }
+                        onClick={() => {
+                          void impersonate(tn);
+                        }}
+                      >
+                        Als Admin
                       </button>{' '}
                       <button
                         type="button"

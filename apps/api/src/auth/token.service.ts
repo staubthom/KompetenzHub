@@ -8,6 +8,24 @@ export interface JwtPayload {
   tid: string; // tenantId
   roles: Role[];
   locale: string;
+  /** Impersonation: userId des Superadmins, der in diese Rolle geschlüpft ist. */
+  imp?: string;
+  iat: number;
+  exp: number;
+}
+
+/**
+ * Kurzlebiger Handoff-Code für die Superadmin-Impersonation. Wird als eigener
+ * signierter Token (getrennte Zweck-Domäne via `typ`) über das URL-Fragment an
+ * die Ziel-Subdomain übergeben und dort sofort gegen ein echtes Session-JWT
+ * getauscht. Enthält bewusst KEINE Rollen – die werden erst beim Einlösen frisch
+ * aus der DB gelesen.
+ */
+export interface HandoffPayload {
+  typ: 'imp_handoff';
+  sub: string; // Superadmin-userId
+  tid: string; // Ziel-Tenant
+  jti: string; // Einmal-Kennung (Single-Use-Schutz)
   iat: number;
   exp: number;
 }
@@ -45,7 +63,13 @@ export class TokenService {
     }
   }
 
-  sign(claims: { userId: string; tenantId: string; roles: Role[]; locale: string }): string {
+  sign(claims: {
+    userId: string;
+    tenantId: string;
+    roles: Role[];
+    locale: string;
+    impersonatorId?: string;
+  }): string {
     const header = { alg: 'HS256', typ: 'JWT' };
     const now = Math.floor(Date.now() / 1000);
     const payload: JwtPayload = {
@@ -53,6 +77,7 @@ export class TokenService {
       tid: claims.tenantId,
       roles: claims.roles,
       locale: claims.locale,
+      ...(claims.impersonatorId ? { imp: claims.impersonatorId } : {}),
       iat: now,
       exp: now + this.ttlSeconds,
     };
@@ -60,6 +85,46 @@ export class TokenService {
     const body = base64urlJson(payload);
     const sig = this.signature(`${head}.${body}`);
     return `${head}.${body}.${sig}`;
+  }
+
+  /** Signiert einen kurzlebigen Impersonations-Handoff-Code (Default 60 s TTL). */
+  signHandoff(
+    claims: { superAdminId: string; tenantId: string; jti: string },
+    ttlSeconds = 60,
+  ): string {
+    const now = Math.floor(Date.now() / 1000);
+    const payload: HandoffPayload = {
+      typ: 'imp_handoff',
+      sub: claims.superAdminId,
+      tid: claims.tenantId,
+      jti: claims.jti,
+      iat: now,
+      exp: now + ttlSeconds,
+    };
+    const head = base64urlJson({ alg: 'HS256', typ: 'JWT' });
+    const body = base64urlJson(payload);
+    const sig = this.signature(`${head}.${body}`);
+    return `${head}.${body}.${sig}`;
+  }
+
+  /** Verifiziert einen Handoff-Code (Signatur + Ablauf + Zweck) oder null. */
+  verifyHandoff(token: string): HandoffPayload | null {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const [head, body, sig] = parts;
+    const expected = this.signature(`${head}.${body}`);
+    const a = Buffer.from(sig);
+    const b = Buffer.from(expected);
+    if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
+    try {
+      const payload = JSON.parse(fromBase64url(body).toString('utf8')) as HandoffPayload;
+      const now = Math.floor(Date.now() / 1000);
+      if (payload.typ !== 'imp_handoff') return null;
+      if (typeof payload.exp !== 'number' || payload.exp < now) return null;
+      return payload;
+    } catch {
+      return null;
+    }
   }
 
   /** Verifiziert Signatur + Ablauf und liefert die Payload oder null. */
