@@ -39,6 +39,7 @@ export class PlatformService {
           slug: true,
           name: true,
           active: true,
+          quotaBytes: true,
           createdAt: true,
           _count: { select: { users: true, modules: true, classes: true } },
         },
@@ -57,6 +58,7 @@ export class PlatformService {
       modules: t._count.modules,
       classes: t._count.classes,
       storageBytes: bytesByTenant.get(t.id) ?? 0,
+      quotaBytes: t.quotaBytes != null ? Number(t.quotaBytes) : null,
     }));
   }
 
@@ -107,26 +109,36 @@ export class PlatformService {
     return { ...tenant, createdAt: tenant.createdAt.toISOString(), adminInvited: !!adminEmail };
   }
 
-  async updateTenant(id: string, patch: { name?: string; active?: boolean }) {
+  async updateTenant(
+    id: string,
+    patch: { name?: string; active?: boolean; quotaBytes?: number | null },
+  ) {
     const tenant = await this.prisma.tenant.findUnique({ where: { id }, select: { slug: true } });
     if (!tenant) throw new NotFoundException('Mandant nicht gefunden.');
 
-    const data: { name?: string; active?: boolean } = {};
+    const data: { name?: string; active?: boolean; quotaBytes?: bigint | null } = {};
     if (patch.name !== undefined) {
       const name = patch.name.trim();
       if (!name) throw new BadRequestException('Name darf nicht leer sein.');
       data.name = name;
     }
     if (patch.active !== undefined) data.active = patch.active;
+    if (patch.quotaBytes !== undefined) {
+      data.quotaBytes =
+        patch.quotaBytes === null ? null : BigInt(Math.max(0, Math.trunc(patch.quotaBytes)));
+    }
 
     const updated = await this.prisma.tenant.update({
       where: { id },
       data,
-      select: { id: true, slug: true, name: true, active: true },
+      select: { id: true, slug: true, name: true, active: true, quotaBytes: true },
     });
     // Cache invalidieren, damit (De-)Aktivierung sofort greift.
     TenantMiddleware.invalidate(tenant.slug);
-    return updated;
+    return {
+      ...updated,
+      quotaBytes: updated.quotaBytes != null ? Number(updated.quotaBytes) : null,
+    };
   }
 
   /**

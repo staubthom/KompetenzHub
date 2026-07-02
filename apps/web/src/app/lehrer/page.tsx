@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AppShell from '../../components/AppShell';
 import PluginSlot from '../../components/PluginSlot';
+import StorageUsagePanel from '../../components/StorageUsagePanel';
 import { useToast } from '../../components/ToastProvider';
 import { useI18n, localized } from '../../lib/i18n';
 import { classes, dashboard, type ClassSummary, type ClassProgress } from '../../lib/api';
@@ -106,6 +107,11 @@ export default function LehrerDashboardPage() {
         <Link href="/modules" className="btn primary">
           {t('dash.newModuleMatrix')}
         </Link>
+      </div>
+
+      {/* Eigener Speicherverbrauch inkl. persönlicher Quota */}
+      <div style={{ marginBottom: 16 }}>
+        <StorageUsagePanel compact maxWidth={420} />
       </div>
 
       {/* Modulanlass-Auswahl */}

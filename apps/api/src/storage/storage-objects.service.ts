@@ -1,4 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, PayloadTooLargeException } from '@nestjs/common';
+import { Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { S3Service } from './s3.service';
 
@@ -139,6 +140,85 @@ export class StorageObjectsService {
     return rows.map((r) => ({ teacherId: r.teacherId, bytes: Number(r.bytes) }));
   }
 
+  /**
+   * Prüft vor einem Upload, ob die gekaufte Schulquota und die persönliche
+   * Quota der verantwortlichen Lehrperson die zusätzlichen Bytes noch zulassen.
+   * `null` als Quota bedeutet „unbegrenzt". Overcommit ist gewollt: die Summe der
+   * LP-Quotas darf die Schulquota übersteigen – geprüft werden beide Grenzen
+   * unabhängig gegen den jeweils aktuellen Verbrauch. Wirft 413, wenn eine der
+   * beiden Grenzen überschritten würde.
+   */
+  async assertQuota(input: {
+    tenantId: string;
+    teacherId?: string | null;
+    addBytes: number;
+  }): Promise<void> {
+    const add = Number.isFinite(input.addBytes) ? Math.max(0, Math.trunc(input.addBytes)) : 0;
+
+    // Schulquota gegen Gesamtverbrauch.
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: input.tenantId },
+      select: { quotaBytes: true },
+    });
+    if (tenant?.quotaBytes != null) {
+      const total = await this.totalForTenant(input.tenantId);
+      if (total + add > Number(tenant.quotaBytes)) {
+        throw new PayloadTooLargeException(
+          'Der Speicherplatz der Schule ist erschöpft. Bitte wenden Sie sich an Ihre Schuladministration.',
+        );
+      }
+    }
+
+    // Persönliche Quota der verantwortlichen Lehrperson gegen deren Verbrauch.
+    if (input.teacherId) {
+      const membership = await this.prisma.membership.findFirst({
+        where: {
+          tenantId: input.tenantId,
+          userId: input.teacherId,
+          role: Role.TEACHER,
+          quotaBytes: { not: null },
+        },
+        select: { quotaBytes: true },
+      });
+      if (membership?.quotaBytes != null) {
+        const used = await this.usageForTeacher(input.tenantId, input.teacherId);
+        if (used + add > Number(membership.quotaBytes)) {
+          throw new PayloadTooLargeException(
+            'Ihr persönliches Speicherkontingent ist erschöpft. Löschen Sie nicht mehr benötigte Dateien oder wenden Sie sich an Ihre Schuladministration.',
+          );
+        }
+      }
+    }
+  }
+
+  /**
+   * Setzt die persönliche Speicherquota einer Lehrperson (Schuladmin). `null`
+   * hebt die Begrenzung auf. Quota liegt auf der TEACHER-Mitgliedschaft.
+   */
+  async setTeacherQuota(
+    tenantId: string,
+    userId: string,
+    quotaBytes: number | null,
+  ): Promise<void> {
+    const value = quotaBytes == null ? null : BigInt(Math.max(0, Math.trunc(quotaBytes)));
+    const res = await this.prisma.membership.updateMany({
+      where: { tenantId, userId, role: Role.TEACHER },
+      data: { quotaBytes: value },
+    });
+    if (res.count === 0) {
+      throw new NotFoundException('Keine Lehrer-Mitgliedschaft für diese Person gefunden.');
+    }
+  }
+
+  /** Persönliche Speicherquota einer Lehrperson (Bytes) oder null = unbegrenzt. */
+  async teacherQuota(tenantId: string, userId: string): Promise<number | null> {
+    const m = await this.prisma.membership.findFirst({
+      where: { tenantId, userId, role: Role.TEACHER, quotaBytes: { not: null } },
+      select: { quotaBytes: true },
+    });
+    return m?.quotaBytes != null ? Number(m.quotaBytes) : null;
+  }
+
   /** Speicherverbrauch des Verantwortlichen für ein einzelnes Konto (Bytes). */
   async usageForTeacher(tenantId: string, userId: string): Promise<number> {
     const rows = await this.prisma.$queryRaw<{ bytes: bigint }[]>`
@@ -152,30 +232,63 @@ export class StorageObjectsService {
   }
 
   /**
-   * Schul-Übersicht: Gesamtverbrauch + Aufschlüsselung je verantwortlicher
-   * Lehrperson inkl. Namen. Von Plattform (super-admin) und Schuladmin genutzt.
+   * Schul-Übersicht: Gesamtverbrauch + gekaufte Schulquota + Aufschlüsselung je
+   * Lehrperson (Verbrauch und persönliche Quota) inkl. Namen. Es werden alle
+   * aktiven Lehrpersonen gelistet – auch solche ohne Verbrauch –, damit der
+   * Schuladmin jeder Person eine Quota zuweisen kann. Zusätzlich erscheinen
+   * Verantwortliche mit Verbrauch, die (mehr) keine aktive Lehrer-Mitgliedschaft
+   * haben (z. B. übernommene Alt-Anlässe), damit kein Verbrauch „verschwindet".
+   * Von Plattform (super-admin) und Schuladmin genutzt.
    */
   async schoolUsage(tenantId: string): Promise<{
     total: number;
-    teachers: { teacherId: string; displayName: string; email: string; bytes: number }[];
+    quotaBytes: number | null;
+    teachers: {
+      teacherId: string;
+      displayName: string;
+      email: string;
+      bytes: number;
+      quotaBytes: number | null;
+    }[];
   }> {
-    const [usage, total] = await Promise.all([
+    const [usage, total, tenant, teacherMemberships] = await Promise.all([
       this.usageByTeacher(tenantId),
       this.totalForTenant(tenantId),
+      this.prisma.tenant.findUnique({ where: { id: tenantId }, select: { quotaBytes: true } }),
+      this.prisma.membership.findMany({
+        where: { tenantId, role: Role.TEACHER, status: 'ACTIVE' },
+        select: { userId: true, quotaBytes: true },
+      }),
     ]);
+
+    const bytesById = new Map(usage.map((u) => [u.teacherId, u.bytes]));
+    const quotaById = new Map(teacherMemberships.map((m) => [m.userId, m.quotaBytes]));
+    // Vereinigung: alle Lehrpersonen + alle Verantwortlichen mit Verbrauch.
+    const ids = new Set<string>([...quotaById.keys(), ...bytesById.keys()]);
+
     const users = await this.prisma.user.findMany({
-      where: { id: { in: usage.map((u) => u.teacherId) } },
+      where: { id: { in: [...ids] } },
       select: { id: true, displayName: true, email: true },
     });
     const byId = new Map(users.map((u) => [u.id, u]));
+
+    const teachers = [...ids]
+      .map((id) => {
+        const q = quotaById.get(id);
+        return {
+          teacherId: id,
+          displayName: byId.get(id)?.displayName ?? '—',
+          email: byId.get(id)?.email ?? '',
+          bytes: bytesById.get(id) ?? 0,
+          quotaBytes: q != null ? Number(q) : null,
+        };
+      })
+      .sort((a, b) => b.bytes - a.bytes);
+
     return {
       total,
-      teachers: usage.map((u) => ({
-        teacherId: u.teacherId,
-        displayName: byId.get(u.teacherId)?.displayName ?? '—',
-        email: byId.get(u.teacherId)?.email ?? '',
-        bytes: u.bytes,
-      })),
+      quotaBytes: tenant?.quotaBytes != null ? Number(tenant.quotaBytes) : null,
+      teachers,
     };
   }
 }

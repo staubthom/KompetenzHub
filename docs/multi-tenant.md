@@ -35,13 +35,13 @@ Die SPA sendet den aus dem Browser-Host abgeleiteten Slug zusätzlich als
 
 ## 2. Umgebungsvariablen
 
-| Variable                         | Zweck                                                | Beispiel             |
-| -------------------------------- | ---------------------------------------------------- | -------------------- |
-| `TENANT_BASE_DOMAIN`             | Basisdomain zum Abschneiden der Subdomain (API)      | `kompetenzhub.ch`    |
-| `NEXT_PUBLIC_TENANT_BASE_DOMAIN` | dito für den Browser (Web)                           | `kompetenzhub.ch`    |
-| `DEFAULT_TENANT_SLUG`            | Fallback-Mandant, wenn keine Subdomain ableitbar ist | `default`            |
-| `SUPERADMIN_EMAILS`              | Plattform-Admins (dürfen Schulen anlegen/verwalten)  | `it@trägerschaft.ch` |
-| `AUTH_TRUST_HOST`                | NextAuth: Origin aus X-Forwarded-Host je Request ableiten (statt fixem `NEXTAUTH_URL`). Wird bei gesetzter Basisdomain automatisch aktiviert. | `true` |
+| Variable                         | Zweck                                                                                                                                         | Beispiel             |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| `TENANT_BASE_DOMAIN`             | Basisdomain zum Abschneiden der Subdomain (API)                                                                                               | `kompetenzhub.ch`    |
+| `NEXT_PUBLIC_TENANT_BASE_DOMAIN` | dito für den Browser (Web)                                                                                                                    | `kompetenzhub.ch`    |
+| `DEFAULT_TENANT_SLUG`            | Fallback-Mandant, wenn keine Subdomain ableitbar ist                                                                                          | `default`            |
+| `SUPERADMIN_EMAILS`              | Plattform-Admins (dürfen Schulen anlegen/verwalten)                                                                                           | `it@trägerschaft.ch` |
+| `AUTH_TRUST_HOST`                | NextAuth: Origin aus X-Forwarded-Host je Request ableiten (statt fixem `NEXTAUTH_URL`). Wird bei gesetzter Basisdomain automatisch aktiviert. | `true`               |
 
 Bleiben die Basisdomain-Variablen **leer**, verhält sich die Instanz wie bisher
 (Single-Tenant, alles läuft auf dem Default-Mandanten) – ideal für lokale

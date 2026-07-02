@@ -96,33 +96,7 @@ services:
       retries: 12
       start_period: 30s
 
-  # ── Logto-Vorkonfiguration: Selbst-Registrierung auf E-Mail+Passwort umstellen ──
-  # Einmaliger Init nach dem Logto-Seed. KompetenzHub identifiziert Nutzer:innen ueber die
-  # E-Mail – Logtos Standard ("username") wuerde sonst zu Konten ohne E-Mail fuehren und der
-  # /auth/exchange schluege fehl. Das SQL greift nur den unveraenderten Standard (idempotent,
-  # ueberschreibt spaetere Konsolen-Anpassungen der Schuladmin nicht).
-  logto-init:
-    image: postgres:16-alpine
-    container_name: kompetenzhub-logto-init
-    restart: 'no'
-    depends_on:
-      logto: { condition: service_healthy }
-    environment:
-      PGPASSWORD: ${POSTGRES_PASSWORD:-kompetenzhub}      
-    volumes:
-      - ./infra/logto:/sql:ro
-    command:
-      - psql
-      - -h
-      - postgres
-      - -U
-      - ${POSTGRES_USER:-kompetenzhub}
-      - -d
-      - logto
-      - -v
-      - ON_ERROR_STOP=1
-      - -f
-      - /sql/10-email-identifier.sql
+
 
   # ── Anwendung (nur mit Profil "app", z. B. `docker compose -f docker-compose_dev.yaml --profile  app up -d --build`) ──
   api:

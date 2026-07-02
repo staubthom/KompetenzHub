@@ -110,6 +110,31 @@ export default function PlatformPage() {
     }
   }
 
+  async function setQuota(tn: PlatformTenant) {
+    const cur = tn.quotaBytes != null ? String(Number((tn.quotaBytes / 1024 ** 3).toFixed(2))) : '';
+    const input = window.prompt(
+      `Gekaufte Speicherquota für „${tn.name}" in GB (leer = unbegrenzt):`,
+      cur,
+    );
+    if (input === null) return; // abgebrochen
+    const raw = input.trim().replace(',', '.');
+    const gb = raw === '' ? null : Number(raw);
+    if (gb !== null && (!Number.isFinite(gb) || gb < 0)) {
+      toast.error('Ungültige Quota (Zahl ≥ 0 oder leer).');
+      return;
+    }
+    try {
+      await platform.updateTenant(tn.id, {
+        quotaBytes: gb === null ? null : Math.round(gb * 1024 ** 3),
+      });
+      toast.success(`Quota für „${tn.name}" gespeichert.`);
+      await load();
+    } catch (err: unknown) {
+      const e2 = err as { body?: { title?: string }; message?: string };
+      toast.error(e2.body?.title ?? e2.message ?? 'Speichern fehlgeschlagen.');
+    }
+  }
+
   async function removeTenant(tn: PlatformTenant) {
     if (
       !confirm(
@@ -282,6 +307,7 @@ export default function PlatformPage() {
                 <th style={{ textAlign: 'right' }}>Module</th>
                 <th style={{ textAlign: 'right' }}>Klassen</th>
                 <th style={{ textAlign: 'right' }}>Speicher</th>
+                <th style={{ textAlign: 'right' }}>Quota</th>
                 <th></th>
               </tr>
             </thead>
@@ -299,6 +325,18 @@ export default function PlatformPage() {
                     <td style={{ textAlign: 'right' }}>{tn.classes}</td>
                     <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                       {formatBytes(tn.storageBytes)}
+                    </td>
+                    <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      {tn.quotaBytes != null ? formatBytes(tn.quotaBytes) : '∞'}{' '}
+                      <button
+                        type="button"
+                        className="btn sm"
+                        onClick={() => {
+                          void setQuota(tn);
+                        }}
+                      >
+                        Ändern
+                      </button>
                     </td>
                     <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                       <button
@@ -341,7 +379,7 @@ export default function PlatformPage() {
                   </tr>
                   {storageId === tn.id && (
                     <tr>
-                      <td colSpan={8} style={{ background: 'var(--kh-surface-2, #f8fafc)' }}>
+                      <td colSpan={9} style={{ background: 'var(--kh-surface-2, #f8fafc)' }}>
                         <div style={{ padding: '8px 4px' }}>
                           <strong>
                             Speicher von „{tn.name}" · gesamt {formatBytes(storage?.total)}
@@ -385,7 +423,7 @@ export default function PlatformPage() {
                   )}
                   {expandedId === tn.id && (
                     <tr>
-                      <td colSpan={8} style={{ background: 'var(--kh-surface-2, #f8fafc)' }}>
+                      <td colSpan={9} style={{ background: 'var(--kh-surface-2, #f8fafc)' }}>
                         <div style={{ padding: '8px 4px' }}>
                           <strong>Schuladmins von „{tn.name}"</strong>
                           {!admins ? (

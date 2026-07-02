@@ -1307,11 +1307,19 @@ export interface PlatformTenant {
   modules: number;
   classes: number;
   storageBytes: number;
+  quotaBytes: number | null;
 }
 
 export interface TenantStorage {
   total: number;
-  teachers: { teacherId: string; displayName: string; email: string; bytes: number }[];
+  quotaBytes: number | null;
+  teachers: {
+    teacherId: string;
+    displayName: string;
+    email: string;
+    bytes: number;
+    quotaBytes: number | null;
+  }[];
 }
 
 export interface TenantAdmin {
@@ -1333,7 +1341,10 @@ export const platform = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
-  updateTenant: (id: string, data: { name?: string; active?: boolean }) =>
+  updateTenant: (
+    id: string,
+    data: { name?: string; active?: boolean; quotaBytes?: number | null },
+  ) =>
     apiFetch<PlatformTenant>(`/platform/tenants/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
@@ -1366,7 +1377,12 @@ export interface GcResult {
 
 // Speicherverbrauch (tenant-scoped): eigener (Lehrperson) + Schul-Übersicht (Admin)
 export const storage = {
-  myUsage: () => apiFetch<{ bytes: number }>('/storage/my-usage'),
+  myUsage: () => apiFetch<{ bytes: number; quotaBytes: number | null }>('/storage/my-usage'),
   school: () => apiFetch<TenantStorage>('/storage/school'),
+  setTeacherQuota: (userId: string, quotaBytes: number | null) =>
+    apiFetch<{ ok: true }>(`/storage/teachers/${userId}/quota`, {
+      method: 'PATCH',
+      body: JSON.stringify({ quotaBytes }),
+    }),
   gc: () => apiFetch<GcResult>('/storage/gc', { method: 'POST' }),
 };

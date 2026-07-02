@@ -34,8 +34,16 @@ export class AssetsController {
     if (dto?.sizeBytes && dto.sizeBytes > MAX_IMAGE_MB * 1024 * 1024) {
       throw new BadRequestException(`Bild zu gross (max. ${MAX_IMAGE_MB} MB).`);
     }
+    // Quota-Prüfung: Bild belastet die hochladende Lehrperson und die Schulquota.
+    await this.storageObjects.assertQuota({
+      tenantId: user.tenantId,
+      teacherId: user.userId,
+      addBytes: dto?.sizeBytes ?? 0,
+    });
     const key = this.s3.tenantKey(user.tenantId, this.s3.publicPrefix, fileName);
-    const uploadUrl = await this.s3.presignUpload(key, dto?.contentType || 'image/png');
+    const uploadUrl = await this.s3.presignUpload(key, dto?.contentType || 'image/png', {
+      contentLength: dto?.sizeBytes,
+    });
     await this.storageObjects.record({
       tenantId: user.tenantId,
       key,
@@ -60,10 +68,19 @@ export class AssetsController {
     @CurrentUser() user: RequestContext,
   ): Promise<{ uploadUrl: string; key: string }> {
     const fileName = dto?.fileName ?? 'anhang';
+    // Quota-Prüfung: Anhang belastet die hochladende Lehrperson und die Schulquota.
+    await this.storageObjects.assertQuota({
+      tenantId: user.tenantId,
+      teacherId: user.userId,
+      addBytes: dto?.sizeBytes ?? 0,
+    });
     const key = this.s3.tenantKey(user.tenantId, 'attachments', fileName);
     const uploadUrl = await this.s3.presignUpload(
       key,
       dto?.contentType || 'application/octet-stream',
+      {
+        contentLength: dto?.sizeBytes,
+      },
     );
     await this.storageObjects.record({
       tenantId: user.tenantId,

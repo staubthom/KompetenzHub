@@ -101,12 +101,17 @@ const de: Record<string, string> = {
   'common.actionFailed': 'Aktion fehlgeschlagen.',
   // Speicherverbrauch
   'storage.schoolTitle': 'Speicher pro Lehrperson',
+  'storage.schoolQuotaTitle': 'Speicher der Schule',
   'storage.teacher': 'Lehrperson',
   'storage.usage': 'Speicher',
+  'storage.quotaGb': 'Quota (GB)',
+  'storage.quotaInvalid': 'Ungültige Quota (Zahl ≥ 0 oder leer für unbegrenzt).',
+  'storage.quotaSaved': 'Quota gespeichert.',
   'storage.none': 'Noch kein Speicherverbrauch erfasst.',
   'storage.attributionHint':
     'Einreichungen werden der verantwortlichen Lehrperson (Besitzer des Modulanlasses) zugerechnet, Anhänge/Bilder der hochladenden Person.',
   'storage.myUsage': 'Dein Speicherverbrauch',
+  'storage.noLimit': 'Kein Speicherlimit gesetzt.',
   'storage.myUsageHint':
     'Summe deiner Dateien: Einreichungen deiner Modulanlässe sowie von dir hochgeladene Anhänge und Bilder.',
   'storage.gcRun': 'Verwaiste Bilder aufräumen',
@@ -812,12 +817,17 @@ const fr: Record<string, string> = {
   'common.actionFailed': 'Action échouée.',
   // Utilisation du stockage
   'storage.schoolTitle': 'Stockage par enseignant·e',
+  'storage.schoolQuotaTitle': 'Stockage de l’école',
   'storage.teacher': 'Enseignant·e',
   'storage.usage': 'Stockage',
+  'storage.quotaGb': 'Quota (Go)',
+  'storage.quotaInvalid': 'Quota invalide (nombre ≥ 0 ou vide pour illimité).',
+  'storage.quotaSaved': 'Quota enregistré.',
   'storage.none': 'Aucune utilisation du stockage enregistrée.',
   'storage.attributionHint':
     'Les preuves sont attribuées à l’enseignant·e responsable (propriétaire de la session de module), les pièces jointes/images à la personne qui les a téléversées.',
   'storage.myUsage': 'Ton utilisation du stockage',
+  'storage.noLimit': 'Aucune limite de stockage définie.',
   'storage.myUsageHint':
     'Somme de tes fichiers : preuves de tes sessions de module ainsi que les pièces jointes et images que tu as téléversées.',
   'storage.gcRun': 'Nettoyer les images orphelines',
@@ -1505,12 +1515,17 @@ const it: Record<string, string> = {
   'common.actionFailed': 'Azione non riuscita.',
   // Utilizzo dello spazio
   'storage.schoolTitle': 'Spazio per docente',
+  'storage.schoolQuotaTitle': 'Spazio della scuola',
   'storage.teacher': 'Docente',
   'storage.usage': 'Spazio',
+  'storage.quotaGb': 'Quota (GB)',
+  'storage.quotaInvalid': 'Quota non valida (numero ≥ 0 o vuoto per illimitato).',
+  'storage.quotaSaved': 'Quota salvata.',
   'storage.none': 'Nessun utilizzo dello spazio registrato.',
   'storage.attributionHint':
     'Le prove sono attribuite al docente responsabile (proprietario della sessione di modulo), gli allegati/le immagini a chi li ha caricati.',
   'storage.myUsage': 'Il tuo utilizzo dello spazio',
+  'storage.noLimit': 'Nessun limite di spazio impostato.',
   'storage.myUsageHint':
     'Somma dei tuoi file: prove delle tue sessioni di modulo e allegati/immagini caricati da te.',
   'storage.gcRun': 'Pulisci immagini orfane',
@@ -2197,12 +2212,17 @@ const en: Record<string, string> = {
   'common.actionFailed': 'Action failed.',
   // Storage usage
   'storage.schoolTitle': 'Storage per teacher',
+  'storage.schoolQuotaTitle': 'School storage',
   'storage.teacher': 'Teacher',
   'storage.usage': 'Storage',
+  'storage.quotaGb': 'Quota (GB)',
+  'storage.quotaInvalid': 'Invalid quota (number ≥ 0, or empty for unlimited).',
+  'storage.quotaSaved': 'Quota saved.',
   'storage.none': 'No storage usage recorded yet.',
   'storage.attributionHint':
     'Submissions are attributed to the responsible teacher (owner of the module session); attachments/images to the uploader.',
   'storage.myUsage': 'Your storage usage',
+  'storage.noLimit': 'No storage limit set.',
   'storage.myUsageHint':
     'Sum of your files: submissions in your module sessions plus attachments and images you uploaded.',
   'storage.gcRun': 'Clean up orphaned images',

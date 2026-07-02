@@ -1,17 +1,17 @@
 NOch nicht umsetzen: ISt es möglich dass Pro Lehrperson angegeben werden kann wie viel Platz er mit seinen Klassen im S3 Store verbraucht? ICh überlege mir auch ob man ein abrechnungsmodell einführen könnte.
 
 Grundsätzlich: ja, möglich — aber es fehlen zwei Bausteine
+
 1. Dateigrößen werden aktuell nicht gespeichert
-sizeBytes wird beim Upload nur validiert (evidence.service.ts requestUpload), aber nirgends persistiert. In Submission stehen nur fileKey/fileName, und das content-JSON hält files: [{key, name, kind}] — ohne Größe. Für eine verlässliche Abrechnung müsste die Größe pro Objekt in der DB landen (beim Upload-Confirm), sonst muss man den ganzen Bucket scannen und jedes Objekt per HEAD messen.
+   sizeBytes wird beim Upload nur validiert (evidence.service.ts requestUpload), aber nirgends persistiert. In Submission stehen nur fileKey/fileName, und das content-JSON hält files: [{key, name, kind}] — ohne Größe. Für eine verlässliche Abrechnung müsste die Größe pro Objekt in der DB landen (beim Upload-Confirm), sonst muss man den ganzen Bucket scannen und jedes Objekt per HEAD messen.
 
 2. S3-Keys enthalten keine Zuordnung zu Lehrperson/Klasse/Schule
-Die Keys sind evidence/{evidenceId}/uuid-datei, dazu attachments/, files/ (Klassen-Archiv), rte/ (öffentliche Bilder). Kein tenantId, kein Lehrer, keine Klasse im Pfad. totalSize() in s3.service.ts:172 liefert daher nur die Gesamtgröße des ganzen Buckets (alle Schulen gemischt) — nicht mal pro Mandant direkt ableitbar.
+   Die Keys sind evidence/{evidenceId}/uuid-datei, dazu attachments/, files/ (Klassen-Archiv), rte/ (öffentliche Bilder). Kein tenantId, kein Lehrer, keine Klasse im Pfad. totalSize() in s3.service.ts:172 liefert daher nur die Gesamtgröße des ganzen Buckets (alle Schulen gemischt) — nicht mal pro Mandant direkt ableitbar.
 
 Die Zuordnung geht nur über die DB-Join-Kette:
 
-
-Submission → Enrollment → Class.ownerId  (= verantwortliche Lehrperson)
-                        → ClassTeacher   (= Co-Leitungen)
+Submission → Enrollment → Class.ownerId (= verantwortliche Lehrperson)
+→ ClassTeacher (= Co-Leitungen)
 Das ist sauber machbar für Einreichungen von Lernenden. Schwieriger sind:
 
 Lehrer-Anhänge/Aufgaben (evidence/attachments): hängen am Modul (Module.ownerId), nicht an der Klasse — ein Modul kann von mehreren Klassen/Lehrpersonen genutzt werden.

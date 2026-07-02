@@ -307,8 +307,23 @@ export class EvidenceService {
       this.validateFile(cfg, fileName, sizeBytes);
     }
 
+    // Quota-Prüfung: Einreichungsdateien belasten die verantwortliche Lehrperson
+    // (Besitzer:in des Modulanlasses) und die Schulquota. Wirft 413 bei Überschreitung.
+    const cls = await this.prisma.class.findUnique({
+      where: { id: enrollment.classId },
+      select: { ownerId: true },
+    });
+    await this.storageObjects.assertQuota({
+      tenantId,
+      teacherId: cls?.ownerId ?? null,
+      addBytes: sizeBytes,
+    });
+
     const key = this.s3.tenantKey(tenantId, `evidence/${id}`, fileName);
-    const url = await this.s3.presignUpload(key, contentType || 'application/octet-stream');
+    // contentLength signieren → S3 erzwingt die angekündigte Grösse (Quota nicht umgehbar).
+    const url = await this.s3.presignUpload(key, contentType || 'application/octet-stream', {
+      contentLength: sizeBytes,
+    });
     // Grösse/Zuordnung verbuchen (für Speicherverbrauch pro Schule/Klasse/Lehrperson).
     await this.storageObjects.record({
       tenantId,

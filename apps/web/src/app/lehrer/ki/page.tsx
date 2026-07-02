@@ -4,23 +4,10 @@ import { useCallback, useEffect, useState } from 'react';
 import AppShell from '../../../components/AppShell';
 import ProfileNamePanel from '../../../components/ProfileNamePanel';
 import NotificationPrefsPanel from '../../../components/NotificationPrefsPanel';
+import StorageUsagePanel from '../../../components/StorageUsagePanel';
 import { useToast } from '../../../components/ToastProvider';
 import { useI18n } from '../../../lib/i18n';
-import { ai, storage, type AiConfig, type AiTestResult } from '../../../lib/api';
-
-/** Bytes menschenlesbar (KB/MB/GB/TB). */
-function formatBytes(n: number | null): string {
-  if (n == null) return '–';
-  if (n < 1024) return `${n} B`;
-  const units = ['KB', 'MB', 'GB', 'TB'];
-  let v = n / 1024;
-  let i = 0;
-  while (v >= 1024 && i < units.length - 1) {
-    v /= 1024;
-    i++;
-  }
-  return `${v.toFixed(1)} ${units[i]}`;
-}
+import { ai, type AiConfig, type AiTestResult } from '../../../lib/api';
 
 const PROVIDERS: { value: string; label: string; baseUrl?: string }[] = [
   { value: 'openai', label: 'OpenAI', baseUrl: 'https://api.openai.com/v1' },
@@ -42,7 +29,6 @@ export default function KiSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<AiTestResult | null>(null);
-  const [myBytes, setMyBytes] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -60,11 +46,6 @@ export default function KiSettingsPage() {
 
   useEffect(() => {
     void load();
-    // Eigener Speicherverbrauch (Fehler nicht fatal).
-    void storage
-      .myUsage()
-      .then((r) => setMyBytes(r.bytes))
-      .catch(() => {});
   }, [load]);
 
   function onProviderChange(p: string) {
@@ -169,18 +150,8 @@ export default function KiSettingsPage() {
       {/* E-Mail-Benachrichtigungen (Tages-Digest, Opt-out) */}
       <NotificationPrefsPanel />
 
-      {/* Eigener Speicherverbrauch */}
-      <div className="panel" style={{ maxWidth: 640 }}>
-        <div className="panel-head">
-          <h2>{t('storage.myUsage')}</h2>
-          <span className="kh-muted">{formatBytes(myBytes)}</span>
-        </div>
-        <div className="panel-body">
-          <p className="kh-muted" style={{ margin: 0, fontSize: 13 }}>
-            {t('storage.myUsageHint')}
-          </p>
-        </div>
-      </div>
+      {/* Eigener Speicherverbrauch inkl. persönlicher Quota */}
+      <StorageUsagePanel />
 
       <div className="panel" style={{ maxWidth: 640 }}>
         <div className="panel-head">

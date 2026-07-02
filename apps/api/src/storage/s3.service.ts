@@ -88,14 +88,28 @@ export class S3Service implements OnModuleInit {
     return `${TENANT_PREFIX}/${tenantId}/`;
   }
 
-  /** Presigned PUT-URL für den direkten Upload durch den Client. */
-  async presignUpload(key: string, contentType: string, expiresIn = 900): Promise<string> {
+  /**
+   * Presigned PUT-URL für den direkten Upload durch den Client. Wird
+   * `contentLength` gesetzt, ist die Objektgrösse Teil der Signatur: S3/MinIO
+   * lehnt dann jeden Upload ab, dessen `Content-Length` abweicht. So kann der
+   * Client die serverseitige Quota-Prüfung nicht durch Unterschätzen der Grösse
+   * umgehen (die geprüfte Grösse == die tatsächlich geschriebene Grösse).
+   */
+  async presignUpload(
+    key: string,
+    contentType: string,
+    opts: { expiresIn?: number; contentLength?: number } = {},
+  ): Promise<string> {
     const cmd = new PutObjectCommand({
       Bucket: this.bucket,
       Key: key,
       ContentType: contentType,
+      ContentLength:
+        opts.contentLength != null && Number.isFinite(opts.contentLength)
+          ? Math.max(0, Math.trunc(opts.contentLength))
+          : undefined,
     });
-    return getSignedUrl(this.client, cmd, { expiresIn });
+    return getSignedUrl(this.client, cmd, { expiresIn: opts.expiresIn ?? 900 });
   }
 
   /** Presigned GET-URL zum Herunterladen/Ansehen. */

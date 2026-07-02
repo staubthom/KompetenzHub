@@ -122,15 +122,18 @@ enum MailTemplateType {
 // ============================================================
 
 model Tenant {
-  id        String   @id @default(uuid())
+  id         String   @id @default(uuid())
   // Subdomain-Schlüssel für die Tenant-Auflösung (z. B. "schule-a" →
   // schule-a.kompetenzhub.ch). Kleinbuchstaben/Ziffern/Bindestrich.
-  slug      String   @unique
-  name      String
-  active    Boolean  @default(true)
-  settings  Json     @default("{}")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  slug       String   @unique
+  name       String
+  active     Boolean  @default(true)
+  // Gekaufte Speicherquota der Schule in Bytes (null = unbegrenzt). Wird bei
+  // jedem Upload gegen den Gesamtverbrauch geprüft. Von der Plattform gesetzt.
+  quotaBytes BigInt?
+  settings   Json     @default("{}")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   branding       TenantBranding?
   users          Membership[]
@@ -201,12 +204,16 @@ model User {
 }
 
 model Membership {
-  id        String           @id @default(uuid())
-  tenantId  String
-  userId    String
-  role      Role
-  status    MembershipStatus @default(ACTIVE)
-  createdAt DateTime         @default(now())
+  id         String           @id @default(uuid())
+  tenantId   String
+  userId     String
+  role       Role
+  status     MembershipStatus @default(ACTIVE)
+  // Persönliche Speicherquota dieser Lehrperson in Bytes (null = unbegrenzt).
+  // Wird vom Schuladmin gesetzt. Die Summe aller LP-Quotas darf die Schulquota
+  // bewusst übersteigen (Overcommit – nicht jede LP nutzt ihr Kontingent aus).
+  quotaBytes BigInt?
+  createdAt  DateTime         @default(now())
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)

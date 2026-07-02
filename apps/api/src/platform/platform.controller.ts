@@ -10,7 +10,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { IsBoolean, IsEmail, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 import { PlatformService } from './platform.service';
 import { SuperAdminGuard } from './super-admin.guard';
 
@@ -37,6 +37,12 @@ class UpdateTenantDto {
   @IsOptional()
   @IsBoolean()
   active?: boolean;
+
+  // Gekaufte Speicherquota der Schule in Bytes. null = unbegrenzt.
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  quotaBytes?: number | null;
 }
 
 class AddAdminDto {
