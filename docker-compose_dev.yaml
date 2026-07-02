@@ -97,9 +97,9 @@ services:
   api:
     profiles: ['app']
     image: ghcr.io/staubthom/kompetenzhub/api:latest
-    #build:
-    #  context: .
-    #  dockerfile: apps/api/Dockerfile
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
     container_name: kompetenzhub-api
     restart: unless-stopped
     depends_on:
@@ -169,12 +169,12 @@ services:
   web:
     profiles: ['app']
     image: ghcr.io/staubthom/kompetenzhub/web:latest
-    #build:
-    #  context: .
-    #  dockerfile: apps/web/Dockerfile
-    #  args:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
         # NEXT_PUBLIC_API_URL wird zur Build-Zeit ins Bundle gebacken (Browser-seitig).
-    #    NEXT_PUBLIC_API_URL: ${API_PUBLIC_URL:-https://api.kompetenzhub.ch}
+        NEXT_PUBLIC_API_URL: ${API_PUBLIC_URL:-https://api.kompetenzhub.ch}
     container_name: kompetenzhub-web
     restart: unless-stopped    
     environment:
