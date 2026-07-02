@@ -442,6 +442,18 @@ export class AuthService {
       : Locale.de;
   }
 
+  /**
+   * Ob das Dev-Login für die aktive Schule aktiviert ist (Default: ja).
+   * Ergänzt den globalen Env-Master-Schalter (DEV_LOGIN_ENABLED): der Env-Wert
+   * bleibt Voraussetzung, dieses Flag verfeinert es pro Mandant.
+   */
+  async isTenantDevLoginEnabled(): Promise<boolean> {
+    const tenantId = await this.resolveActiveTenantId();
+    const tenant = await this.prisma.tenant.findUnique({ where: { id: tenantId } });
+    const settings = (tenant?.settings ?? {}) as Record<string, unknown>;
+    return settings.devLogin !== false;
+  }
+
   /** Ob ein Auth-Provider in den Schul-Einstellungen aktiviert ist (Default: ja). */
   private async isProviderEnabled(tenantId: string, provider: AuthProvider): Promise<boolean> {
     const tenant = await this.prisma.tenant.findUnique({ where: { id: tenantId } });

@@ -132,9 +132,11 @@ export class AuthController {
   > {
     refreshRootEnv();
     const options = await this.auth.loginOptions();
+    // Env-Master-Schalter UND per-Mandant-Flag müssen beide erlauben.
+    const devLoginEnabled = isDevLoginEnabled() && (await this.auth.isTenantDevLoginEnabled());
     return {
       ...options,
-      devLoginEnabled: isDevLoginEnabled(),
+      devLoginEnabled,
       showAdminLogin: isAdminLoginVisible(),
     };
   }
@@ -150,7 +152,7 @@ export class AuthController {
     @Body() dto: DevLoginDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<unknown> {
-    if (!isDevLoginEnabled()) {
+    if (!isDevLoginEnabled() || !(await this.auth.isTenantDevLoginEnabled())) {
       throw new BadRequestException('Dev-Login ist deaktiviert.');
     }
     const email = dto.email?.trim() || 'dev.lehrperson@example.com';

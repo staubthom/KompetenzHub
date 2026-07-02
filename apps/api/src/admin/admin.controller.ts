@@ -46,6 +46,7 @@ interface SettingsDto {
   primaryColor?: string;
   defaultLocale?: string;
   allowedRegistrationDomains?: string[];
+  devLogin?: boolean;
 }
 interface UserPatchDto {
   displayName?: string;

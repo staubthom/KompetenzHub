@@ -50,6 +50,7 @@ export default function AdminSettingsPage() {
         primaryColor: patch.primaryColor,
         defaultLocale: patch.defaultLocale,
         allowedRegistrationDomains: patch.allowedRegistrationDomains,
+        devLogin: patch.devLogin,
       });
       setSettings(next);
       setSchoolName(next.schoolName);
@@ -371,15 +372,23 @@ export default function AdminSettingsPage() {
               <h2>{t('common.status')}</h2>
             </div>
             <div className="panel-body">
-              <p>
-                <strong>{t('admin.devLogin')}:</strong>{' '}
-                <span className={`badge ${settings.devLoginEnabled ? 'b-draft' : 'b-archived'}`}>
-                  {settings.devLoginEnabled ? t('admin.devLoginOn') : t('admin.devLoginOff')}
-                </span>
-              </p>
-              <p className="kh-muted" style={{ fontSize: 13, marginTop: -4 }}>
+              <label className="goal-check" style={{ display: 'block' }}>
+                <input
+                  type="checkbox"
+                  checked={settings.devLogin}
+                  disabled={busy || !settings.devLoginEnabled}
+                  onChange={() => void save({ devLogin: !settings.devLogin })}
+                />{' '}
+                <strong>{t('admin.devLogin')}</strong>
+              </label>
+              <p className="kh-muted" style={{ fontSize: 13, marginTop: 4 }}>
                 {t('admin.devLoginHint')}
               </p>
+              {!settings.devLoginEnabled && (
+                <p className="kh-muted" style={{ fontSize: 13, marginTop: -4 }}>
+                  {t('admin.devLoginEnvOff')}
+                </p>
+              )}
               <p>
                 <strong>{t('admin.adminEmails')}:</strong>{' '}
                 <span

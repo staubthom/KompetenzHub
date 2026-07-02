@@ -258,7 +258,10 @@ export class AdminService {
             (d): d is string => typeof d === 'string',
           )
         : [],
+      // Globaler Env-Master-Schalter (Prod kann Dev-Login komplett sperren).
       devLoginEnabled: (process.env.DEV_LOGIN_ENABLED ?? 'true') === 'true',
+      // Per-Mandant-Flag (Default: an); wirkt nur, wenn der Env-Master erlaubt.
+      devLogin: settings.devLogin !== false,
       adminEmailsConfigured: (process.env.ADMIN_EMAILS ?? '').trim().length > 0,
     };
   }
@@ -277,6 +280,7 @@ export class AdminService {
       primaryColor?: string;
       defaultLocale?: string;
       allowedRegistrationDomains?: string[];
+      devLogin?: boolean;
     },
   ) {
     const tenant = await this.prisma.tenant.findUnique({ where: { id: tenantId } });
@@ -297,6 +301,7 @@ export class AdminService {
     }
     const nextSettings: Record<string, unknown> = { ...settings, authProviders: next };
     if (dto.defaultLocale !== undefined) nextSettings.defaultLocale = dto.defaultLocale;
+    if (dto.devLogin !== undefined) nextSettings.devLogin = dto.devLogin;
     if (dto.allowedRegistrationDomains !== undefined) {
       if (!Array.isArray(dto.allowedRegistrationDomains)) {
         throw new BadRequestException('allowedRegistrationDomains muss eine Liste sein.');

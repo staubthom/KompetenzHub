@@ -1149,6 +1149,7 @@ export interface AdminSettings {
   authProviders: { microsoft: boolean; google: boolean; github: boolean; kompetenzhub: boolean };
   allowedRegistrationDomains: string[];
   devLoginEnabled: boolean;
+  devLogin: boolean;
   adminEmailsConfigured: boolean;
 }
 
@@ -1237,6 +1238,7 @@ export const admin = {
     primaryColor?: string;
     defaultLocale?: string;
     allowedRegistrationDomains?: string[];
+    devLogin?: boolean;
   }) =>
     apiFetch<AdminSettings>('/admin/settings', {
       method: 'PATCH',

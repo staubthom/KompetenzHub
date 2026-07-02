@@ -680,7 +680,10 @@ const de: Record<string, string> = {
   'admin.devLogin': 'Dev-Login',
   'admin.devLoginOn': 'aktiv',
   'admin.devLoginOff': 'deaktiviert',
-  'admin.devLoginHint': 'Nur für Entwicklung. Wird über die Server-Konfiguration gesteuert.',
+  'admin.devLoginHint':
+    'Blendet die Dev-Login-Auswahl auf der Anmeldeseite dieser Schule ein bzw. aus. Nur für Entwicklung/Test gedacht.',
+  'admin.devLoginEnvOff':
+    'Global über die Server-Konfiguration deaktiviert – diese Einstellung bleibt wirkungslos, bis der Betrieb sie freischaltet.',
   'admin.adminEmails': 'Erst-Admin (ENV)',
   'admin.adminEmailsSet': 'konfiguriert',
   'admin.adminEmailsUnset': 'nicht gesetzt',
@@ -1395,7 +1398,10 @@ const fr: Record<string, string> = {
   'admin.devLogin': 'Connexion dev',
   'admin.devLoginOn': 'actif',
   'admin.devLoginOff': 'désactivé',
-  'admin.devLoginHint': 'Développement uniquement. Géré via la configuration du serveur.',
+  'admin.devLoginHint':
+    "Affiche ou masque le choix de connexion dev sur la page de connexion de cette école. Uniquement pour le développement/test.",
+  'admin.devLoginEnvOff':
+    "Désactivé globalement via la configuration du serveur – ce réglage reste sans effet tant que l'exploitation ne l'active pas.",
   'admin.adminEmails': 'Admin initial (ENV)',
   'admin.adminEmailsSet': 'configuré',
   'admin.adminEmailsUnset': 'non défini',
@@ -2107,7 +2113,10 @@ const it: Record<string, string> = {
   'admin.devLogin': 'Dev-Login',
   'admin.devLoginOn': 'attivo',
   'admin.devLoginOff': 'disattivato',
-  'admin.devLoginHint': 'Solo per sviluppo. Gestito tramite la configurazione del server.',
+  'admin.devLoginHint':
+    'Mostra o nasconde la scelta del login dev nella pagina di accesso di questa scuola. Solo per sviluppo/test.',
+  'admin.devLoginEnvOff':
+    "Disattivato a livello globale tramite la configurazione del server – questa impostazione resta senza effetto finché non viene abilitata.",
   'admin.adminEmails': 'Admin iniziale (ENV)',
   'admin.adminEmailsSet': 'configurato',
   'admin.adminEmailsUnset': 'non impostato',
@@ -2813,7 +2822,10 @@ const en: Record<string, string> = {
   'admin.devLogin': 'Dev login',
   'admin.devLoginOn': 'enabled',
   'admin.devLoginOff': 'disabled',
-  'admin.devLoginHint': 'Development only. Controlled via server configuration.',
+  'admin.devLoginHint':
+    'Shows or hides the dev-login choice on this school’s sign-in page. For development/testing only.',
+  'admin.devLoginEnvOff':
+    'Disabled globally via server configuration – this setting has no effect until operations enable it.',
   'admin.adminEmails': 'Bootstrap admin (ENV)',
   'admin.adminEmailsSet': 'configured',
   'admin.adminEmailsUnset': 'not set',
