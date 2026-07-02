@@ -1798,6 +1798,8 @@ button.hm-cell {
   padding: 10px 12px;
   border-bottom: 1px solid var(--border);
   border-left: 1px solid var(--border);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .smatrix td:first-child {
   border-left: none;

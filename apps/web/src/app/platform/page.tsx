@@ -297,6 +297,7 @@ export default function PlatformPage() {
             <p className="kh-muted">Noch keine Schulen angelegt.</p>
           </div>
         ) : (
+          <div className="tablewrap">
           <table className="table">
             <thead>
               <tr>
@@ -493,6 +494,7 @@ export default function PlatformPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </AppShell>
