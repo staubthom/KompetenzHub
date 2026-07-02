@@ -327,217 +327,218 @@ export default function PlatformPage() {
           </div>
         ) : (
           <div className="tablewrap">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Slug</th>
-                <th>Name</th>
-                <th>Status</th>
-                <th style={{ textAlign: 'right' }}>Personen</th>
-                <th style={{ textAlign: 'right' }}>Module</th>
-                <th style={{ textAlign: 'right' }}>Klassen</th>
-                <th style={{ textAlign: 'right' }}>Speicher</th>
-                <th style={{ textAlign: 'right' }}>Quota</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {list.map((tn) => (
-                <Fragment key={tn.id}>
-                  <tr>
-                    <td>
-                      <code>{tn.slug}</code>
-                    </td>
-                    <td>{tn.name}</td>
-                    <td>{tn.active ? 'aktiv' : 'deaktiviert'}</td>
-                    <td style={{ textAlign: 'right' }}>{tn.memberships}</td>
-                    <td style={{ textAlign: 'right' }}>{tn.modules}</td>
-                    <td style={{ textAlign: 'right' }}>{tn.classes}</td>
-                    <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                      {formatBytes(tn.storageBytes)}
-                    </td>
-                    <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                      {tn.quotaBytes != null ? formatBytes(tn.quotaBytes) : '∞'}{' '}
-                      <button
-                        type="button"
-                        className="btn sm"
-                        onClick={() => {
-                          void setQuota(tn);
-                        }}
-                      >
-                        Ändern
-                      </button>
-                    </td>
-                    <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                      <button
-                        type="button"
-                        className="btn"
-                        onClick={() => {
-                          void openStorage(tn);
-                        }}
-                      >
-                        Speicher
-                      </button>{' '}
-                      <button
-                        type="button"
-                        className="btn"
-                        onClick={() => {
-                          void openAdmins(tn);
-                        }}
-                      >
-                        Admins
-                      </button>{' '}
-                      <button
-                        type="button"
-                        className="btn"
-                        disabled={!tn.active}
-                        title={
-                          tn.active
-                            ? 'Als Admin dieser Schule anmelden'
-                            : 'Deaktivierte Schule – kein Login möglich'
-                        }
-                        onClick={() => {
-                          void impersonate(tn);
-                        }}
-                      >
-                        Als Admin
-                      </button>{' '}
-                      <button
-                        type="button"
-                        className="btn"
-                        onClick={() => {
-                          void toggleActive(tn);
-                        }}
-                      >
-                        {tn.active ? 'Deaktivieren' : 'Aktivieren'}
-                      </button>{' '}
-                      <button
-                        type="button"
-                        className="btn danger"
-                        onClick={() => {
-                          void removeTenant(tn);
-                        }}
-                      >
-                        Löschen
-                      </button>
-                    </td>
-                  </tr>
-                  {storageId === tn.id && (
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Slug</th>
+                  <th>Name</th>
+                  <th>Status</th>
+                  <th style={{ textAlign: 'right' }}>Personen</th>
+                  <th style={{ textAlign: 'right' }}>Module</th>
+                  <th style={{ textAlign: 'right' }}>Klassen</th>
+                  <th style={{ textAlign: 'right' }}>Speicher</th>
+                  <th style={{ textAlign: 'right' }}>Quota</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {list.map((tn) => (
+                  <Fragment key={tn.id}>
                     <tr>
-                      <td colSpan={9} style={{ background: 'var(--kh-surface-2, #f8fafc)' }}>
-                        <div style={{ padding: '8px 4px' }}>
-                          <strong>
-                            Speicher von „{tn.name}" · gesamt {formatBytes(storage?.total)}
-                          </strong>
-                          {!storage ? (
-                            <p className="kh-muted">Laden…</p>
-                          ) : storage.teachers.length === 0 ? (
-                            <p className="kh-muted">Noch kein Speicherverbrauch erfasst.</p>
-                          ) : (
-                            <table className="table" style={{ marginTop: 8 }}>
-                              <thead>
-                                <tr>
-                                  <th>Lehrperson</th>
-                                  <th style={{ textAlign: 'right' }}>Speicher</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {storage.teachers.map((tt) => (
-                                  <tr key={tt.teacherId}>
-                                    <td>
-                                      {tt.displayName}
-                                      {tt.email ? (
-                                        <span className="kh-muted"> &lt;{tt.email}&gt;</span>
-                                      ) : null}
-                                    </td>
-                                    <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                                      {formatBytes(tt.bytes)}
-                                    </td>
+                      <td>
+                        <code>{tn.slug}</code>
+                      </td>
+                      <td>{tn.name}</td>
+                      <td>{tn.active ? 'aktiv' : 'deaktiviert'}</td>
+                      <td style={{ textAlign: 'right' }}>{tn.memberships}</td>
+                      <td style={{ textAlign: 'right' }}>{tn.modules}</td>
+                      <td style={{ textAlign: 'right' }}>{tn.classes}</td>
+                      <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        {formatBytes(tn.storageBytes)}
+                      </td>
+                      <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        {tn.quotaBytes != null ? formatBytes(tn.quotaBytes) : '∞'}{' '}
+                        <button
+                          type="button"
+                          className="btn sm"
+                          onClick={() => {
+                            void setQuota(tn);
+                          }}
+                        >
+                          Ändern
+                        </button>
+                      </td>
+                      <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        <button
+                          type="button"
+                          className="btn"
+                          onClick={() => {
+                            void openStorage(tn);
+                          }}
+                        >
+                          Speicher
+                        </button>{' '}
+                        <button
+                          type="button"
+                          className="btn"
+                          onClick={() => {
+                            void openAdmins(tn);
+                          }}
+                        >
+                          Admins
+                        </button>{' '}
+                        <button
+                          type="button"
+                          className="btn"
+                          disabled={!tn.active}
+                          title={
+                            tn.active
+                              ? 'Als Admin dieser Schule anmelden'
+                              : 'Deaktivierte Schule – kein Login möglich'
+                          }
+                          onClick={() => {
+                            void impersonate(tn);
+                          }}
+                        >
+                          Als Admin
+                        </button>{' '}
+                        <button
+                          type="button"
+                          className="btn"
+                          onClick={() => {
+                            void toggleActive(tn);
+                          }}
+                        >
+                          {tn.active ? 'Deaktivieren' : 'Aktivieren'}
+                        </button>{' '}
+                        <button
+                          type="button"
+                          className="btn danger"
+                          onClick={() => {
+                            void removeTenant(tn);
+                          }}
+                        >
+                          Löschen
+                        </button>
+                      </td>
+                    </tr>
+                    {storageId === tn.id && (
+                      <tr>
+                        <td colSpan={9} style={{ background: 'var(--kh-surface-2, #f8fafc)' }}>
+                          <div style={{ padding: '8px 4px' }}>
+                            <strong>
+                              Speicher von „{tn.name}" · gesamt {formatBytes(storage?.total)}
+                            </strong>
+                            {!storage ? (
+                              <p className="kh-muted">Laden…</p>
+                            ) : storage.teachers.length === 0 ? (
+                              <p className="kh-muted">Noch kein Speicherverbrauch erfasst.</p>
+                            ) : (
+                              <table className="table" style={{ marginTop: 8 }}>
+                                <thead>
+                                  <tr>
+                                    <th>Lehrperson</th>
+                                    <th style={{ textAlign: 'right' }}>Speicher</th>
                                   </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          )}
-                          <p className="kh-muted" style={{ fontSize: 12, marginTop: 6 }}>
-                            Einreichungen werden der verantwortlichen Lehrperson (Besitzer des
-                            Modulanlasses) zugerechnet, Anhänge/Bilder der hochladenden Person.
-                          </p>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                  {expandedId === tn.id && (
-                    <tr>
-                      <td colSpan={9} style={{ background: 'var(--kh-surface-2, #f8fafc)' }}>
-                        <div style={{ padding: '8px 4px' }}>
-                          <strong>Schuladmins von „{tn.name}"</strong>
-                          {!admins ? (
-                            <p className="kh-muted">Laden…</p>
-                          ) : (
-                            <>
-                              {admins.admins.length === 0 && admins.pendingInvites.length === 0 ? (
-                                <p className="kh-muted">Noch keine Admins.</p>
-                              ) : (
-                                <ul style={{ margin: '8px 0', paddingLeft: 18 }}>
-                                  {admins.admins.map((a) => (
-                                    <li key={a.membershipId}>
-                                      {a.displayName} &lt;{a.email}&gt;{' '}
-                                      <button
-                                        type="button"
-                                        className="btn danger btn-sm"
-                                        onClick={() => {
-                                          void removeAdmin(tn.id, { userId: a.userId });
-                                        }}
-                                      >
-                                        Entfernen
-                                      </button>
-                                    </li>
+                                </thead>
+                                <tbody>
+                                  {storage.teachers.map((tt) => (
+                                    <tr key={tt.teacherId}>
+                                      <td>
+                                        {tt.displayName}
+                                        {tt.email ? (
+                                          <span className="kh-muted"> &lt;{tt.email}&gt;</span>
+                                        ) : null}
+                                      </td>
+                                      <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                                        {formatBytes(tt.bytes)}
+                                      </td>
+                                    </tr>
                                   ))}
-                                  {admins.pendingInvites.map((p) => (
-                                    <li key={p.id}>
-                                      {p.email} <em className="kh-muted">(eingeladen)</em>{' '}
-                                      <button
-                                        type="button"
-                                        className="btn danger btn-sm"
-                                        onClick={() => {
-                                          void removeAdmin(tn.id, { email: p.email });
-                                        }}
-                                      >
-                                        Widerrufen
-                                      </button>
-                                    </li>
-                                  ))}
-                                </ul>
-                              )}
-                              <div className="form-inline" style={{ marginTop: 4 }}>
-                                <input
-                                  type="email"
-                                  placeholder="admin@schule.ch"
-                                  aria-label="Neue Admin-E-Mail"
-                                  value={newAdmin}
-                                  onChange={(e) => setNewAdmin(e.target.value)}
-                                  style={{ minWidth: 240 }}
-                                />
-                                <button
-                                  type="button"
-                                  className="btn primary"
-                                  onClick={() => {
-                                    void addAdmin(tn.id);
-                                  }}
-                                >
-                                  Admin hinzufügen
-                                </button>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </Fragment>
-              ))}
-            </tbody>
-          </table>
+                                </tbody>
+                              </table>
+                            )}
+                            <p className="kh-muted" style={{ fontSize: 12, marginTop: 6 }}>
+                              Einreichungen werden der verantwortlichen Lehrperson (Besitzer des
+                              Modulanlasses) zugerechnet, Anhänge/Bilder der hochladenden Person.
+                            </p>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                    {expandedId === tn.id && (
+                      <tr>
+                        <td colSpan={9} style={{ background: 'var(--kh-surface-2, #f8fafc)' }}>
+                          <div style={{ padding: '8px 4px' }}>
+                            <strong>Schuladmins von „{tn.name}"</strong>
+                            {!admins ? (
+                              <p className="kh-muted">Laden…</p>
+                            ) : (
+                              <>
+                                {admins.admins.length === 0 &&
+                                admins.pendingInvites.length === 0 ? (
+                                  <p className="kh-muted">Noch keine Admins.</p>
+                                ) : (
+                                  <ul style={{ margin: '8px 0', paddingLeft: 18 }}>
+                                    {admins.admins.map((a) => (
+                                      <li key={a.membershipId}>
+                                        {a.displayName} &lt;{a.email}&gt;{' '}
+                                        <button
+                                          type="button"
+                                          className="btn danger btn-sm"
+                                          onClick={() => {
+                                            void removeAdmin(tn.id, { userId: a.userId });
+                                          }}
+                                        >
+                                          Entfernen
+                                        </button>
+                                      </li>
+                                    ))}
+                                    {admins.pendingInvites.map((p) => (
+                                      <li key={p.id}>
+                                        {p.email} <em className="kh-muted">(eingeladen)</em>{' '}
+                                        <button
+                                          type="button"
+                                          className="btn danger btn-sm"
+                                          onClick={() => {
+                                            void removeAdmin(tn.id, { email: p.email });
+                                          }}
+                                        >
+                                          Widerrufen
+                                        </button>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                                <div className="form-inline" style={{ marginTop: 4 }}>
+                                  <input
+                                    type="email"
+                                    placeholder="admin@schule.ch"
+                                    aria-label="Neue Admin-E-Mail"
+                                    value={newAdmin}
+                                    onChange={(e) => setNewAdmin(e.target.value)}
+                                    style={{ minWidth: 240 }}
+                                  />
+                                  <button
+                                    type="button"
+                                    className="btn primary"
+                                    onClick={() => {
+                                      void addAdmin(tn.id);
+                                    }}
+                                  >
+                                    Admin hinzufügen
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

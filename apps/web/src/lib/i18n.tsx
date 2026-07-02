@@ -1403,7 +1403,7 @@ const fr: Record<string, string> = {
   'admin.devLoginOn': 'actif',
   'admin.devLoginOff': 'désactivé',
   'admin.devLoginHint':
-    "Affiche ou masque le choix de connexion dev sur la page de connexion de cette école. Uniquement pour le développement/test.",
+    'Affiche ou masque le choix de connexion dev sur la page de connexion de cette école. Uniquement pour le développement/test.',
   'admin.devLoginEnvOff':
     "Désactivé globalement via la configuration du serveur – ce réglage reste sans effet tant que l'exploitation ne l'active pas.",
   'admin.adminEmails': 'Admin initial (ENV)',
@@ -2122,7 +2122,7 @@ const it: Record<string, string> = {
   'admin.devLoginHint':
     'Mostra o nasconde la scelta del login dev nella pagina di accesso di questa scuola. Solo per sviluppo/test.',
   'admin.devLoginEnvOff':
-    "Disattivato a livello globale tramite la configurazione del server – questa impostazione resta senza effetto finché non viene abilitata.",
+    'Disattivato a livello globale tramite la configurazione del server – questa impostazione resta senza effetto finché non viene abilitata.',
   'admin.adminEmails': 'Admin iniziale (ENV)',
   'admin.adminEmailsSet': 'configurato',
   'admin.adminEmailsUnset': 'non impostato',

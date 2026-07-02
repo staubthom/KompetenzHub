@@ -408,7 +408,13 @@ export class AuthService {
       locale: user.locale,
       impersonatorId: payload.sub,
     });
-    await this.audit(payload.tid, payload.sub, 'auth.impersonate.redeem', { jti: payload.jti }, meta);
+    await this.audit(
+      payload.tid,
+      payload.sub,
+      'auth.impersonate.redeem',
+      { jti: payload.jti },
+      meta,
+    );
 
     return {
       token,
