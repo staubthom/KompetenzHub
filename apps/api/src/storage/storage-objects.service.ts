@@ -1,4 +1,10 @@
-import { Injectable, Logger, NotFoundException, PayloadTooLargeException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  PayloadTooLargeException,
+} from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { S3Service } from './s3.service';
@@ -48,6 +54,40 @@ export class StorageObjectsService {
       });
     } catch (e) {
       this.logger.warn(`StorageObject konnte nicht verbucht werden (${input.key}): ${String(e)}`);
+    }
+  }
+
+  /**
+   * Stellt sicher, dass die angegebenen Objekt-Keys tatsächlich von dieser Person
+   * in diesem Mandanten hochgeladen wurden (Buchung in StorageObject vorhanden).
+   *
+   * Sicherheitskritisch: Beim Einreichen/Anfügen liefert der Client die Keys; ohne
+   * diese Prüfung könnte ein:e Nutzer:in einen fremden oder erratenen S3-Key
+   * unterschieben (z. B. `t/<fremder-tenant>/…`) und ihn später über die
+   * presigned Download-URL der Einreichung auslesen – ein mandantenübergreifender
+   * Datei-Zugriff. Der Abgleich gegen `uploaderId` + `tenantId` (+ optional `kind`)
+   * bindet jeden Key an die Person, die ihn selbst per presigned Upload angefordert hat.
+   */
+  async assertUploadedBy(input: {
+    tenantId: string;
+    uploaderId: string;
+    keys: (string | null | undefined)[];
+    kind?: StorageObjectKind;
+  }): Promise<void> {
+    const keys = [...new Set(input.keys.filter((k): k is string => !!k))];
+    if (keys.length === 0) return;
+    const found = await this.prisma.storageObject.findMany({
+      where: {
+        key: { in: keys },
+        tenantId: input.tenantId,
+        uploaderId: input.uploaderId,
+        ...(input.kind ? { kind: input.kind } : {}),
+      },
+      select: { key: true },
+    });
+    const ok = new Set(found.map((o) => o.key));
+    if (keys.some((k) => !ok.has(k))) {
+      throw new ForbiddenException('Ungültiger Datei-Verweis in der Einreichung.');
     }
   }
 

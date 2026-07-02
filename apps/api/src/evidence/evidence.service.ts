@@ -342,6 +342,14 @@ export class EvidenceService {
     this.assertStudentMaySubmit((ev.config ?? {}) as UploadConfig);
     const enrollment = await this.resolveEnrollment(ev.moduleId, tenantId, userId);
     await this.assertCanSubmit(id, enrollment.id);
+    // Der Client liefert den Key – er muss aus einem eigenen presigned Upload dieser
+    // Person stammen (sonst liesse sich ein fremder Objekt-Key unterschieben).
+    await this.storageObjects.assertUploadedBy({
+      tenantId,
+      uploaderId: userId,
+      keys: [key],
+      kind: 'submission',
+    });
     const submission = await this.prisma.submission.create({
       data: {
         evidenceId: id,
@@ -425,6 +433,14 @@ export class EvidenceService {
       }
     }
     await this.assertCanSubmit(id, enrollment.id);
+    // Alle referenzierten Datei-Keys müssen aus eigenen presigned Uploads dieser
+    // Person stammen (kein Unterschieben fremder/erratener Objekt-Keys).
+    await this.storageObjects.assertUploadedBy({
+      tenantId,
+      uploaderId: userId,
+      keys: files.map((f) => f.key),
+      kind: 'submission',
+    });
 
     const primary = files[0];
     const submission = await this.prisma.submission.create({
@@ -520,6 +536,16 @@ export class EvidenceService {
     const files = rawFiles
       ?.filter((f) => f?.key)
       .map((f) => ({ key: String(f.key), name: f.name?.trim() || 'Datei', kind: 'file' as const }));
+    // Nur eigene, in diesem Mandanten hochgeladene Anhänge dürfen referenziert werden
+    // (verhindert das Unterschieben fremder Objekt-Keys über die spätere Download-URL).
+    if (files !== undefined) {
+      await this.storageObjects.assertUploadedBy({
+        tenantId,
+        uploaderId: userId,
+        keys: files.map((f) => f.key),
+        kind: 'attachment',
+      });
+    }
     const fileData =
       files !== undefined
         ? {
