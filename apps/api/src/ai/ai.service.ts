@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { decryptSecret, encryptSecret, maskSecret } from './crypto.util';
+import { assertPublicEndpoint, isPublicEndpoint } from './url-guard';
 
 export interface AiConfigInput {
   provider?: string;
@@ -89,6 +90,8 @@ export class AiService {
     if (input.baseUrl !== undefined && input.baseUrl && !/^https?:\/\//i.test(input.baseUrl)) {
       throw new BadRequestException('baseUrl muss mit http:// oder https:// beginnen.');
     }
+    // SSRF-Schutz: interne/private Ziele (Cloud-Metadaten, Objektspeicher, …) sperren.
+    if (input.baseUrl) await assertPublicEndpoint(input.baseUrl);
 
     const data: {
       provider?: string;
@@ -142,6 +145,13 @@ export class AiService {
 
     if (!baseUrl) return { ok: false, message: 'Kein Endpoint (baseUrl) konfiguriert.' };
     if (!apiKey) return { ok: false, message: 'Kein API-Key hinterlegt.' };
+    // SSRF-Schutz: kein Verbindungstest gegen interne/private Adressen.
+    if (!(await isPublicEndpoint(baseUrl))) {
+      return {
+        ok: false,
+        message: 'Der Endpoint verweist auf eine nicht erlaubte (interne oder private) Adresse.',
+      };
+    }
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10_000);
@@ -275,6 +285,11 @@ export class AiService {
     }
     const apiKey = decryptSecret(cfg.apiKeyEnc!);
     const baseUrl = cfg.baseUrl.replace(/\/+$/, '');
+    // SSRF-Schutz (Defense-in-depth): auch gespeicherte/geteilte Configs, die vor
+    // dieser Prüfung angelegt wurden, dürfen nicht auf interne Ziele zeigen.
+    if (!(await isPublicEndpoint(baseUrl))) {
+      throw new ConflictException('Der KI-Endpoint verweist auf eine nicht erlaubte Adresse.');
+    }
     // Der /models-Listing-Endpoint (Verbindungstest) liefert IDs mit „models/"-Präfix
     // (z. B. Gemini: „models/gemini-2.5-flash"). Der OpenAI-kompatible /chat/completions
     // erwartet jedoch die nackte ID. Das Präfix darum entfernen, falls hineinkopiert.
