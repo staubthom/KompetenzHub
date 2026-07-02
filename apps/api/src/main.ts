@@ -157,7 +157,10 @@ async function bootstrap(): Promise<void> {
   // CORS: konfigurierte Web-URL, localhost und alle Schul-Subdomains der
   // Basisdomain zulassen (Multi-Tenant), Cookies durchlassen.
   app.enableCors({
-    origin: (origin, callback) => {
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
       // Kein Origin (Server-zu-Server, curl, same-origin) → zulassen.
       callback(null, !origin || isAllowedOrigin(origin));
     },

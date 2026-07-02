@@ -24,6 +24,9 @@
     "prisma:migrate": "npm run prisma:migrate --workspace apps/api",
     "prisma:generate": "npm run prisma:generate --workspace apps/api"
   },
+  "overrides": {
+    "multer": "^2.2.0"
+  },
   "devDependencies": {
     "@eslint/compat": "^2.1.0",
     "@eslint/eslintrc": "^3.3.5",
