@@ -123,19 +123,22 @@ await fetch(att.body.uploadUrl, {
 });
 const attachmentKey = att.body.key;
 
-// Rich-Text-Bild in S3 ablegen
+// Rich-Text-Bild in S3 ablegen. sizeBytes MUSS der tatsächlich hochgeladenen
+// Grösse entsprechen – presignUpload signiert die Content-Length (Quota-Schutz),
+// S3 lehnt sonst den PUT ab.
+const imgBytes = Buffer.from('89504e470d0a1a0a', 'hex');
 const img = await req(
   'POST',
   '/assets/image-upload-url',
-  { fileName: 'bild.png', contentType: 'image/png', sizeBytes: 70 },
+  { fileName: 'bild.png', contentType: 'image/png', sizeBytes: imgBytes.length },
   teacher,
 );
 await fetch(img.body.uploadUrl, {
   method: 'PUT',
   headers: { 'Content-Type': 'image/png' },
-  body: Buffer.from('89504e470d0a1a0a', 'hex'),
+  body: imgBytes,
 });
-const imgUrl = img.body.publicUrl;
+const imgUrl = img.body.canonicalUrl;
 
 const ev = await req(
   'POST',
