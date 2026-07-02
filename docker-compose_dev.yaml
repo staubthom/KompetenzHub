@@ -4,20 +4,15 @@ services:
     container_name: kompetenzhub-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-kompetenzhub}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kompetenzhub}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-kompetenzhub}
     ports:
       - '${POSTGRES_PORT:-5432}:5432'
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      # Legt beim ERSTEN Hochfahren (leeres Volume) zusaetzlich die Logto-DB an.
-      # Bei bereits bestehendem Volume einmalig manuell:
-      #   docker compose -f docker-compose_dev.yaml exec postgres \
-      #     createdb -U kompetenzhub logto
-      - ./infra/postgres-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-kompetenzhub}']
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -42,8 +37,8 @@ services:
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     ports:
       - '${MINIO_PORT:-9000}:9000'
       - '${MINIO_CONSOLE_PORT:-9001}:9001'
@@ -55,7 +50,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # ── Eigener Identity-Provider (Logto): Self-Service-Registrierung mit E-Mail/Passwort ──
+# ── Eigener Identity-Provider (Logto): Self-Service-Registrierung mit E-Mail/Passwort ──
   # Nutzt denselben Postgres-Server, aber eine eigene Datenbank `logto`.
   # OIDC-Endpoint (Login/Registrierung): http://localhost:3011
   # Admin-Konsole (App anlegen, Client-ID/Secret holen): http://localhost:3012
@@ -75,10 +70,12 @@ services:
       # Standardport 3001 (Core) kollidiert mit der KompetenzHub-API, daher 3011/3012.
       PORT: 3011
       ADMIN_PORT: 3012
-      DB_URL: postgresql://${POSTGRES_USER:-kompetenzhub}:${POSTGRES_PASSWORD:-kompetenzhub}@postgres:5432/logto
-      ENDPOINT: ${KOMPETENZHUB_OIDC_ENDPOINT:-http://localhost:3011}
-      ADMIN_ENDPOINT: ${KOMPETENZHUB_ADMIN_ENDPOINT:-http://localhost:3012}
-      CONNECTORS: '[{"id":"smtp-mail","target":"@logto/connector-smtp","config":{"host":"${SMTP_HOST}","port":${SMTP_PORT},"secure":${SMTP_SECURE},"auth":{"user":"${SMTP_USER}","pass":"${SMTP_PASS}"},"from":"${SMTP_USER}"}}]'
+      # für die Adminkonfiguration muss der auf true sein danach auf False, dann kommt man aber nicht mehr ins Admin Portal sein. 
+      TRUST_PROXY_HEADER: true
+      DB_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/logto
+      ENDPOINT: ${KOMPETENZHUB_OIDC_ENDPOINT:-https://auth.kompetenzhub.ch}
+      ADMIN_ENDPOINT: ${KOMPETENZHUB_ADMIN_ENDPOINT:-https://authadmin.kompetenzhub.ch}
+      REDIS_URL: redis://redis:6379     
     ports:
       - '3011:3011' # OIDC-Endpoint  (Core)
       - '3012:3012' # Admin-Konsole
@@ -96,8 +93,6 @@ services:
       retries: 12
       start_period: 30s
 
-
-
   # ── Anwendung (nur mit Profil "app", z. B. `docker compose -f docker-compose_dev.yaml --profile  app up -d --build`) ──
   api:
     profiles: ['app']
@@ -110,45 +105,52 @@ services:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
       minio: { condition: service_healthy }
-    environment:
+    environment:      
       NODE_ENV: development
       API_PORT: 3001
-      DATABASE_URL: postgresql://${POSTGRES_USER:-kompetenzhub}:${POSTGRES_PASSWORD:-kompetenzhub}@postgres:5432/${POSTGRES_DB:-kompetenzhub}?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-kompetenzhub}?schema=public
       REDIS_URL: redis://redis:6379
       # S3_ENDPOINT: interne Adresse (Container→MinIO); S3_PUBLIC_URL: Browser-erreichbar
-      S3_ENDPOINT: http://minio:9000
-      S3_PUBLIC_URL: ${S3_PUBLIC_URL:-http://localhost:9000}
-      S3_BUCKET: ${S3_BUCKET:-kompetenzhub}
-      S3_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
-      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      S3_ENDPOINT: https://s3.kompetenzhub.ch
+      S3_PUBLIC_URL: ${S3_PUBLIC_URL:-https://s3.kompetenzhub.ch}
+      S3_BUCKET: ${S3_BUCKET}
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       # In Produktion zwingend starke Werte in .env setzen (sonst bricht der Start ab).
       JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:?Bitte starken Wert in .env setzen}
       JWT_TTL_SECONDS: ${JWT_TTL_SECONDS:-900}
       AI_CONFIG_ENC_KEY: ${AI_CONFIG_ENC_KEY:?Bitte starken Wert in .env setzen}
       DEV_LOGIN_ENABLED: 'true'
       SHOW_ADMIN_LOGIN: 'false'
-      AUTH_EXCHANGE_SECRET: ${AUTH_EXCHANGE_SECRET:-}
-      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
       DEFAULT_TENANT_ID: ${DEFAULT_TENANT_ID:-00000000-0000-0000-0000-000000000001}
-      NEXT_PUBLIC_WEB_URL: ${WEB_PUBLIC_URL:-http://localhost:3000}
+      DEFAULT_TENANT_SLUG: ${DEFAULT_TENANT_SLUG:-demo}
+      AUTH_EXCHANGE_SECRET: ${AUTH_EXCHANGE_SECRET}
+      SUPERADMIN_EMAILS: ${SUPERADMIN_EMAILS}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+      NEXT_PUBLIC_WEB_URL: ${WEB_PUBLIC_URL:-https://demo.kompetenzhub.ch}
       THROTTLE_TTL: ${THROTTLE_TTL:-60000}
       THROTTLE_LIMIT: ${THROTTLE_LIMIT:-300}
       THROTTLE_AUTH_LIMIT: ${THROTTLE_AUTH_LIMIT:-60}
       # ----- Auth (OIDC) – Frontend (NextAuth), optional bis IdP angebunden -----
-      AUTH_MICROSOFT_CLIENT_ID: ${AUTH_MICROSOFT_CLIENT_ID:-noch-zu-setzen}
-      AUTH_MICROSOFT_CLIENT_SECRET: ${AUTH_MICROSOFT_CLIENT_SECRET:-noch-zu-setze}
-      AUTH_MICROSOFT_TENANT_ID: ${AUTH_MICROSOFT_TENANT_ID:-common}
-      AUTH_GITHUB_CLIENT_ID: ${AUTH_GITHUB_CLIENT_ID:-}
-      AUTH_GITHUB_CLIENT_SECRET: ${AUTH_GITHUB_CLIENT_SECRET:-}
-      AUTH_GOOGLE_CLIENT_ID: ${AUTH_GOOGLE_CLIENT_ID:-}
-      AUTH_GOOGLE_CLIENT_SECRET: ${AUTH_GOOGLE_CLIENT_SECRET:-}
-      # Eigener IdP (Logto). Die API ruft Logto NICHT auf – sie nutzt diese Werte nur,
-      # um den Provider auf der Login-Seite als "konfiguriert" anzuzeigen, und vertraut
-      # beim /auth/exchange dem vom web-Container verifizierten Profil (AUTH_EXCHANGE_SECRET).
-      # Daher genügt hier der öffentliche Issuer; host.docker.internal ist NICHT nötig.
-      KOMPETENZHUB_OIDC_ISSUER: ${KOMPETENZHUB_OIDC_ISSUER:-}
-      KOMPETENZHUB_OIDC_CLIENT_ID: ${KOMPETENZHUB_OIDC_CLIENT_ID:-}
-      KOMPETENZHUB_OIDC_CLIENT_SECRET: ${KOMPETENZHUB_OIDC_CLIENT_SECRET:-}
+      AUTH_MICROSOFT_CLIENT_ID: ${AUTH_MICROSOFT_CLIENT_ID}
+      AUTH_MICROSOFT_CLIENT_SECRET: ${AUTH_MICROSOFT_CLIENT_SECRET}
+      AUTH_GITHUB_CLIENT_ID: ${AUTH_GITHUB_CLIENT_ID}
+      AUTH_GITHUB_CLIENT_SECRET: ${AUTH_GITHUB_CLIENT_SECRET}
+      AUTH_GOOGLE_CLIENT_ID: ${AUTH_GOOGLE_CLIENT_ID}
+      AUTH_GOOGLE_CLIENT_SECRET: ${AUTH_GOOGLE_CLIENT_SECRET}          
+      # OAuth App Client Secret aus GitHub
+      # Lösen unter: https://console.cloud.google.com/apis/credentials      
+      #in Github:unter Settings -> Developer settings -> OAuth Apps -> New OAuth App   
+      KOMPETENZHUB_OIDC_ISSUER: ${KOMPETENZHUB_OIDC_ISSUER:-https://auth.kompetenzhub.ch/oidc}
+      KOMPETENZHUB_OIDC_CLIENT_ID: ${KOMPETENZHUB_OIDC_CLIENT_ID}
+      KOMPETENZHUB_OIDC_CLIENT_SECRET: ${KOMPETENZHUB_OIDC_CLIENT_SECRET}
+      # Browser-erreichbare URLs des Logto-Containers (fuer abweichende Ports anpassen).
+      KOMPETENZHUB_OIDC_ENDPOINT: ${KOMPETENZHUB_OIDC_ENDPOINT}
+      KOMPETENZHUB_ADMIN_ENDPOINT: ${KOMPETENZHUB_ADMIN_ENDPOINT}     
+      NEXTAUTH_SECRET:  ${NEXTAUTH_SECRET}     
+      NEXTAUTH_URL:  ${NEXTAUTH_URL}   
+      AUTH_TRUST_HOST: ${AUTH_TRUST_HOST}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
     ports:
       - '${API_PORT:-3001}:3001'
     healthcheck:
@@ -170,49 +172,47 @@ services:
       dockerfile: apps/web/Dockerfile
       args:
         # NEXT_PUBLIC_API_URL wird zur Build-Zeit ins Bundle gebacken (Browser-seitig).
-        NEXT_PUBLIC_API_URL: ${API_PUBLIC_URL:-http://localhost:3001}
+        NEXT_PUBLIC_API_URL: ${API_PUBLIC_URL:-https://api.kompetenzhub.ch}
     container_name: kompetenzhub-web
-    restart: unless-stopped
-    depends_on:
-      api: { condition: service_healthy }
+    restart: unless-stopped    
     environment:
-      NODE_ENV: development
+      NODE_ENV: development     
       PORT: 3000
-      NEXT_PUBLIC_API_URL: ${API_PUBLIC_URL:-http://localhost:3001}
-      API_INTERNAL_URL: http://api:3001
+      # ----- Auth (OIDC) – Frontend (NextAuth), optional bis IdP angebunden -----
+      AUTH_MICROSOFT_CLIENT_ID: ${AUTH_MICROSOFT_CLIENT_ID}
+      AUTH_MICROSOFT_CLIENT_SECRET: ${AUTH_MICROSOFT_CLIENT_SECRET}
+      AUTH_GITHUB_CLIENT_ID: ${AUTH_GITHUB_CLIENT_ID}
+      AUTH_GITHUB_CLIENT_SECRET: ${AUTH_GITHUB_CLIENT_SECRET}
+      AUTH_GOOGLE_CLIENT_ID: ${AUTH_GOOGLE_CLIENT_ID}
+      AUTH_GOOGLE_CLIENT_SECRET: ${AUTH_GOOGLE_CLIENT_SECRET}          
+      # OAuth App Client Secret aus GitHub
+      # Lösen unter: https://console.cloud.google.com/apis/credentials      
+      #in Github:unter Settings -> Developer settings -> OAuth Apps -> New OAuth App   
+      KOMPETENZHUB_OIDC_ISSUER: ${KOMPETENZHUB_OIDC_ISSUER:-https://auth.kompetenzhub.ch/oidc}
+      KOMPETENZHUB_OIDC_CLIENT_ID: ${KOMPETENZHUB_OIDC_CLIENT_ID}
+      KOMPETENZHUB_OIDC_CLIENT_SECRET: ${KOMPETENZHUB_OIDC_CLIENT_SECRET}
+      # Browser-erreichbare URLs des Logto-Containers (fuer abweichende Ports anpassen).
+      KOMPETENZHUB_OIDC_ENDPOINT: ${KOMPETENZHUB_OIDC_ENDPOINT}
+      KOMPETENZHUB_ADMIN_ENDPOINT: ${KOMPETENZHUB_ADMIN_ENDPOINT}      
       AUTH_EXCHANGE_SECRET: ${AUTH_EXCHANGE_SECRET:-}
-      AUTH_MICROSOFT_CLIENT_ID: ${AUTH_MICROSOFT_CLIENT_ID:-noch-zu-setzen}
-      AUTH_MICROSOFT_CLIENT_SECRET: ${AUTH_MICROSOFT_CLIENT_SECRET:-noch-zu-setze}
-      AUTH_MICROSOFT_TENANT_ID: ${AUTH_MICROSOFT_TENANT_ID:-common}
-      AUTH_GITHUB_CLIENT_ID: ${AUTH_GITHUB_CLIENT_ID:-}
-      AUTH_GITHUB_CLIENT_SECRET: ${AUTH_GITHUB_CLIENT_SECRET:-}
-      AUTH_GOOGLE_CLIENT_ID: ${AUTH_GOOGLE_CLIENT_ID:-}
-      AUTH_GOOGLE_CLIENT_SECRET: ${AUTH_GOOGLE_CLIENT_SECRET:-}
-      # Eigener IdP (Logto). Im reinen Container-Betrieb (--profile app) muss der Issuer
-      # eine sowohl vom Browser als auch vom web-Container erreichbare URL sein
-      # (z. B. http://host.docker.internal:3011/oidc) und mit Logtos ENDPOINT übereinstimmen.
-      KOMPETENZHUB_OIDC_ISSUER: ${KOMPETENZHUB_OIDC_ISSUER:-}
-      KOMPETENZHUB_OIDC_CLIENT_ID: ${KOMPETENZHUB_OIDC_CLIENT_ID:-}
-      KOMPETENZHUB_OIDC_CLIENT_SECRET: ${KOMPETENZHUB_OIDC_CLIENT_SECRET:-}
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-mein-dev-nextauth-secret-change-me-in-production124364546v34243vdfs}
-      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXTAUTH_SECRET:  ${NEXTAUTH_SECRET}     
+      NEXTAUTH_URL:  ${NEXTAUTH_URL}   
+      NEXT_PUBLIC_TENANT_BASE_DOMAIN: ${NEXT_PUBLIC_TENANT_BASE_DOMAIN}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
     ports:
       - '${WEB_PORT:-3000}:3000'
 
-    # ── Anwendung (nur mit Profil "maintenance", z. B. `docker compose -f docker-compose_dev.yaml --profile  maintenance up -d --build`) ──
+
+   # ── Anwendung (nur mit Profil "maintenance", z. B. `docker compose -f docker-compose_dev.yaml --profile  maintenance up -d --build`) ──     
   wartungsseite:
     profiles: ['maintenance']
     build:
-      context: .
+      context: .         
       dockerfile: maintenance/Dockerfile
     container_name: wartung_app
     ports:
-      - '3000:80' # Wartungsbetrieb: Port 3000 von aussen geht intern auf Port 80
+      - "3000:80" # Wartungsbetrieb: Port 3000 von aussen geht intern auf Port 80
     restart: unless-stopped
-
-
-
-
 # Ersetze den alten Volumes-Block am Ende deiner Datei hiermit:
 volumes:
   postgres-data:

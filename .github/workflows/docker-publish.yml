@@ -22,12 +22,22 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Create dummy .env for build-time requirements
+        run: |
+          # Docker Compose prüft die Variablen beim Parsen der YAML.
+          # Wir befüllen sie mit Dummy-Werten, damit der Build nicht abbricht.
+          echo "POSTGRES_USER=build_user" >> .env
+          echo "POSTGRES_PASSWORD=build_password" >> .env
+          echo "MINIO_ROOT_USER=build_minio" >> .env
+          echo "MINIO_ROOT_PASSWORD=build_minio_password" >> .env
+          echo "JWT_SIGNING_KEY=temporary_build_key_that_is_long_enough_12345" >> .env
+          echo "AI_CONFIG_ENC_KEY=temporary_build_key_that_is_long_enough_12345" >> .env
+          echo "S3_BUCKET=kompetenzhub-bucket" >> .env
+
       - name: Build Images
         run: |
-          # Wir nutzen deinen exakten Build-Befehl
-          docker compose -f docker-compose_hetzner.yaml --profile app build
+          docker compose -f docker-compose_dev.yaml --profile app build
 
       - name: Push Images
         run: |
-          # Und pushen die getaggten Images hoch
-          docker compose -f docker-compose_hetzner.yaml --profile app push
+          docker compose -f docker-compose_dev.yaml --profile app push
