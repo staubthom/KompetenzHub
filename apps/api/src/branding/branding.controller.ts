@@ -2,6 +2,7 @@ import { Controller, Get } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators';
 import type { RequestContext } from '../common/request-context';
 import { PrismaService } from '../prisma/prisma.service';
+import { S3Service } from '../storage/s3.service';
 
 /**
  * Lese-Endpunkt für das Schul-Branding (Logo, Anzeigename), den die Kopfzeile
@@ -9,7 +10,10 @@ import { PrismaService } from '../prisma/prisma.service';
  */
 @Controller('branding')
 export class BrandingController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly s3: S3Service,
+  ) {}
 
   @Get()
   async get(
@@ -19,7 +23,8 @@ export class BrandingController {
       where: { tenantId: user.tenantId },
     });
     return {
-      logoUrl: branding?.logoLightKey ?? null,
+      // Logo liegt privat im Bucket → für die Anzeige kurzlebig presignen.
+      logoUrl: await this.s3.presignUrlForRead(branding?.logoLightKey),
       displayName: branding?.displayName ?? null,
       primaryColor: branding?.primaryColor ?? null,
     };

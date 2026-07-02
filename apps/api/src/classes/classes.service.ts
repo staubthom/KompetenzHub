@@ -9,6 +9,7 @@ import {
 import { ClassStatus, EnrollmentStatus, MembershipStatus, Role } from '@prisma/client';
 import { randomInt } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import { StorageObjectsService } from '../storage/storage-objects.service';
 
 export interface CreateClassDto {
   name: string;
@@ -31,7 +32,10 @@ const CODE_LENGTH = 6;
 
 @Injectable()
 export class ClassesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storageObjects: StorageObjectsService,
+  ) {}
 
   /**
    * Klassen der Lehrperson – eigene UND als Co-Leitung geführte (Admins: alle).
@@ -150,6 +154,9 @@ export class ClassesService {
     // Auch archivierte Modulanlässe dürfen gelöscht werden.
     await this.assertOwnerOnly(id, tenantId, userId, roles);
     await this.prisma.class.delete({ where: { id } });
+    // Einreichungsdateien dieses Modulanlasses aus dem Objektspeicher entfernen
+    // und die Speicher-Buchungen bereinigen (best-effort; DB-Löschung ist erfolgt).
+    await this.storageObjects.deleteForClass(id);
   }
 
   /** FA-103: Modulanlass archivieren (read-only, aus Standardlisten ausgeblendet). */

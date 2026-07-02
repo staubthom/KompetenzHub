@@ -6,6 +6,8 @@ import {
 } from '@nestjs/common';
 import { InvitationStatus, MembershipStatus, Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { S3Service } from '../storage/s3.service';
+import { StorageObjectsService } from '../storage/storage-objects.service';
 import { TenantMiddleware } from '../common/tenant.middleware';
 import { defaultTenantSlug } from '../common/tenant-resolution';
 
@@ -21,21 +23,30 @@ export interface CreateTenantInput {
 
 @Injectable()
 export class PlatformService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly s3: S3Service,
+    private readonly storageObjects: StorageObjectsService,
+  ) {}
 
   /** Alle Mandanten mit Kennzahlen (für die Plattform-Übersicht). */
   async listTenants() {
-    const tenants = await this.prisma.tenant.findMany({
-      orderBy: { createdAt: 'asc' },
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        active: true,
-        createdAt: true,
-        _count: { select: { users: true, modules: true, classes: true } },
-      },
-    });
+    const [tenants, storageTotals] = await Promise.all([
+      this.prisma.tenant.findMany({
+        orderBy: { createdAt: 'asc' },
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          active: true,
+          createdAt: true,
+          _count: { select: { users: true, modules: true, classes: true } },
+        },
+      }),
+      // Speicherverbrauch pro Schule aus der Objekt-Buchhaltung (ohne S3-Scan).
+      this.prisma.storageObject.groupBy({ by: ['tenantId'], _sum: { sizeBytes: true } }),
+    ]);
+    const bytesByTenant = new Map(storageTotals.map((s) => [s.tenantId, s._sum.sizeBytes ?? 0]));
     return tenants.map((t) => ({
       id: t.id,
       slug: t.slug,
@@ -45,7 +56,14 @@ export class PlatformService {
       memberships: t._count.users,
       modules: t._count.modules,
       classes: t._count.classes,
+      storageBytes: bytesByTenant.get(t.id) ?? 0,
     }));
+  }
+
+  /** Speicherverbrauch einer Schule je verantwortlicher Lehrperson (mit Namen). */
+  async storageByTeacher(tenantId: string) {
+    await this.requireTenant(tenantId);
+    return this.storageObjects.schoolUsage(tenantId);
   }
 
   async createTenant(input: CreateTenantInput) {
@@ -142,6 +160,15 @@ export class PlatformService {
       this.prisma.$executeRaw`DELETE FROM "AuditLog" WHERE "tenantId" = ${id}`,
       this.prisma.$executeRaw`DELETE FROM "Tenant" WHERE "id" = ${id}`,
     ]);
+
+    // Objektspeicher der Schule best-effort aufräumen (mandanten-präfixierte Keys
+    // t/<tenantId>/…). Fehler dürfen die Löschung nicht scheitern lassen; verwaiste
+    // Objekte könnten sonst dauerhaft bestehen bleiben.
+    try {
+      await this.s3.deletePrefix(this.s3.tenantPrefix(id));
+    } catch {
+      /* S3-Cleanup ist optional – DB-Löschung ist bereits erfolgt. */
+    }
 
     TenantMiddleware.invalidate(tenant.slug);
     return { deleted: true };

@@ -74,6 +74,12 @@ export class PlatformController {
     return this.platform.deleteTenant(id);
   }
 
+  // Speicherverbrauch einer Schule je Lehrperson
+  @Get(':id/storage')
+  storage(@Param('id') id: string) {
+    return this.platform.storageByTeacher(id);
+  }
+
   // Schuladmins eines Mandanten verwalten
   @Get(':id/admins')
   listAdmins(@Param('id') id: string) {

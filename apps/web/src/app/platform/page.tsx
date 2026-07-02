@@ -6,7 +6,26 @@ import AppShell from '../../components/AppShell';
 import { useToast } from '../../components/ToastProvider';
 import { getUser } from '../../lib/session';
 import { useI18n } from '../../lib/i18n';
-import { platform, type PlatformTenant, type TenantAdmins } from '../../lib/api';
+import {
+  platform,
+  type PlatformTenant,
+  type TenantAdmins,
+  type TenantStorage,
+} from '../../lib/api';
+
+/** Bytes menschenlesbar (KB/MB/GB/TB). */
+function formatBytes(n: number | null | undefined): string {
+  if (n == null) return '–';
+  if (n < 1024) return `${n} B`;
+  const units = ['KB', 'MB', 'GB', 'TB'];
+  let v = n / 1024;
+  let i = 0;
+  while (v >= 1024 && i < units.length - 1) {
+    v /= 1024;
+    i++;
+  }
+  return `${v.toFixed(1)} ${units[i]}`;
+}
 
 /**
  * Plattform-Verwaltung (Super-Admin): Schulen/Mandanten anlegen und verwalten.
@@ -27,6 +46,9 @@ export default function PlatformPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [admins, setAdmins] = useState<TenantAdmins | null>(null);
   const [newAdmin, setNewAdmin] = useState('');
+  // Speicher-Aufschlüsselung pro Schule (eigener Ausklapp-Bereich, unabhängig von Admins).
+  const [storageId, setStorageId] = useState<string | null>(null);
+  const [storage, setStorage] = useState<TenantStorage | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -119,6 +141,21 @@ export default function PlatformPage() {
     } catch (err: unknown) {
       const e = err as { body?: { title?: string } };
       toast.error(e.body?.title ?? t('toast.adminsLoadFailed'));
+    }
+  }
+
+  async function openStorage(tn: PlatformTenant) {
+    if (storageId === tn.id) {
+      setStorageId(null);
+      return;
+    }
+    setStorageId(tn.id);
+    setStorage(null);
+    try {
+      setStorage(await platform.storageByTeacher(tn.id));
+    } catch (err: unknown) {
+      const e = err as { body?: { title?: string } };
+      toast.error(e.body?.title ?? t('toast.loadFailed'));
     }
   }
 
@@ -244,6 +281,7 @@ export default function PlatformPage() {
                 <th style={{ textAlign: 'right' }}>Personen</th>
                 <th style={{ textAlign: 'right' }}>Module</th>
                 <th style={{ textAlign: 'right' }}>Klassen</th>
+                <th style={{ textAlign: 'right' }}>Speicher</th>
                 <th></th>
               </tr>
             </thead>
@@ -260,6 +298,18 @@ export default function PlatformPage() {
                     <td style={{ textAlign: 'right' }}>{tn.modules}</td>
                     <td style={{ textAlign: 'right' }}>{tn.classes}</td>
                     <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      {formatBytes(tn.storageBytes)}
+                    </td>
+                    <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      <button
+                        type="button"
+                        className="btn"
+                        onClick={() => {
+                          void openStorage(tn);
+                        }}
+                      >
+                        Speicher
+                      </button>{' '}
                       <button
                         type="button"
                         className="btn"
@@ -289,9 +339,53 @@ export default function PlatformPage() {
                       </button>
                     </td>
                   </tr>
+                  {storageId === tn.id && (
+                    <tr>
+                      <td colSpan={8} style={{ background: 'var(--kh-surface-2, #f8fafc)' }}>
+                        <div style={{ padding: '8px 4px' }}>
+                          <strong>
+                            Speicher von „{tn.name}" · gesamt {formatBytes(storage?.total)}
+                          </strong>
+                          {!storage ? (
+                            <p className="kh-muted">Laden…</p>
+                          ) : storage.teachers.length === 0 ? (
+                            <p className="kh-muted">Noch kein Speicherverbrauch erfasst.</p>
+                          ) : (
+                            <table className="table" style={{ marginTop: 8 }}>
+                              <thead>
+                                <tr>
+                                  <th>Lehrperson</th>
+                                  <th style={{ textAlign: 'right' }}>Speicher</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {storage.teachers.map((tt) => (
+                                  <tr key={tt.teacherId}>
+                                    <td>
+                                      {tt.displayName}
+                                      {tt.email ? (
+                                        <span className="kh-muted"> &lt;{tt.email}&gt;</span>
+                                      ) : null}
+                                    </td>
+                                    <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                                      {formatBytes(tt.bytes)}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          )}
+                          <p className="kh-muted" style={{ fontSize: 12, marginTop: 6 }}>
+                            Einreichungen werden der verantwortlichen Lehrperson (Besitzer des
+                            Modulanlasses) zugerechnet, Anhänge/Bilder der hochladenden Person.
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                   {expandedId === tn.id && (
                     <tr>
-                      <td colSpan={7} style={{ background: 'var(--kh-surface-2, #f8fafc)' }}>
+                      <td colSpan={8} style={{ background: 'var(--kh-surface-2, #f8fafc)' }}>
                         <div style={{ padding: '8px 4px' }}>
                           <strong>Schuladmins von „{tn.name}"</strong>
                           {!admins ? (

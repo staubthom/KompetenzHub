@@ -20,6 +20,7 @@ import AdmZip from 'adm-zip';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { S3Service } from '../storage/s3.service';
+import { StorageObjectsService } from '../storage/storage-objects.service';
 
 const SCHEMA_VERSION = 1;
 const MANIFEST = 'class-archive.json';
@@ -47,6 +48,7 @@ export class ClassArchiveService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly s3: S3Service,
+    private readonly storageObjects: StorageObjectsService,
   ) {}
 
   // ── Export ─────────────────────────────────────────────────────
@@ -279,8 +281,15 @@ export class ClassArchiveService {
           : a.kind === 'attachment'
             ? 'attachments'
             : 'evidence';
-      const key = this.s3.buildKey(prefix, baseName);
+      const key = this.s3.tenantKey(tenantId, prefix, baseName);
       await this.s3.putBytes(key, bytes, a.contentType || this.contentType(baseName));
+      await this.storageObjects.record({
+        tenantId,
+        key,
+        sizeBytes: bytes.length,
+        kind: a.kind === 'rte' ? 'rte' : a.kind === 'attachment' ? 'attachment' : 'submission',
+        uploaderId: ownerId,
+      });
       assetMap.set(a.path, { key, url: this.s3.publicUrl(key), kind: a.kind });
     }
 

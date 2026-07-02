@@ -25,6 +25,7 @@ import { BrandingModule } from './branding/branding.module';
 import { MailModule } from './mail/mail.module';
 import { PluginsCoreModule } from './plugins/plugins.module';
 import { PlatformModule } from './platform/platform.module';
+import { StorageModule } from './storage/storage.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { PlatformModule } from './platform/platform.module';
     LearningPathsModule,
     MatrixIoModule,
     ClassArchiveModule,
+    StorageModule,
     // Bewusst zuletzt: Kern-Routen behalten Vorrang beim Routing-Matching,
     // bevor der spätere Plugin-Dispatcher greift (siehe planung/Planung_Plugin.md §20).
     PluginsCoreModule,

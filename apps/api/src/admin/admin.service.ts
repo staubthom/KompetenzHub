@@ -10,6 +10,7 @@ import AdmZip from 'adm-zip';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConnectivityService } from '../health/connectivity.service';
 import { S3Service } from '../storage/s3.service';
+import { StorageObjectsService } from '../storage/storage-objects.service';
 import { MailService } from '../mail/mail.service';
 import { MailTemplateService } from '../mail/mail-template.service';
 import { localeKey, roleLabel, webUrl } from '../mail/mail.templates';
@@ -40,6 +41,7 @@ export class AdminService {
     private readonly s3: S3Service,
     private readonly mail: MailService,
     private readonly templates: MailTemplateService,
+    private readonly storageObjects: StorageObjectsService,
   ) {}
 
   // ── Personen ────────────────────────────────────────────────
@@ -239,13 +241,14 @@ export class AdminService {
     const providers = (settings.authProviders ?? {}) as Record<string, boolean>;
     return {
       schoolName: tenant.name,
-      logoUrl: tenant.branding?.logoLightKey ?? null,
+      logoUrl: await this.s3.presignUrlForRead(tenant.branding?.logoLightKey),
       primaryColor: tenant.branding?.primaryColor ?? DEFAULT_PRIMARY,
       defaultLocale: typeof settings.defaultLocale === 'string' ? settings.defaultLocale : 'de',
       authProviders: {
         microsoft: providers.microsoft !== false,
         google: providers.google !== false,
         github: providers.github !== false,
+        kompetenzhub: providers.kompetenzhub !== false,
       },
       devLoginEnabled: (process.env.DEV_LOGIN_ENABLED ?? 'true') === 'true',
       adminEmailsConfigured: (process.env.ADMIN_EMAILS ?? '').trim().length > 0,
@@ -256,7 +259,12 @@ export class AdminService {
     tenantId: string,
     dto: {
       schoolName?: string;
-      authProviders?: { microsoft?: boolean; google?: boolean; github?: boolean };
+      authProviders?: {
+        microsoft?: boolean;
+        google?: boolean;
+        github?: boolean;
+        kompetenzhub?: boolean;
+      };
       logoUrl?: string | null;
       primaryColor?: string;
       defaultLocale?: string;
@@ -270,6 +278,7 @@ export class AdminService {
       microsoft: dto.authProviders?.microsoft ?? current.microsoft !== false,
       google: dto.authProviders?.google ?? current.google !== false,
       github: dto.authProviders?.github ?? current.github !== false,
+      kompetenzhub: dto.authProviders?.kompetenzhub ?? current.kompetenzhub !== false,
     };
     if (dto.primaryColor !== undefined && !HEX_RE.test(dto.primaryColor)) {
       throw new BadRequestException('Ungültiger Farbwert (Hex, z. B. #2563eb).');
@@ -288,7 +297,20 @@ export class AdminService {
     });
     // Logo / Primärfarbe (undefined = unverändert) in TenantBranding ablegen.
     if (dto.logoUrl !== undefined || dto.primaryColor !== undefined) {
-      const logo = dto.logoUrl?.trim() || null;
+      // Logo kanonisch speichern (nie eine ablaufende presigned URL persistieren).
+      const logo = this.s3.normalizeUrlForWrite(dto.logoUrl?.trim() || null);
+      // Altes Logo aus dem Objektspeicher entfernen, wenn es ersetzt/gelöscht wird.
+      if (dto.logoUrl !== undefined) {
+        const prev = await this.prisma.tenantBranding.findUnique({
+          where: { tenantId },
+          select: { logoLightKey: true },
+        });
+        const oldUrl = prev?.logoLightKey ?? null;
+        const base = this.s3.bucketBaseUrl;
+        if (oldUrl && oldUrl !== logo && oldUrl.startsWith(base)) {
+          await this.storageObjects.deleteKeys([oldUrl.slice(base.length)]);
+        }
+      }
       await this.prisma.tenantBranding.upsert({
         where: { tenantId },
         update: {
@@ -363,7 +385,8 @@ export class AdminService {
       this.prisma.auditLog.count({
         where: { tenantId, action: 'auth.login', createdAt: { gte: since30 } },
       }),
-      this.s3.totalSize().catch(() => null),
+      // Nur der Speicher dieser Schule (mandanten-präfixierte Keys: t/<tenantId>/…).
+      this.s3.totalSize(this.s3.tenantPrefix(tenantId)).catch(() => null),
     ]);
     return {
       health: {

@@ -16,6 +16,7 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { S3Service } from '../storage/s3.service';
+import { StorageObjectsService } from '../storage/storage-objects.service';
 import { SubmissionsService } from '../submissions/submissions.service';
 
 interface UploadConfig {
@@ -72,16 +73,24 @@ export class EvidenceService {
     private readonly prisma: PrismaService,
     private readonly s3: S3Service,
     private readonly submissions: SubmissionsService,
+    private readonly storageObjects: StorageObjectsService,
   ) {}
 
   // ── Lehrer-CRUD (FA-30/36/40) ─────────────────────────────────
 
   async list(tenantId: string, moduleId?: string) {
-    return this.prisma.competenceEvidence.findMany({
+    const rows = await this.prisma.competenceEvidence.findMany({
       where: { tenantId, ...(moduleId ? { moduleId } : {}) },
       include: { fields: true, _count: { select: { submissions: true } } },
       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
     });
+    // Bild-URLs in den Instruktionen für die Anzeige/Bearbeitung presignen.
+    for (const ev of rows) {
+      (ev as { instructions: unknown }).instructions = await this.s3.presignHtmlForRead(
+        ev.instructions,
+      );
+    }
+    return rows;
   }
 
   async findOneForTeacher(id: string, tenantId: string) {
@@ -90,6 +99,9 @@ export class EvidenceService {
       include: { fields: true },
     });
     if (!ev) throw new NotFoundException('Nachweis nicht gefunden.');
+    (ev as { instructions: unknown }).instructions = await this.s3.presignHtmlForRead(
+      ev.instructions,
+    );
     return ev;
   }
 
@@ -112,7 +124,9 @@ export class EvidenceService {
         moduleId: dto.moduleId,
         type: EvidenceType.FILE_UPLOAD,
         title: dto.title as Prisma.InputJsonValue,
-        instructions: (dto.instructions ?? {}) as Prisma.InputJsonValue,
+        instructions: this.s3.normalizeHtmlForWrite(
+          dto.instructions ?? {},
+        ) as Prisma.InputJsonValue,
         maxPoints: dto.maxPoints ?? null,
         targetLevel: dto.targetLevel,
         isVisible: dto.isVisible ?? false,
@@ -133,7 +147,7 @@ export class EvidenceService {
     const data: Prisma.CompetenceEvidenceUpdateInput = {
       ...(dto.title && { title: dto.title as Prisma.InputJsonValue }),
       ...(dto.instructions !== undefined && {
-        instructions: dto.instructions as Prisma.InputJsonValue,
+        instructions: this.s3.normalizeHtmlForWrite(dto.instructions) as Prisma.InputJsonValue,
       }),
       ...(dto.maxPoints !== undefined && { maxPoints: dto.maxPoints }),
       ...(dto.targetLevel !== undefined && { targetLevel: dto.targetLevel }),
@@ -153,8 +167,13 @@ export class EvidenceService {
   }
 
   async remove(id: string, tenantId: string) {
-    await this.findOneForTeacher(id, tenantId);
+    const ev = await this.findOneForTeacher(id, tenantId);
     await this.prisma.competenceEvidence.delete({ where: { id } });
+    // Zugehörige Dateien aus dem Objektspeicher entfernen: alle Einreichungsdateien
+    // liegen unter dem Nachweis-Präfix; dazu der optionale Lehrer-Anhang.
+    await this.storageObjects.deletePrefix(`t/${tenantId}/evidence/${id}/`);
+    const cfg = (ev.config ?? {}) as UploadConfig;
+    if (cfg.attachmentKey) await this.storageObjects.deleteKeys([cfg.attachmentKey]);
   }
 
   /** Kompetenzfeld-Zuordnung setzen (n:m), validiert Tenant-Zugehörigkeit. */
@@ -234,11 +253,18 @@ export class EvidenceService {
     return view;
   }
 
-  /** Presigned Download-URL für den Lehrer-Anhang ergänzen. */
-  private async attachDownloadUrl(view: { config: unknown; attachmentUrl: string | null }) {
+  /** Presigned Download-URL für den Lehrer-Anhang + presignte Bild-URLs in den Instruktionen. */
+  private async attachDownloadUrl(view: {
+    config: unknown;
+    attachmentUrl: string | null;
+    instructions?: unknown;
+  }) {
     const cfg = (view.config ?? {}) as UploadConfig;
     if (cfg.attachmentKey) {
       view.attachmentUrl = await this.s3.presignDownload(cfg.attachmentKey);
+    }
+    if (view.instructions !== undefined) {
+      view.instructions = await this.s3.presignHtmlForRead(view.instructions);
     }
   }
 
@@ -281,8 +307,17 @@ export class EvidenceService {
       this.validateFile(cfg, fileName, sizeBytes);
     }
 
-    const key = this.s3.buildKey(`evidence/${id}`, fileName);
+    const key = this.s3.tenantKey(tenantId, `evidence/${id}`, fileName);
     const url = await this.s3.presignUpload(key, contentType || 'application/octet-stream');
+    // Grösse/Zuordnung verbuchen (für Speicherverbrauch pro Schule/Klasse/Lehrperson).
+    await this.storageObjects.record({
+      tenantId,
+      key,
+      sizeBytes,
+      kind: 'submission',
+      classId: enrollment.classId,
+      uploaderId: userId,
+    });
     return { uploadUrl: url, key };
   }
 

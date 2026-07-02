@@ -99,6 +99,19 @@ const de: Record<string, string> = {
   'settings.nameHint': 'Dieser Name erscheint in der Kopfzeile und ist für andere sichtbar.',
   'settings.teacherSubtitle': 'Profil & KI-Konfiguration',
   'common.actionFailed': 'Aktion fehlgeschlagen.',
+  // Speicherverbrauch
+  'storage.schoolTitle': 'Speicher pro Lehrperson',
+  'storage.teacher': 'Lehrperson',
+  'storage.usage': 'Speicher',
+  'storage.none': 'Noch kein Speicherverbrauch erfasst.',
+  'storage.attributionHint':
+    'Einreichungen werden der verantwortlichen Lehrperson (Besitzer des Modulanlasses) zugerechnet, Anhänge/Bilder der hochladenden Person.',
+  'storage.myUsage': 'Dein Speicherverbrauch',
+  'storage.myUsageHint':
+    'Summe deiner Dateien: Einreichungen deiner Modulanlässe sowie von dir hochgeladene Anhänge und Bilder.',
+  'storage.gcRun': 'Verwaiste Bilder aufräumen',
+  'storage.gcRunning': 'Räumt auf…',
+  'storage.gcDone': '{deleted} verwaiste Bild(er) entfernt ({freed} freigegeben).',
   // Toast-Meldungen (zentral; {platzhalter} werden über t(key, {…}) ersetzt)
   'toast.loadFailed': 'Laden fehlgeschlagen.',
   'toast.saveFailed': 'Speichern fehlgeschlagen.',
@@ -652,6 +665,7 @@ const de: Record<string, string> = {
   'admin.authMicrosoft': 'Microsoft',
   'admin.authGoogle': 'Google',
   'admin.authGithub': 'GitHub',
+  'admin.authKompetenzhub': 'KompetenzHub (Logto)',
   'admin.devLogin': 'Dev-Login',
   'admin.devLoginOn': 'aktiv',
   'admin.devLoginOff': 'deaktiviert',
@@ -796,6 +810,19 @@ const fr: Record<string, string> = {
   'settings.nameHint': 'Ce nom apparaît dans l’en-tête et est visible par les autres.',
   'settings.teacherSubtitle': 'Profil & configuration IA',
   'common.actionFailed': 'Action échouée.',
+  // Utilisation du stockage
+  'storage.schoolTitle': 'Stockage par enseignant·e',
+  'storage.teacher': 'Enseignant·e',
+  'storage.usage': 'Stockage',
+  'storage.none': 'Aucune utilisation du stockage enregistrée.',
+  'storage.attributionHint':
+    'Les preuves sont attribuées à l’enseignant·e responsable (propriétaire de la session de module), les pièces jointes/images à la personne qui les a téléversées.',
+  'storage.myUsage': 'Ton utilisation du stockage',
+  'storage.myUsageHint':
+    'Somme de tes fichiers : preuves de tes sessions de module ainsi que les pièces jointes et images que tu as téléversées.',
+  'storage.gcRun': 'Nettoyer les images orphelines',
+  'storage.gcRunning': 'Nettoyage…',
+  'storage.gcDone': '{deleted} image(s) orpheline(s) supprimée(s) ({freed} libérés).',
   // Messages toast (centralisés ; {placeholder} remplacés via t(key, {…}))
   'toast.loadFailed': 'Échec du chargement.',
   'toast.saveFailed': 'Échec de l’enregistrement.',
@@ -1332,6 +1359,7 @@ const fr: Record<string, string> = {
   'admin.authMicrosoft': 'Microsoft',
   'admin.authGoogle': 'Google',
   'admin.authGithub': 'GitHub',
+  'admin.authKompetenzhub': 'KompetenzHub (Logto)',
   'admin.devLogin': 'Connexion dev',
   'admin.devLoginOn': 'actif',
   'admin.devLoginOff': 'désactivé',
@@ -1475,6 +1503,19 @@ const it: Record<string, string> = {
   'settings.nameHint': 'Questo nome appare nell’intestazione ed è visibile agli altri.',
   'settings.teacherSubtitle': 'Profilo e configurazione IA',
   'common.actionFailed': 'Azione non riuscita.',
+  // Utilizzo dello spazio
+  'storage.schoolTitle': 'Spazio per docente',
+  'storage.teacher': 'Docente',
+  'storage.usage': 'Spazio',
+  'storage.none': 'Nessun utilizzo dello spazio registrato.',
+  'storage.attributionHint':
+    'Le prove sono attribuite al docente responsabile (proprietario della sessione di modulo), gli allegati/le immagini a chi li ha caricati.',
+  'storage.myUsage': 'Il tuo utilizzo dello spazio',
+  'storage.myUsageHint':
+    'Somma dei tuoi file: prove delle tue sessioni di modulo e allegati/immagini caricati da te.',
+  'storage.gcRun': 'Pulisci immagini orfane',
+  'storage.gcRunning': 'Pulizia…',
+  'storage.gcDone': '{deleted} immagine/i orfana/e rimossa/e ({freed} liberati).',
   // Messaggi toast (centralizzati; {placeholder} sostituiti con t(key, {…}))
   'toast.loadFailed': 'Caricamento non riuscito.',
   'toast.saveFailed': 'Salvataggio non riuscito.',
@@ -2010,6 +2051,7 @@ const it: Record<string, string> = {
   'admin.authMicrosoft': 'Microsoft',
   'admin.authGoogle': 'Google',
   'admin.authGithub': 'GitHub',
+  'admin.authKompetenzhub': 'KompetenzHub (Logto)',
   'admin.devLogin': 'Dev-Login',
   'admin.devLoginOn': 'attivo',
   'admin.devLoginOff': 'disattivato',
@@ -2153,6 +2195,19 @@ const en: Record<string, string> = {
   'settings.nameHint': 'This name appears in the header and is visible to others.',
   'settings.teacherSubtitle': 'Profile & AI configuration',
   'common.actionFailed': 'Action failed.',
+  // Storage usage
+  'storage.schoolTitle': 'Storage per teacher',
+  'storage.teacher': 'Teacher',
+  'storage.usage': 'Storage',
+  'storage.none': 'No storage usage recorded yet.',
+  'storage.attributionHint':
+    'Submissions are attributed to the responsible teacher (owner of the module session); attachments/images to the uploader.',
+  'storage.myUsage': 'Your storage usage',
+  'storage.myUsageHint':
+    'Sum of your files: submissions in your module sessions plus attachments and images you uploaded.',
+  'storage.gcRun': 'Clean up orphaned images',
+  'storage.gcRunning': 'Cleaning up…',
+  'storage.gcDone': '{deleted} orphaned image(s) removed ({freed} freed).',
   // Toast messages (central; {placeholder} replaced via t(key, {…}))
   'toast.loadFailed': 'Loading failed.',
   'toast.saveFailed': 'Saving failed.',
@@ -2682,6 +2737,7 @@ const en: Record<string, string> = {
   'admin.authMicrosoft': 'Microsoft',
   'admin.authGoogle': 'Google',
   'admin.authGithub': 'GitHub',
+  'admin.authKompetenzhub': 'KompetenzHub (Logto)',
   'admin.devLogin': 'Dev login',
   'admin.devLoginOn': 'enabled',
   'admin.devLoginOff': 'disabled',

@@ -6,7 +6,13 @@ import AppShell from '../../../components/AppShell';
 import { useToast } from '../../../components/ToastProvider';
 import { useI18n } from '../../../lib/i18n';
 import { getUser, isAdmin, homePathForRole } from '../../../lib/session';
-import { admin, exportBackupZip, type AdminOps } from '../../../lib/api';
+import {
+  admin,
+  exportBackupZip,
+  storage,
+  type AdminOps,
+  type TenantStorage,
+} from '../../../lib/api';
 
 function formatBytes(n: number | null): string {
   if (n == null) return '–';
@@ -26,7 +32,9 @@ export default function AdminOpsPage() {
   const toast = useToast();
   const { t } = useI18n();
   const [ops, setOps] = useState<AdminOps | null>(null);
+  const [store, setStore] = useState<TenantStorage | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [gcRunning, setGcRunning] = useState(false);
 
   useEffect(() => {
     const u = getUser();
@@ -41,7 +49,29 @@ export default function AdminOpsPage() {
         toast.error(t('admin.loadFailed'));
       }
     })();
+    // Speicher-Aufschlüsselung pro Lehrperson (eigene Schule); Fehler nicht fatal.
+    void storage
+      .school()
+      .then(setStore)
+      .catch(() => {});
   }, [router, toast, t]);
+
+  async function runGc() {
+    setGcRunning(true);
+    try {
+      const r = await storage.gc();
+      toast.success(t('storage.gcDone', { deleted: r.deleted, freed: formatBytes(r.freedBytes) }));
+      // Anzeige aktualisieren (Aufschlüsselung + Gesamtwert).
+      const [s, o] = await Promise.all([storage.school(), admin.ops()]);
+      setStore(s);
+      setOps(o);
+    } catch (err: unknown) {
+      const e2 = err as { body?: { title?: string }; message?: string };
+      toast.error(e2.body?.title ?? e2.message ?? t('common.actionFailed'));
+    } finally {
+      setGcRunning(false);
+    }
+  }
 
   async function downloadBackup() {
     setDownloading(true);
@@ -145,6 +175,55 @@ export default function AdminOpsPage() {
               <div className="d">
                 {t('admin.kpiLogins30')}: {ops.usage.logins30}
               </div>
+            </div>
+          </div>
+
+          {/* Speicher pro Lehrperson */}
+          <div className="panel">
+            <div className="panel-head">
+              <h2>{t('storage.schoolTitle')}</h2>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                {store && <span className="kh-muted">{formatBytes(store.total)}</span>}
+                <button className="btn sm" disabled={gcRunning} onClick={() => void runGc()}>
+                  {gcRunning ? t('storage.gcRunning') : t('storage.gcRun')}
+                </button>
+              </span>
+            </div>
+            <div className="panel-body">
+              {!store ? (
+                <p className="kh-muted" style={{ marginTop: 0 }}>
+                  {t('common.loading')}
+                </p>
+              ) : store.teachers.length === 0 ? (
+                <p className="kh-muted" style={{ marginTop: 0 }}>
+                  {t('storage.none')}
+                </p>
+              ) : (
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>{t('storage.teacher')}</th>
+                      <th style={{ textAlign: 'right' }}>{t('storage.usage')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {store.teachers.map((tt) => (
+                      <tr key={tt.teacherId}>
+                        <td>
+                          {tt.displayName}
+                          {tt.email ? <span className="kh-muted"> &lt;{tt.email}&gt;</span> : null}
+                        </td>
+                        <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                          {formatBytes(tt.bytes)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              <p className="kh-muted" style={{ fontSize: 12, marginBottom: 0 }}>
+                {t('storage.attributionHint')}
+              </p>
             </div>
           </div>
 

@@ -4,8 +4,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ModuleStatus, Prisma, Role } from '@prisma/client';
+import { ClassStatus, ModuleStatus, Prisma, Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { StorageObjectsService } from '../storage/storage-objects.service';
 
 export interface I18nField {
   de?: string;
@@ -31,7 +32,10 @@ export interface UpdateModuleDto {
 
 @Injectable()
 export class ModulesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storageObjects: StorageObjectsService,
+  ) {}
 
   /** Sichtbarkeits-Filter: Lehrperson sieht eigene + besitzerlose Module; Admin alle. */
   private ownerScope(userId: string, roles: Role[]) {
@@ -165,7 +169,29 @@ export class ModulesService {
 
   async remove(id: string, tenantId: string, userId: string, roles: Role[]) {
     await this.assertExists(id, tenantId, userId, roles);
+    // Nicht löschbar, solange noch ein aktiver Modulanlass mit dem Modul verknüpft
+    // ist – sonst würden dessen Matrix-Bezug und laufende Nachweise verwaisen.
+    // Die Lehrperson muss den Anlass zuerst löschen oder archivieren.
+    const activeClasses = await this.prisma.class.count({
+      where: { moduleId: id, status: ClassStatus.ACTIVE },
+    });
+    if (activeClasses > 0) {
+      throw new ConflictException(
+        `Modul kann nicht gelöscht werden: Es ist noch mit ${activeClasses} aktiven Modulanlass/Modulanlässen verknüpft. Bitte den Anlass zuerst löschen oder archivieren.`,
+      );
+    }
+    // Nachweise des Moduls (inkl. deren Dateien) vor dem Löschen erfassen – die
+    // DB-Kaskade entfernt die Nachweise, räumt aber den Objektspeicher nicht auf.
+    const evidences = await this.prisma.competenceEvidence.findMany({
+      where: { moduleId: id },
+      select: { id: true, config: true },
+    });
     await this.prisma.module.delete({ where: { id } });
+    for (const ev of evidences) {
+      await this.storageObjects.deletePrefix(`t/${tenantId}/evidence/${ev.id}/`);
+      const key = (ev.config as { attachmentKey?: string } | null)?.attachmentKey;
+      if (key) await this.storageObjects.deleteKeys([key]);
+    }
   }
 
   private async assertExists(id: string, tenantId: string, userId: string, roles: Role[]) {

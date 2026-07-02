@@ -60,7 +60,7 @@ export default function AdminSettingsPage() {
     }
   }
 
-  function toggleProvider(key: 'microsoft' | 'google' | 'github') {
+  function toggleProvider(key: 'microsoft' | 'google' | 'github' | 'kompetenzhub') {
     if (!settings) return;
     void save({
       authProviders: { ...settings.authProviders, [key]: !settings.authProviders[key] },
@@ -265,6 +265,15 @@ export default function AdminSettingsPage() {
                   onChange={() => toggleProvider('github')}
                 />{' '}
                 {t('admin.authGithub')}
+              </label>
+              <label className="goal-check" style={{ display: 'block', marginTop: 8 }}>
+                <input
+                  type="checkbox"
+                  checked={settings.authProviders.kompetenzhub}
+                  disabled={busy}
+                  onChange={() => toggleProvider('kompetenzhub')}
+                />{' '}
+                {t('admin.authKompetenzhub')}
               </label>
             </div>
           </div>

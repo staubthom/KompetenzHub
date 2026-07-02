@@ -236,7 +236,26 @@ services:
       - '3000:80' # Wartungsbetrieb: Port 3000 von aussen geht intern auf Port 80
     restart: unless-stopped
 
+
+
+
+# Ersetze den alten Volumes-Block am Ende deiner Datei hiermit:
 volumes:
   postgres-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/postgres
   redis-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/redis
   minio-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/minio

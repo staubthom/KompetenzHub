@@ -3,6 +3,7 @@ import { CompetenceLevel, EvidenceType, Prisma, Role } from '@prisma/client';
 import AdmZip from 'adm-zip';
 import { PrismaService } from '../prisma/prisma.service';
 import { S3Service } from '../storage/s3.service';
+import { StorageObjectsService } from '../storage/storage-objects.service';
 
 const SCHEMA_VERSION = 1;
 const LEVELS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'];
@@ -76,6 +77,7 @@ export class MatrixIoService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly s3: S3Service,
+    private readonly storageObjects: StorageObjectsService,
   ) {}
 
   // ── Export (ZIP) ───────────────────────────────────────────────
@@ -267,8 +269,15 @@ export class MatrixIoService {
       const bytes = entry.getData();
       const base = a.path.split('/').pop() ?? 'datei';
       const prefix = a.kind === 'rte' ? this.s3.publicPrefix : 'attachments';
-      const key = this.s3.buildKey(prefix, base);
+      const key = this.s3.tenantKey(tenantId, prefix, base);
       await this.s3.putBytes(key, bytes, a.contentType || this.contentType(base));
+      await this.storageObjects.record({
+        tenantId,
+        key,
+        sizeBytes: bytes.length,
+        kind: a.kind === 'rte' ? 'rte' : 'attachment',
+        uploaderId: ownerId,
+      });
       assetMap.set(a.path, { kind: a.kind, key, url: this.s3.publicUrl(key) });
     }
 

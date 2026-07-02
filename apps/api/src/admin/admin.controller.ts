@@ -36,7 +36,12 @@ class InviteDto {
 }
 interface SettingsDto {
   schoolName?: string;
-  authProviders?: { microsoft?: boolean; google?: boolean; github?: boolean };
+  authProviders?: {
+    microsoft?: boolean;
+    google?: boolean;
+    github?: boolean;
+    kompetenzhub?: boolean;
+  };
   logoUrl?: string | null;
   primaryColor?: string;
   defaultLocale?: string;

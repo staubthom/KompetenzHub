@@ -126,6 +126,11 @@ export class SubmissionsService {
       throw new ForbiddenException('Kein Zugriff auf diese Einreichung.');
     }
 
+    // Bild-URLs in den Aufgaben-Instruktionen für die Anzeige presignen.
+    (sub.evidence as { instructions?: unknown }).instructions = await this.s3.presignHtmlForRead(
+      sub.evidence.instructions,
+    );
+
     let fileUrl: string | null = null;
     if (sub.fileKey) {
       fileUrl = await this.s3.presignDownload(sub.fileKey);

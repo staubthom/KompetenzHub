@@ -523,14 +523,17 @@ export const expertTalk = {
 // Rich-Text-Assets (Bild-Upload vom PC)
 export const assets = {
   imageUploadUrl: (fileName: string, contentType: string, sizeBytes: number) =>
-    apiFetch<{ uploadUrl: string; publicUrl: string }>('/assets/image-upload-url', {
-      method: 'POST',
-      body: JSON.stringify({ fileName, contentType, sizeBytes }),
-    }),
-  attachmentUploadUrl: (fileName: string, contentType: string) =>
+    apiFetch<{ uploadUrl: string; canonicalUrl: string; viewUrl: string }>(
+      '/assets/image-upload-url',
+      {
+        method: 'POST',
+        body: JSON.stringify({ fileName, contentType, sizeBytes }),
+      },
+    ),
+  attachmentUploadUrl: (fileName: string, contentType: string, sizeBytes: number) =>
     apiFetch<{ uploadUrl: string; key: string }>('/assets/attachment-upload-url', {
       method: 'POST',
-      body: JSON.stringify({ fileName, contentType }),
+      body: JSON.stringify({ fileName, contentType, sizeBytes }),
     }),
 };
 
@@ -539,6 +542,7 @@ export async function uploadAttachment(file: File): Promise<{ key: string; name:
   const { uploadUrl, key } = await assets.attachmentUploadUrl(
     file.name,
     file.type || 'application/octet-stream',
+    file.size,
   );
   const put = await fetch(uploadUrl, {
     method: 'PUT',
@@ -580,9 +584,13 @@ export const submissions = {
     apiFetch<{ feedback: string }>(`/submissions/${id}/ai-feedback`, { method: 'POST' }),
 };
 
-/** Bild vom PC hochladen → liefert die einbettbare öffentliche URL. */
+/**
+ * Bild vom PC hochladen → liefert eine kurzlebige presigned URL für die sofortige
+ * Vorschau im Editor. Beim Speichern normalisiert die API die URL serverseitig auf
+ * die kanonische (stabile) Form; beim erneuten Laden wird sie wieder presigned.
+ */
 export async function uploadRichTextImage(file: File): Promise<string> {
-  const { uploadUrl, publicUrl } = await assets.imageUploadUrl(
+  const { uploadUrl, viewUrl } = await assets.imageUploadUrl(
     file.name,
     file.type || 'image/png',
     file.size,
@@ -593,7 +601,7 @@ export async function uploadRichTextImage(file: File): Promise<string> {
     body: file,
   });
   if (!put.ok) throw new Error('Bild-Upload fehlgeschlagen.');
-  return publicUrl;
+  return viewUrl;
 }
 
 // ── Matrix-Export/-Import als ZIP (FA-100) ──────────────────────────
@@ -1138,7 +1146,7 @@ export interface AdminSettings {
   logoUrl: string | null;
   primaryColor: string;
   defaultLocale: string;
-  authProviders: { microsoft: boolean; google: boolean; github: boolean };
+  authProviders: { microsoft: boolean; google: boolean; github: boolean; kompetenzhub: boolean };
   devLoginEnabled: boolean;
   adminEmailsConfigured: boolean;
 }
@@ -1210,7 +1218,12 @@ export const admin = {
   settings: () => apiFetch<AdminSettings>('/admin/settings'),
   updateSettings: (dto: {
     schoolName?: string;
-    authProviders?: { microsoft?: boolean; google?: boolean; github?: boolean };
+    authProviders?: {
+      microsoft?: boolean;
+      google?: boolean;
+      github?: boolean;
+      kompetenzhub?: boolean;
+    };
     logoUrl?: string | null;
     primaryColor?: string;
     defaultLocale?: string;
@@ -1293,6 +1306,12 @@ export interface PlatformTenant {
   memberships: number;
   modules: number;
   classes: number;
+  storageBytes: number;
+}
+
+export interface TenantStorage {
+  total: number;
+  teachers: { teacherId: string; displayName: string; email: string; bytes: number }[];
 }
 
 export interface TenantAdmin {
@@ -1321,6 +1340,7 @@ export const platform = {
     }),
   deleteTenant: (id: string) =>
     apiFetch<{ deleted: boolean }>(`/platform/tenants/${id}`, { method: 'DELETE' }),
+  storageByTeacher: (id: string) => apiFetch<TenantStorage>(`/platform/tenants/${id}/storage`),
   listAdmins: (id: string) => apiFetch<TenantAdmins>(`/platform/tenants/${id}/admins`),
   addAdmin: (id: string, email: string) =>
     apiFetch<{ added: boolean; invited: boolean }>(`/platform/tenants/${id}/admins`, {
@@ -1335,4 +1355,18 @@ export const platform = {
       method: 'DELETE',
     });
   },
+};
+
+export interface GcResult {
+  scanned: number;
+  referenced: number;
+  deleted: number;
+  freedBytes: number;
+}
+
+// Speicherverbrauch (tenant-scoped): eigener (Lehrperson) + Schul-Übersicht (Admin)
+export const storage = {
+  myUsage: () => apiFetch<{ bytes: number }>('/storage/my-usage'),
+  school: () => apiFetch<TenantStorage>('/storage/school'),
+  gc: () => apiFetch<GcResult>('/storage/gc', { method: 'POST' }),
 };

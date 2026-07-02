@@ -132,13 +132,34 @@ model Tenant {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  branding    TenantBranding?
-  users       Membership[]
-  modules     Module[]
-  classes     Class[]
-  invitations   Invitation[]
-  digestState   DigestState?
-  mailTemplates MailTemplate[]
+  branding       TenantBranding?
+  users          Membership[]
+  modules        Module[]
+  classes        Class[]
+  invitations    Invitation[]
+  digestState    DigestState?
+  mailTemplates  MailTemplate[]
+  storageObjects StorageObject[]
+}
+
+// Buchhaltung des Objektspeichers: pro hochgeladenem S3-Objekt wird Grösse und
+// Zuordnung persistiert, damit der Speicherverbrauch pro Schule/Klasse/Lehrperson
+// ohne teures Scannen des Buckets aggregiert werden kann.
+model StorageObject {
+  id         String   @id @default(uuid())
+  tenantId   String
+  key        String   @unique // S3-Objekt-Key (t/<tenantId>/…)
+  sizeBytes  Int
+  kind       String // 'submission' | 'attachment' | 'rte'
+  classId    String? // bei Einreichungen: Klasse → Zuordnung zur verantwortlichen Lehrperson
+  uploaderId String? // hochladende Person
+  createdAt  DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([classId])
+  @@index([uploaderId])
 }
 
 model TenantBranding {
@@ -271,7 +292,6 @@ model AuditLog {
   @@index([action])
 }
 
-
 // ============================================================
 // Modul & Kompetenzmatrix
 // ============================================================
@@ -288,8 +308,8 @@ model Module {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
-  tenant      Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  owner       User?             @relation("ModuleOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  tenant      Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  owner       User?                @relation("ModuleOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   matrix      CompetenceMatrix?
   actionGoals ActionGoal[]
   classes     Class[]
@@ -322,7 +342,7 @@ model CompetenceMatrix {
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
 
-  module Module          @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  module Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   bands  CompetenceBand[]
   paths  LearningPath[]
 }
@@ -363,7 +383,7 @@ model CompetenceField {
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
 
-  band       CompetenceBand  @relation(fields: [bandId], references: [id], onDelete: Cascade)
+  band       CompetenceBand     @relation(fields: [bandId], references: [id], onDelete: Cascade)
   descriptor Descriptor?
   evidences  EvidenceField[]
   pathSteps  LearningPathStep[]
@@ -462,21 +482,21 @@ model Enrollment {
 // ============================================================
 
 model CompetenceEvidence {
-  id           String           @id @default(uuid())
-  tenantId     String
-  moduleId     String
-  type         EvidenceType
-  title        Json             @default("{}") // i18n
-  instructions Json             @default("{}") // i18n
-  maxPoints    Decimal?         @db.Decimal(6, 2)
-  targetLevel  CompetenceLevel?
-  isVisible    Boolean          @default(false)
+  id            String           @id @default(uuid())
+  tenantId      String
+  moduleId      String
+  type          EvidenceType
+  title         Json             @default("{}") // i18n
+  instructions  Json             @default("{}") // i18n
+  maxPoints     Decimal?         @db.Decimal(6, 2)
+  targetLevel   CompetenceLevel?
+  isVisible     Boolean          @default(false)
   availableFrom DateTime?
-  dueAt        DateTime?
-  sortOrder    Int              @default(0)
-  config       Json             @default("{}") // Upload-Constraints (Datei/Link/Text)
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
+  dueAt         DateTime?
+  sortOrder     Int              @default(0)
+  config        Json             @default("{}") // Upload-Constraints (Datei/Link/Text)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
 
   module      Module          @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   fields      EvidenceField[]
@@ -511,8 +531,8 @@ model Submission {
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
 
-  evidence   CompetenceEvidence @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
-  enrollment Enrollment         @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  evidence   CompetenceEvidence  @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+  enrollment Enrollment          @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
   evaluation Evaluation?
   history    EvaluationHistory[]
 
@@ -637,17 +657,17 @@ model PluginSecret {
 /// KI-Anbindung je Lehrperson (pro Tenant). Der API-Key wird verschlüsselt
 /// (AES-256-GCM) at rest gespeichert und nie im Klartext zurückgegeben.
 model AiConfig {
-  id        String   @id @default(uuid())
-  tenantId  String
-  userId    String
-  provider  String   @default("openai") // openai | openai-compatible | azure | local
-  baseUrl   String   @default("https://api.openai.com/v1")
-  model     String   @default("gpt-4o-mini")
-  apiKeyEnc String? // verschlüsselter API-Key (null = keiner hinterlegt)
-  enabled   Boolean  @default(false) // Feature-Gate: KI-Funktionen aktiv
-  shareWithLearners Boolean @default(false) // Lehrer-KI auch für Lernende nutzbar
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                String   @id @default(uuid())
+  tenantId          String
+  userId            String
+  provider          String   @default("openai") // openai | openai-compatible | azure | local
+  baseUrl           String   @default("https://api.openai.com/v1")
+  model             String   @default("gpt-4o-mini")
+  apiKeyEnc         String? // verschlüsselter API-Key (null = keiner hinterlegt)
+  enabled           Boolean  @default(false) // Feature-Gate: KI-Funktionen aktiv
+  shareWithLearners Boolean  @default(false) // Lehrer-KI auch für Lernende nutzbar
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   @@unique([tenantId, userId])
   @@index([tenantId])

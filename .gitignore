@@ -54,6 +54,7 @@ apps/api/node_modules/.prisma/
 # ===== Docker / Daten-Volumes (lokal) =====
 .docker-data/
 docker-compose_hetzner.yaml
+data
 
 
 Notizen.md

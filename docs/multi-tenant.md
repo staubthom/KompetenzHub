@@ -41,6 +41,7 @@ Die SPA sendet den aus dem Browser-Host abgeleiteten Slug zusätzlich als
 | `NEXT_PUBLIC_TENANT_BASE_DOMAIN` | dito für den Browser (Web)                           | `kompetenzhub.ch`    |
 | `DEFAULT_TENANT_SLUG`            | Fallback-Mandant, wenn keine Subdomain ableitbar ist | `default`            |
 | `SUPERADMIN_EMAILS`              | Plattform-Admins (dürfen Schulen anlegen/verwalten)  | `it@trägerschaft.ch` |
+| `AUTH_TRUST_HOST`                | NextAuth: Origin aus X-Forwarded-Host je Request ableiten (statt fixem `NEXTAUTH_URL`). Wird bei gesetzter Basisdomain automatisch aktiviert. | `true` |
 
 Bleiben die Basisdomain-Variablen **leer**, verhält sich die Instanz wie bisher
 (Single-Tenant, alles läuft auf dem Default-Mandanten) – ideal für lokale
@@ -103,6 +104,18 @@ zwei Wege:
 Der interne Token-Exchange (`/auth/exchange`) bekommt den Mandanten von der
 Web-App via `X-Tenant-Slug` (aus dem Host des Login-Requests, siehe
 `apps/web/src/lib/auth.ts`). `AUTH_EXCHANGE_SECRET` sollte gesetzt sein.
+
+> **Wichtig (Pro-Subdomain-Redirects):** NextAuth verwendet standardmässig das feste
+> `NEXTAUTH_URL` für `redirect_uri` und den Rücksprung nach dem Login. Im Multi-Tenant-
+> Betrieb muss der Origin stattdessen pro Request aus dem `X-Forwarded-Host` kommen –
+> sonst wird ein Login von `schule-b.<domain>` mit dem Redirect von `schule-a` gestartet
+> und landet nach dem OAuth-Rücksprung auf `schule-a`. Dafür muss `AUTH_TRUST_HOST=true`
+> gesetzt sein; die App aktiviert das automatisch, sobald `TENANT_BASE_DOMAIN` bzw.
+> `NEXT_PUBLIC_TENANT_BASE_DOMAIN` konfiguriert ist (siehe
+> `apps/web/src/app/api/auth/[...nextauth]/route.ts`). Voraussetzung: Der Reverse-Proxy
+> reicht `X-Forwarded-Host` durch, und pro Schul-Subdomain ist beim Anbieter (Logto,
+> Microsoft, Google, GitHub) die jeweilige Redirect-URI `https://<schule>.<domain>/api/auth/callback/<provider>`
+> registriert.
 
 ---
 
