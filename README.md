@@ -503,12 +503,12 @@ Das startet alle fünf Container; die API wendet beim Start automatisch die **Da
 
 **Zwingend in der `.env` setzen** (sonst startet die API bewusst nicht):
 
-| Variable               | Bedeutung                                                                                     |
-| ---------------------- | --------------------------------------------------------------------------------------------- |
-| `JWT_SIGNING_KEY`      | starker, geheimer Schlüssel für die API-Tokens                                                 |
-| `AI_CONFIG_ENC_KEY`    | starker, geheimer Schlüssel für die KI-Schlüssel-Verschlüsselung                               |
+| Variable               | Bedeutung                                                                                                                                                     |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `JWT_SIGNING_KEY`      | starker, geheimer Schlüssel für die API-Tokens                                                                                                                |
+| `AI_CONFIG_ENC_KEY`    | starker, geheimer Schlüssel für die KI-Schlüssel-Verschlüsselung                                                                                              |
 | `AUTH_EXCHANGE_SECRET` | Schutz des `/auth/exchange`-Endpunkts (min. 24 Zeichen). **API und Web müssen denselben Wert haben.** In Produktion Pflicht – ohne ihn startet die API nicht. |
-| `ADMIN_EMAILS`         | E-Mail(s) der ersten Schuladmin(s)                                                            |
+| `ADMIN_EMAILS`         | E-Mail(s) der ersten Schuladmin(s)                                                                                                                            |
 
 **Öffentliche URLs** (browser-erreichbar – nicht die internen Container-Namen):
 
@@ -617,14 +617,14 @@ Alle Einstellungen liegen in der zentralen Datei **`.env`** (Vorlage: `.env.exam
 
 ### Authentifizierung & Sicherheit
 
-| Variable               | Bedeutung                                   | Hinweis                                        |
-| ---------------------- | ------------------------------------------- | ---------------------------------------------- |
-| `JWT_SIGNING_KEY`      | Signaturschlüssel für API-Tokens            | **In Produktion zwingend ändern!**             |
-| `JWT_TTL_SECONDS`      | Token-Lebensdauer                           | Default `900` (15 min)                         |
-| `DEV_LOGIN_ENABLED`    | Dev-Login-Endpunkt aktiv                    | In Produktion auf **`false`** (sonst Startabbruch) |
+| Variable               | Bedeutung                                   | Hinweis                                                                                                                                                                                                          |
+| ---------------------- | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `JWT_SIGNING_KEY`      | Signaturschlüssel für API-Tokens            | **In Produktion zwingend ändern!**                                                                                                                                                                               |
+| `JWT_TTL_SECONDS`      | Token-Lebensdauer                           | Default `900` (15 min)                                                                                                                                                                                           |
+| `DEV_LOGIN_ENABLED`    | Dev-Login-Endpunkt aktiv                    | In Produktion auf **`false`** (sonst Startabbruch)                                                                                                                                                               |
 | `AUTH_EXCHANGE_SECRET` | Schutz des `/auth/exchange`-Endpunkts (BFF) | **In Produktion zwingend, min. 24 Zeichen** – bei Web **und** API identisch setzen. Ohne ihn startet die API nicht; der Endpunkt vertraut sonst dem übergebenen Profil und Anmeldungen könnten gefälscht werden. |
-| `ADMIN_EMAILS`         | Bootstrap-Admins (kommagetrennt)            | siehe [10.6](#106-erste-schuladmin-einrichten) |
-| `DEFAULT_TENANT_ID`    | Standard-Mandant                            | vorbelegt                                      |
+| `ADMIN_EMAILS`         | Bootstrap-Admins (kommagetrennt)            | siehe [10.6](#106-erste-schuladmin-einrichten)                                                                                                                                                                   |
+| `DEFAULT_TENANT_ID`    | Standard-Mandant                            | vorbelegt                                                                                                                                                                                                        |
 
 ### Multi-Mandanten (mehrere Schulen in einer Instanz) – optional
 
