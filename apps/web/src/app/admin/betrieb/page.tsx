@@ -201,6 +201,10 @@ export default function AdminOpsPage() {
               </p>
               <p className="kh-muted" style={{ fontSize: 13 }}>
                 {t('admin.version')}: {ops.health.version}
+                {ops.health.gitSha && ops.health.gitSha !== 'dev'
+                  ? ` · ${ops.health.gitSha}`
+                  : ''}
+                {ops.health.buildTime ? ` · ${ops.health.buildTime}` : ''}
               </p>
             </div>
           </div>

@@ -56,6 +56,11 @@ services:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
+      args:
+        # Version aus package.json (leer = Fallback im Code); Commit/Build-Zeit optional.
+        APP_VERSION: ${APP_VERSION:-}
+        GIT_SHA: ${GIT_SHA:-dev}
+        BUILD_TIME: ${BUILD_TIME:-}
     container_name: kompetenzhub-api
     restart: unless-stopped
     depends_on:
@@ -114,6 +119,10 @@ services:
       args:
         # NEXT_PUBLIC_API_URL wird zur Build-Zeit ins Bundle gebacken (Browser-seitig).
         NEXT_PUBLIC_API_URL: ${API_PUBLIC_URL:-http://localhost:3001}
+        # Version aus package.json (leer = Fallback im Code); Commit/Build-Zeit optional.
+        APP_VERSION: ${APP_VERSION:-}
+        GIT_SHA: ${GIT_SHA:-dev}
+        BUILD_TIME: ${BUILD_TIME:-}
     container_name: kompetenzhub-web
     restart: unless-stopped
     depends_on:

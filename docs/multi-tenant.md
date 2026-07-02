@@ -103,7 +103,7 @@ zwei Wege:
 
 Der interne Token-Exchange (`/auth/exchange`) bekommt den Mandanten von der
 Web-App via `X-Tenant-Slug` (aus dem Host des Login-Requests, siehe
-`apps/web/src/lib/auth.ts`). `AUTH_EXCHANGE_SECRET` sollte gesetzt sein.
+`apps/web/src/lib/auth.ts`). `AUTH_EXCHANGE_SECRET` **muss in Produktion gesetzt sein** (min. 24 Zeichen, bei Web und API identisch) – sonst startet die API nicht, und ohne das Secret liesse sich eine Anmeldung als beliebige Person fälschen.
 
 > **Wichtig (Pro-Subdomain-Redirects):** NextAuth verwendet standardmässig das feste
 > `NEXTAUTH_URL` für `redirect_uri` und den Rücksprung nach dem Login. Im Multi-Tenant-

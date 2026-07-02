@@ -1147,6 +1147,7 @@ export interface AdminSettings {
   primaryColor: string;
   defaultLocale: string;
   authProviders: { microsoft: boolean; google: boolean; github: boolean; kompetenzhub: boolean };
+  allowedRegistrationDomains: string[];
   devLoginEnabled: boolean;
   adminEmailsConfigured: boolean;
 }
@@ -1158,7 +1159,15 @@ export interface Branding {
 }
 
 export interface AdminOps {
-  health: { status: string; db: string; redis: string; s3: string; version: string };
+  health: {
+    status: string;
+    db: string;
+    redis: string;
+    s3: string;
+    version: string;
+    gitSha?: string;
+    buildTime?: string;
+  };
   usage: {
     users: number;
     teachers: number;
@@ -1227,6 +1236,7 @@ export const admin = {
     logoUrl?: string | null;
     primaryColor?: string;
     defaultLocale?: string;
+    allowedRegistrationDomains?: string[];
   }) =>
     apiFetch<AdminSettings>('/admin/settings', {
       method: 'PATCH',

@@ -19,6 +19,14 @@ COPY apps/web ./apps/web
 # NEXT_PUBLIC_* werden zur Build-Zeit ins Bundle gebacken (Browser-seitig).
 ARG NEXT_PUBLIC_API_URL=http://localhost:3001
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+# Versions-/Build-Info für die Fusszeile (Version stammt aus package.json; Commit
+# und Build-Zeit aus dem Build-Aufruf). Werden ins Browser-Bundle eingebacken.
+ARG APP_VERSION=0.0.0
+ARG GIT_SHA=dev
+ARG BUILD_TIME=
+ENV NEXT_PUBLIC_APP_VERSION=$APP_VERSION
+ENV NEXT_PUBLIC_GIT_SHA=$GIT_SHA
+ENV NEXT_PUBLIC_BUILD_TIME=$BUILD_TIME
 # prebuild generiert die Plugin-Registry (aus plugins/ + scripts/), dann Next-Build.
 RUN npm run build --workspace apps/web
 

@@ -13,12 +13,15 @@ import { S3Service } from '../storage/s3.service';
 import { StorageObjectsService } from '../storage/storage-objects.service';
 import { MailService } from '../mail/mail.service';
 import { MailTemplateService } from '../mail/mail-template.service';
+import { APP_VERSION, GIT_SHA, BUILD_TIME } from '../common/version';
 import { localeKey, roleLabel, webUrl } from '../mail/mail.templates';
 import { MailTemplateType } from '@prisma/client';
 
 const ROLE_RANK: Record<Role, number> = { ADMIN: 3, TEACHER: 2, LEARNER: 1 };
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+// Plausibles Domain-Format (mind. ein Punkt, gültige Labels, gültige TLD).
+const DOMAIN_RE = /^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/;
 const LOCALES = ['de', 'fr', 'it', 'en'];
 const DEFAULT_PRIMARY = '#1d4ed8';
 
@@ -250,6 +253,11 @@ export class AdminService {
         github: providers.github !== false,
         kompetenzhub: providers.kompetenzhub !== false,
       },
+      allowedRegistrationDomains: Array.isArray(settings.allowedRegistrationDomains)
+        ? (settings.allowedRegistrationDomains as unknown[]).filter(
+            (d): d is string => typeof d === 'string',
+          )
+        : [],
       devLoginEnabled: (process.env.DEV_LOGIN_ENABLED ?? 'true') === 'true',
       adminEmailsConfigured: (process.env.ADMIN_EMAILS ?? '').trim().length > 0,
     };
@@ -268,6 +276,7 @@ export class AdminService {
       logoUrl?: string | null;
       primaryColor?: string;
       defaultLocale?: string;
+      allowedRegistrationDomains?: string[];
     },
   ) {
     const tenant = await this.prisma.tenant.findUnique({ where: { id: tenantId } });
@@ -288,6 +297,26 @@ export class AdminService {
     }
     const nextSettings: Record<string, unknown> = { ...settings, authProviders: next };
     if (dto.defaultLocale !== undefined) nextSettings.defaultLocale = dto.defaultLocale;
+    if (dto.allowedRegistrationDomains !== undefined) {
+      if (!Array.isArray(dto.allowedRegistrationDomains)) {
+        throw new BadRequestException('allowedRegistrationDomains muss eine Liste sein.');
+      }
+      // Normalisieren: trimmen, Kleinbuchstaben, führendes @ entfernen, leere und
+      // Duplikate raus. Jede verbleibende Domain muss ein plausibles Format haben.
+      const cleaned = Array.from(
+        new Set(
+          dto.allowedRegistrationDomains
+            .map((d) => String(d).trim().toLowerCase().replace(/^@/, ''))
+            .filter(Boolean),
+        ),
+      );
+      for (const d of cleaned) {
+        if (!DOMAIN_RE.test(d)) {
+          throw new BadRequestException(`Ungültige Domain: "${d}" (z. B. stud.gibb.ch).`);
+        }
+      }
+      nextSettings.allowedRegistrationDomains = cleaned;
+    }
     await this.prisma.tenant.update({
       where: { id: tenantId },
       data: {
@@ -394,7 +423,9 @@ export class AdminService {
         db: dbUp ? 'up' : 'down',
         redis: redisUp ? 'up' : 'down',
         s3: s3Up ? 'up' : 'down',
-        version: process.env.npm_package_version ?? '0.0.0',
+        version: APP_VERSION,
+        gitSha: GIT_SHA,
+        buildTime: BUILD_TIME,
       },
       usage: {
         users: users.length,

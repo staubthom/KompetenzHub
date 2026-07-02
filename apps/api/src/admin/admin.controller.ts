@@ -45,6 +45,7 @@ interface SettingsDto {
   logoUrl?: string | null;
   primaryColor?: string;
   defaultLocale?: string;
+  allowedRegistrationDomains?: string[];
 }
 interface UserPatchDto {
   displayName?: string;

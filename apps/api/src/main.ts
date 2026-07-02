@@ -24,12 +24,17 @@ function assertSecureSecrets(): void {
     problems.push('JWT_SIGNING_KEY ist nicht gesetzt oder unsicher.');
   if (insecure(process.env.AI_CONFIG_ENC_KEY, 'dev-insecure'))
     problems.push('AI_CONFIG_ENC_KEY ist nicht gesetzt oder unsicher.');
+  // Der /auth/exchange-Endpunkt vertraut dem übergebenen IdP-Profil (BFF-Muster);
+  // ohne starkes Shared-Secret könnte jeder eine Anmeldung als beliebige Person
+  // fälschen. Daher in Produktion zwingend – und ausreichend lang.
+  if (!process.env.AUTH_EXCHANGE_SECRET || process.env.AUTH_EXCHANGE_SECRET.trim().length < 24)
+    problems.push('AUTH_EXCHANGE_SECRET ist nicht gesetzt oder zu kurz (min. 24 Zeichen).');
   if ((process.env.DEV_LOGIN_ENABLED ?? 'true') === 'true')
     problems.push('DEV_LOGIN_ENABLED muss in Produktion auf false stehen.');
   if (problems.length > 0) {
     throw new Error(
       `Unsichere Konfiguration in Produktion:\n - ${problems.join('\n - ')}\n` +
-        'Bitte starke Secrets setzen (siehe docs/22-Security-Review.md).',
+        'Bitte starke Secrets setzen (siehe README.md, Kapitel 12 „Produktivbetrieb & Sicherheit").',
     );
   }
 }

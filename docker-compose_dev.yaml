@@ -100,6 +100,10 @@ services:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION:-}
+        GIT_SHA: ${GIT_SHA:-dev}
+        BUILD_TIME: ${BUILD_TIME:-}
     container_name: kompetenzhub-api
     restart: unless-stopped
     depends_on:
@@ -107,7 +111,7 @@ services:
       redis: { condition: service_healthy }
       minio: { condition: service_healthy }
     environment:      
-      NODE_ENV: development
+      NODE_ENV: production    
       API_PORT: 3001
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-kompetenzhub}?schema=public
       REDIS_URL: redis://redis:6379
@@ -175,10 +179,13 @@ services:
       args:
         # NEXT_PUBLIC_API_URL wird zur Build-Zeit ins Bundle gebacken (Browser-seitig).
         NEXT_PUBLIC_API_URL: ${API_PUBLIC_URL:-https://api.kompetenzhub.ch}
+        APP_VERSION: ${APP_VERSION:-}
+        GIT_SHA: ${GIT_SHA:-dev}
+        BUILD_TIME: ${BUILD_TIME:-}
     container_name: kompetenzhub-web
     restart: unless-stopped    
     environment:
-      NODE_ENV: development     
+      NODE_ENV: production     
       PORT: 3000
       # ----- Auth (OIDC) – Frontend (NextAuth), optional bis IdP angebunden -----
       AUTH_MICROSOFT_CLIENT_ID: ${AUTH_MICROSOFT_CLIENT_ID}

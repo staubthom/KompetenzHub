@@ -18,6 +18,7 @@ export default function AdminSettingsPage() {
   const { t } = useI18n();
   const [settings, setSettings] = useState<AdminSettings | null>(null);
   const [schoolName, setSchoolName] = useState('');
+  const [domainInput, setDomainInput] = useState('');
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -48,6 +49,7 @@ export default function AdminSettingsPage() {
         logoUrl: patch.logoUrl,
         primaryColor: patch.primaryColor,
         defaultLocale: patch.defaultLocale,
+        allowedRegistrationDomains: patch.allowedRegistrationDomains,
       });
       setSettings(next);
       setSchoolName(next.schoolName);
@@ -64,6 +66,21 @@ export default function AdminSettingsPage() {
     if (!settings) return;
     void save({
       authProviders: { ...settings.authProviders, [key]: !settings.authProviders[key] },
+    });
+  }
+
+  function addDomain() {
+    if (!settings) return;
+    const raw = domainInput.trim().toLowerCase().replace(/^@/, '');
+    setDomainInput('');
+    if (!raw || settings.allowedRegistrationDomains.includes(raw)) return;
+    void save({ allowedRegistrationDomains: [...settings.allowedRegistrationDomains, raw] });
+  }
+
+  function removeDomain(d: string) {
+    if (!settings) return;
+    void save({
+      allowedRegistrationDomains: settings.allowedRegistrationDomains.filter((x) => x !== d),
     });
   }
 
@@ -275,6 +292,76 @@ export default function AdminSettingsPage() {
                 />{' '}
                 {t('admin.authKompetenzhub')}
               </label>
+            </div>
+          </div>
+
+          {/* Registrierungs-Domains: Selbstregistrierung auf erlaubte E-Mail-Domains beschränken */}
+          <div className="panel">
+            <div className="panel-head">
+              <h2>{t('admin.regDomains')}</h2>
+            </div>
+            <div className="panel-body">
+              <p className="kh-muted" style={{ marginTop: 0 }}>
+                {t('admin.regDomainsHint')}
+              </p>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                <input
+                  type="text"
+                  value={domainInput}
+                  disabled={busy}
+                  placeholder="stud.gibb.ch"
+                  aria-label={t('admin.regDomains')}
+                  style={{
+                    padding: '6px 8px',
+                    border: '1px solid var(--kh-border, #d1d5db)',
+                    borderRadius: 6,
+                    minWidth: 220,
+                  }}
+                  onChange={(e) => setDomainInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addDomain();
+                    }
+                  }}
+                />
+                <button className="btn" disabled={busy || !domainInput.trim()} onClick={addDomain}>
+                  {t('common.add')}
+                </button>
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
+                {settings.allowedRegistrationDomains.length === 0 ? (
+                  <span className="kh-muted" style={{ fontSize: 13 }}>
+                    {t('admin.regDomainsNone')}
+                  </span>
+                ) : (
+                  settings.allowedRegistrationDomains.map((d) => (
+                    <span
+                      key={d}
+                      className="badge b-published"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                    >
+                      @{d}
+                      <button
+                        type="button"
+                        aria-label={`${t('common.remove')} @${d}`}
+                        disabled={busy}
+                        onClick={() => removeDomain(d)}
+                        style={{
+                          border: 'none',
+                          background: 'transparent',
+                          cursor: 'pointer',
+                          fontWeight: 700,
+                          lineHeight: 1,
+                          padding: 0,
+                        }}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))
+                )}
+              </div>
             </div>
           </div>
 

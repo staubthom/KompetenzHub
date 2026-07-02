@@ -9,6 +9,7 @@ import {
   Post,
   Req,
   Res,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { join } from 'node:path';
 import { config as loadEnv } from 'dotenv';
@@ -199,9 +200,14 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ): Promise<unknown> {
+    // Fail-closed: In Produktion ist das Secret Pflicht (assertSecureSecrets
+    // verhindert sonst den Start). Auch in Dev wird geprüft, sobald ein Secret
+    // gesetzt ist. Ohne gültiges Secret keine Token-Ausstellung – sonst könnte
+    // jeder eine Anmeldung als beliebige Person fälschen.
     const secret = process.env.AUTH_EXCHANGE_SECRET;
-    if (secret && req.headers['x-auth-exchange'] !== secret) {
-      throw new BadRequestException('Ungueltiges Exchange-Secret.');
+    const requireSecret = process.env.NODE_ENV === 'production' || !!secret;
+    if (requireSecret && (!secret || req.headers['x-auth-exchange'] !== secret)) {
+      throw new UnauthorizedException('Ungültiges oder fehlendes Exchange-Secret.');
     }
     if (!dto.provider || !dto.externalId || !dto.email || !dto.displayName) {
       throw new BadRequestException('provider, externalId, email, displayName erforderlich.');

@@ -1,6 +1,6 @@
 # KompetenzHub – Benutzerhandbuch & Installationsanleitung für Schulen 🏫
 
-> Stand: Juni 2026 · Sprache: Deutsch
+> Stand: Juli 2026 · Sprache: Deutsch
 > Diese Anleitung richtet sich an **Lehrpersonen**, **Schulleitungen** und **technisch interessierte Personen**, die prüfen möchten, ob sich KompetenzHub für ihre Schule eignet – sowie an alle, die die Software selbst betreiben wollen.
 
 ---
@@ -132,7 +132,7 @@ Nach der Anmeldung als Lehrperson sehen Sie links die Navigation: **Dashboard**,
 
 ### 6.1 Dashboard
 
-Das Dashboard zeigt pro Modulanlass den **Lernfortschritt der Klasse** als Heatmap (Lernende × Kompetenzfelder) sowie Kennzahlen (Anzahl Lernende, „zu bewerten", „bewertet", Durchschnittsfortschritt). Ein Klick auf eine Zelle führt direkt zur Bewertung.
+Das Dashboard zeigt pro Modulanlass den **Lernfortschritt der Klasse** als Heatmap (Lernende × Kompetenzfelder) sowie Kennzahlen (Anzahl Lernende, „zu bewerten", „bewertet", Durchschnittsfortschritt). Ein Klick auf eine Zelle führt direkt zur Bewertung. Zusätzlich zeigt ein kompaktes Diagramm den **eigenen Speicherverbrauch** – bei gesetzter persönlicher Quota inkl. Fortschrittsbalken (denselben Wert finden Sie auch unter **KI-Einstellungen**).
 
 > 📷 \_Screenshot: Lehrer-Dashboard mit Fortschritts-Heatmap.
 >
@@ -322,7 +322,7 @@ Die Schuladmin meldet sich an und gelangt zum **Schuladmin-Dashboard** mit der N
 
 ### 9.1 Übersicht
 
-Kennzahlen auf einen Blick: Anzahl Lehrpersonen, Lernende, Admins, offene Einladungen, gesperrte Konten, Module und Modulanlässe.
+Kennzahlen auf einen Blick: Anzahl Lehrpersonen, Lernende, Admins, offene Einladungen, gesperrte Konten, Module und Modulanlässe. Ist eine **Schulquota** hinterlegt, zeigt ein Balken zusätzlich den **Gesamtspeicher gegen die gekaufte Quota**.
 
 > 📷 _Screenshot: Admin-Übersicht._
 >
@@ -363,7 +363,8 @@ Bereits vorhandene Personen werden nicht eingeladen, sondern direkt in der Perso
 - **Standardsprache**: Sprache, die neue Konten beim ersten Login erhalten.
 - **Logo hochladen**: erscheint oben links in der Kopfzeile neben dem Schriftzug. Empfohlen: PNG/SVG mit transparentem Hintergrund.
 - **Akzentfarbe**: Primärfarbe der App – 7 Vorschläge oder eigener Hex-Wert, mit Live-Vorschau. Statusfarben (grün/orange/grau) bleiben für die Lesbarkeit unverändert.
-- **Anmelde-Anbieter**: Microsoft und/oder Google aktivieren/deaktivieren. Ein deaktivierter Anbieter wird beim Login abgewiesen.
+- **Anmelde-Anbieter**: Microsoft, Google, GitHub und/oder das eigene KompetenzHub-Konto (Logto) aktivieren/deaktivieren. Ein deaktivierter Anbieter wird beim Login abgewiesen.
+- **Erlaubte Registrierungs-Domains**: Beschränkt die **Selbstregistrierung Lernender** auf bestimmte E-Mail-Domains (z. B. `stud.gibb.ch`). Mehrere Domains möglich. Ohne Eintrag darf sich jede:r registrieren; per **Einladung** aufgenommene Personen sind von der Einschränkung nie betroffen. Greift nur beim eigenen KompetenzHub-Konto/OIDC-Selbstregistrierung.
 - Statusanzeige: ob **Dev-Login** aktiv ist und ob der **Bootstrap-Admin** (`ADMIN_EMAILS`) konfiguriert ist.
 
 > 📷 _Screenshot: Schul-Einstellungen mit Akzentfarben-Auswahl und Logo._
@@ -374,6 +375,7 @@ Bereits vorhandene Personen werden nicht eingeladen, sondern direkt in der Perso
 
 - **Gesundheits-Ampel**: Zustand von Datenbank, Redis und Objektspeicher sowie Software-Version.
 - **Auslastung**: Anzahl Lehrpersonen/Lernende, Module, Modulanlässe, Einreichungen, **belegter Speicher** sowie **Anmeldungen der letzten 7 / 30 Tage**.
+- **Speicher je Lehrperson & Quota**: Aufschlüsselung des Verbrauchs pro Lehrperson (Einreichungen der eigenen Modulanlässe zzgl. selbst hochgeladener Anhänge/Bilder) mit Fortschrittsbalken. Hier lässt sich je Lehrperson eine **persönliche Speicherquota** (in GB) setzen. Steht für die Schule eine gekaufte **Schulquota** bereit, wird der Gesamtverbrauch dagegen angezeigt. Die Summe der Lehrpersonen-Quotas darf die Schulquota bewusst übersteigen (nicht jede:r nutzt sein Kontingent aus). Bei erschöpfter Quota werden weitere Uploads abgewiesen. Die **Schulquota** selbst wird von der Plattform-Administration vergeben (siehe [Kapitel 22.3](#223-eine-neue-schule-anlegen-plattform-admin)).
 
 > 📷 _Screenshot: Betriebs-Seite mit Health-Ampel und Kennzahlen._
 >
@@ -501,11 +503,12 @@ Das startet alle fünf Container; die API wendet beim Start automatisch die **Da
 
 **Zwingend in der `.env` setzen** (sonst startet die API bewusst nicht):
 
-| Variable            | Bedeutung                                                        |
-| ------------------- | ---------------------------------------------------------------- |
-| `JWT_SIGNING_KEY`   | starker, geheimer Schlüssel für die API-Tokens                   |
-| `AI_CONFIG_ENC_KEY` | starker, geheimer Schlüssel für die KI-Schlüssel-Verschlüsselung |
-| `ADMIN_EMAILS`      | E-Mail(s) der ersten Schuladmin(s)                               |
+| Variable               | Bedeutung                                                                                     |
+| ---------------------- | --------------------------------------------------------------------------------------------- |
+| `JWT_SIGNING_KEY`      | starker, geheimer Schlüssel für die API-Tokens                                                 |
+| `AI_CONFIG_ENC_KEY`    | starker, geheimer Schlüssel für die KI-Schlüssel-Verschlüsselung                               |
+| `AUTH_EXCHANGE_SECRET` | Schutz des `/auth/exchange`-Endpunkts (min. 24 Zeichen). **API und Web müssen denselben Wert haben.** In Produktion Pflicht – ohne ihn startet die API nicht. |
+| `ADMIN_EMAILS`         | E-Mail(s) der ersten Schuladmin(s)                                                            |
 
 **Öffentliche URLs** (browser-erreichbar – nicht die internen Container-Namen):
 
@@ -618,8 +621,8 @@ Alle Einstellungen liegen in der zentralen Datei **`.env`** (Vorlage: `.env.exam
 | ---------------------- | ------------------------------------------- | ---------------------------------------------- |
 | `JWT_SIGNING_KEY`      | Signaturschlüssel für API-Tokens            | **In Produktion zwingend ändern!**             |
 | `JWT_TTL_SECONDS`      | Token-Lebensdauer                           | Default `900` (15 min)                         |
-| `DEV_LOGIN_ENABLED`    | Dev-Login-Endpunkt aktiv                    | In Produktion auf **`false`**                  |
-| `AUTH_EXCHANGE_SECRET` | Schutz des `/auth/exchange`-Endpunkts (BFF) | In Produktion setzen                           |
+| `DEV_LOGIN_ENABLED`    | Dev-Login-Endpunkt aktiv                    | In Produktion auf **`false`** (sonst Startabbruch) |
+| `AUTH_EXCHANGE_SECRET` | Schutz des `/auth/exchange`-Endpunkts (BFF) | **In Produktion zwingend, min. 24 Zeichen** – bei Web **und** API identisch setzen. Ohne ihn startet die API nicht; der Endpunkt vertraut sonst dem übergebenen Profil und Anmeldungen könnten gefälscht werden. |
 | `ADMIN_EMAILS`         | Bootstrap-Admins (kommagetrennt)            | siehe [10.6](#106-erste-schuladmin-einrichten) |
 | `DEFAULT_TENANT_ID`    | Standard-Mandant                            | vorbelegt                                      |
 
@@ -665,14 +668,18 @@ Checkliste vor dem produktiven Einsatz:
 
 - [ ] **`JWT_SIGNING_KEY`** und **`AI_CONFIG_ENC_KEY`** auf starke, geheime Werte gesetzt.
 - [ ] **`DEV_LOGIN_ENABLED=false`** (kein Dev-Login in Produktion).
-- [ ] **`AUTH_EXCHANGE_SECRET`** gesetzt; OIDC-Anbieter (Microsoft/Google) konfiguriert.
+- [ ] **`AUTH_EXCHANGE_SECRET`** gesetzt (min. 24 Zeichen, bei Web **und** API identisch); OIDC-Anbieter (Microsoft/Google) konfiguriert.
 - [ ] **HTTPS** über einen Reverse Proxy; Cookies laufen dann sicher (`secure`).
+- [ ] Reverse-Proxy als **`trust proxy`** konfiguriert, damit `X-Forwarded-For` (Audit-Log/IP) nicht fälschbar ist.
 - [ ] Starke Datenbank-/MinIO-Zugangsdaten (nicht die Defaults).
 - [ ] **`ADMIN_EMAILS`** mit den realen Schuladmin-Adressen befüllt.
+- [ ] Objektspeicher (`S3_PUBLIC_URL`) auf einer **anderen Origin** als die Web-App ausliefern (Schutz vor Inline-Ausführung hochgeladener Dateien).
 - [ ] Regelmässige **Backups** eingerichtet (siehe Kapitel 13).
 - [ ] Monitoring auf `GET /api/v1/health`.
 
-**Sicherheitsmerkmale ab Werk:** rollenbasierte Zugriffskontrolle (RBAC), strikte **Mandanten-/Eigentümer-Trennung** (Lehrpersonen sehen nur eigene Module/Modulanlässe), verschlüsselte KI-Schlüssel, Audit-Log für Anmelde-/Sicherheitsereignisse, Zugangs-Gate (neue Konten werden nicht automatisch Lehrpersonen).
+> In Produktion (`NODE_ENV=production`) erzwingt die API einen Teil dieser Punkte beim Start: fehlt/zu schwach ein Pflicht-Secret (`JWT_SIGNING_KEY`, `AI_CONFIG_ENC_KEY`, `AUTH_EXCHANGE_SECRET`) oder ist `DEV_LOGIN_ENABLED` nicht `false`, bricht der Start bewusst ab.
+
+**Sicherheitsmerkmale ab Werk:** rollenbasierte Zugriffskontrolle (RBAC), strikte **Mandanten-/Eigentümer-Trennung** (Lehrpersonen sehen nur eigene Module/Modulanlässe), Token an die Schul-Subdomain gebunden, verschlüsselte KI-Schlüssel, Audit-Log für Anmelde-/Sicherheitsereignisse, Zugangs-Gate (neue Konten werden nicht automatisch Lehrpersonen), optionale **Beschränkung der Selbstregistrierung auf erlaubte E-Mail-Domains**, Rate-Limiting sowie **erzwungener Download** hochgeladener SVG-Dateien (`Content-Disposition: attachment`) gegen Inline-XSS.
 
 ---
 
@@ -956,6 +963,8 @@ POST /api/v1/platform/tenants
 ```
 
 **Schuladmin bearbeiten:** Über den Knopf **„Admins"** je Schule lässt sich der/die Schuladmin verwalten – weitere Admins per E-Mail hinzufügen (bestehende Konten werden sofort befördert, sonst wird eine Einladung erstellt) sowie Admins entfernen bzw. Einladungen widerrufen. Die Schule behält immer **mindestens eine:n aktive:n Admin**.
+
+**Speicherquota je Schule:** In der Schulliste lässt sich pro Schule über **„Quota"** die gekaufte **Speicherquota** (in GB, leer = unbegrenzt) setzen. Sie begrenzt den Gesamtverbrauch der Schule; die Schuladmin verteilt daraus persönliche Quotas an die Lehrpersonen (siehe [Kapitel 9.5](#95-betrieb--gesundheit)). Ist die Quota erschöpft, werden weitere Uploads dieser Schule abgewiesen.
 
 **Schule deaktivieren/löschen:** Schulen lassen sich **deaktivieren** (Zugriff gesperrt, Daten bleiben) oder **endgültig löschen** – beim Löschen werden **alle** Daten der Schule (Personen, Module, Klassen, Nachweise, Fachgespräche, Plugin-/KI-Daten) unwiderruflich entfernt. Der Default-Mandant kann nicht gelöscht werden.
 

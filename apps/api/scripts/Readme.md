@@ -52,15 +52,16 @@ node apps/api/scripts/smoke-auth.mjs
 | `smoke-dashboard.mjs`      | Dashboard-Endpunkte                                                                                    |
 | `smoke-evidence.mjs`       | Evidence-/Nachweismanagement                                                                           |
 | `smoke-expert-talk.mjs`    | Expert-Talk-Feature                                                                                    |
-| `smoke-isolation.mjs`      | Mandanten-Isolation: Lehrperson B darf Daten von A nicht sehen                                         |
+| `smoke-isolation.mjs`      | Mandanten-/Eigentümer-Isolation: B sieht Module, Modulanlässe, Teilnehmende & Einreichungen von A nicht; Rollen-Isolation (Lernende/Lehrperson dürfen keine Lehrer-/Admin-Routen nutzen) |
 | `smoke-learning-paths.mjs` | Lernpfade                                                                                              |
 | `smoke-matrix.mjs`         | Kompetenzmatrix                                                                                        |
 | `smoke-matrix-io.mjs`      | Import/Export der Kompetenzmatrix                                                                      |
 | `smoke-plugins.mjs`        | Plugin-System                                                                                          |
-| `smoke-security.mjs`       | Sicherheits-Header (helmet), Eingabevalidierung, Rate Limiting, Auth-Guard, Injection/XSS-Basics, CORS |
+| `smoke-security.mjs`       | Sicherheits-Header (helmet), Eingabevalidierung, Rate Limiting, Auth-Guard, Rollen-Guard, Injection/XSS-Basics, CORS, SVG-Download als Attachment, Selbstregistrierung nur mit erlaubter E-Mail-Domain |
 
 ## Hinweise
 
 - `smoke-security.mjs` testet Rate Limiting; für niedrige Limits die API mit `THROTTLE_AUTH_LIMIT=5 THROTTLE_LIMIT=50` starten.
+- Die Registrierungs-Domain-Prüfung in `smoke-security.mjs` nutzt `POST /auth/exchange`. Ist auf der API `AUTH_EXCHANGE_SECRET` gesetzt, muss derselbe Wert auch im Testlauf als `AUTH_EXCHANGE_SECRET` verfügbar sein – sonst überspringt der Test diesen Block (kein Fehler).
 - Die Tests nutzen den `dev-login`-Endpunkt und sind **nicht für Produktionsumgebungen** geeignet.
 - **Aufräumen:** Jeder Test, der per Dev-Login (oder `/auth/exchange`) Test-User anlegt, löscht diese am Schluss wieder über `POST /auth/dev-delete` (siehe `_cleanup.mjs`). Das Löschen kaskadiert die Daten des Users (Memberships, Klassen, Einreichungen, Bewertungen); im Besitz stehende Module werden auf `ownerId = null` gesetzt. Der Endpunkt ist nur bei aktivem Dev-Login (`DEV_LOGIN_ENABLED`) verfügbar.

@@ -16,9 +16,21 @@ function generatedTranspilePackages() {
   }
 }
 
+// Versions-/Build-Info fürs Browser-Bundle. Die Version stammt aus der
+// package.json; Commit und Build-Zeit werden beim Docker-Build als
+// NEXT_PUBLIC_GIT_SHA/NEXT_PUBLIC_BUILD_TIME (bzw. GIT_SHA/BUILD_TIME) gesetzt.
+// Lokal (npm run dev) genügt die package.json-Version.
+const pkgVersion = JSON.parse(readFileSync(join(__dirname, 'package.json'), 'utf8')).version;
+const buildEnv = {
+  NEXT_PUBLIC_APP_VERSION: process.env.NEXT_PUBLIC_APP_VERSION || pkgVersion,
+  NEXT_PUBLIC_GIT_SHA: process.env.NEXT_PUBLIC_GIT_SHA || process.env.GIT_SHA || '',
+  NEXT_PUBLIC_BUILD_TIME: process.env.NEXT_PUBLIC_BUILD_TIME || process.env.BUILD_TIME || '',
+};
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  env: buildEnv,
   transpilePackages: generatedTranspilePackages(),
   // Schlankes, eigenständiges Runtime-Bundle für das Docker-Image.
   output: 'standalone',

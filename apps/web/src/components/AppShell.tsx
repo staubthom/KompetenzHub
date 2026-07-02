@@ -35,6 +35,11 @@ import {
   type PluginNavItem,
 } from '../lib/api';
 import { useI18n, normalizeLocale, LOCALES, LOCALE_LABEL, type Locale } from '../lib/i18n';
+
+// Build-Info (zur Build-Zeit ins Bundle gebacken, siehe next.config.mjs).
+const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION || '';
+const GIT_SHA = process.env.NEXT_PUBLIC_GIT_SHA || '';
+const BUILD_TIME = process.env.NEXT_PUBLIC_BUILD_TIME || '';
 import { pluginT } from '../plugins/registry';
 
 type Theme = 'light' | 'dark' | 'gray';
@@ -455,6 +460,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             >
               <span aria-hidden="true">{'</>'}</span> {t('common.sourceCode')}
             </a>
+            {APP_VERSION && (
+              <span
+                className="app-version kh-muted"
+                title={BUILD_TIME ? `Build: ${BUILD_TIME}` : undefined}
+              >
+                v{APP_VERSION}
+                {GIT_SHA && GIT_SHA !== 'dev' ? ` · ${GIT_SHA}` : ''}
+              </span>
+            )}
           </div>
         </aside>
 

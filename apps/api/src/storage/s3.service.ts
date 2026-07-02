@@ -112,9 +112,29 @@ export class S3Service implements OnModuleInit {
     return getSignedUrl(this.client, cmd, { expiresIn: opts.expiresIn ?? 900 });
   }
 
-  /** Presigned GET-URL zum Herunterladen/Ansehen. */
+  /**
+   * Presigned GET-URL zum Herunterladen/Ansehen.
+   *
+   * SVG-Sicherheit: SVG-Dateien können eingebettetes JavaScript enthalten und
+   * würden im Browser inline gerendert (potenzielles Stored-XSS, falls der
+   * Objektspeicher je unter derselben Origin wie die App ausgeliefert wird).
+   * Für .svg erzwingen wir daher `Content-Disposition: attachment` und einen
+   * neutralen Content-Type – der Browser lädt die Datei herunter statt sie
+   * auszuführen/darzustellen. Dies ist der zentrale Ausgabepunkt (auch
+   * presignHtmlForRead nutzt ihn), greift also überall.
+   */
   async presignDownload(key: string, expiresIn = 900): Promise<string> {
-    const cmd = new GetObjectCommand({ Bucket: this.bucket, Key: key });
+    const isSvg = /\.svg$/i.test(key);
+    const cmd = new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+      ...(isSvg
+        ? {
+            ResponseContentDisposition: 'attachment',
+            ResponseContentType: 'application/octet-stream',
+          }
+        : {}),
+    });
     return getSignedUrl(this.client, cmd, { expiresIn });
   }
 

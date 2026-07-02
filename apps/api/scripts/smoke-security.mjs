@@ -71,6 +71,148 @@ const badProvider = await post('/auth/exchange', {
 });
 check('Ungültiger Enum-Wert → 400', badProvider.status === 400, `status ${badProvider.status}`);
 
+// Hilfsfunktion mit Token/Methode für die folgenden Blöcke.
+async function authReq(method, path, body, token, extra = {}) {
+  const headers = { 'Content-Type': 'application/json', ...extra };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const res = await fetch(`${BASE}${path}`, {
+    method,
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  let json;
+  try {
+    json = await res.json();
+  } catch {
+    json = null;
+  }
+  return { status: res.status, body: json };
+}
+
+// ── Rollen-Isolation über den globalen RolesGuard ─────────────────
+// (Vor dem Rate-Limit-Test, damit das Auth-Throttling-Fenster noch frei ist.)
+const learner = await post('/auth/dev-login', {
+  email: `sec-learner-${Date.now()}@demo.ch`,
+  role: 'LEARNER',
+});
+const learnerToken = learner.body?.token;
+if (learnerToken) {
+  const lAdmin = await authReq('GET', '/admin/users', undefined, learnerToken);
+  check('Lernende:r kann Admin-Route nicht nutzen → 403', lAdmin.status === 403, `status ${lAdmin.status}`);
+  const lMod = await authReq(
+    'POST',
+    '/modules',
+    { number: `S${Date.now()}`, title: { de: 'X' } },
+    learnerToken,
+  );
+  check('Lernende:r kann kein Modul anlegen → 403', lMod.status === 403, `status ${lMod.status}`);
+}
+
+// ── SVG-Downloads werden als Attachment ausgeliefert (kein Inline-XSS) ──
+const secTeacher = await post('/auth/dev-login', {
+  email: `sec-teacher-${Date.now()}@demo.ch`,
+  role: 'TEACHER',
+});
+const secTeacherToken = secTeacher.body?.token;
+if (secTeacherToken) {
+  const svgUp = await authReq(
+    'POST',
+    '/assets/image-upload-url',
+    { fileName: 'logo.svg', contentType: 'image/svg+xml', sizeBytes: 16 },
+    secTeacherToken,
+  );
+  const svgView = decodeURIComponent(svgUp.body?.viewUrl ?? '');
+  check(
+    'SVG-Download erzwingt Content-Disposition: attachment',
+    /content-disposition=attachment/i.test(svgView),
+    `viewUrl=${svgView.slice(0, 90)}`,
+  );
+  const pngUp = await authReq(
+    'POST',
+    '/assets/image-upload-url',
+    { fileName: 'foto.png', contentType: 'image/png', sizeBytes: 16 },
+    secTeacherToken,
+  );
+  const pngView = decodeURIComponent(pngUp.body?.viewUrl ?? '');
+  check(
+    'PNG-Vorschau bleibt inline (kein erzwungenes attachment)',
+    pngView.length > 0 && !/content-disposition=attachment/i.test(pngView),
+    `viewUrl=${pngView.slice(0, 90)}`,
+  );
+}
+
+// ── Selbstregistrierung nur mit erlaubter E-Mail-Domain ───────────
+const EXCHANGE_SECRET = process.env.AUTH_EXCHANGE_SECRET;
+async function exchange(profile) {
+  if (profile.email) trackUser(profile.email);
+  const headers = { 'Content-Type': 'application/json' };
+  if (EXCHANGE_SECRET) headers['x-auth-exchange'] = EXCHANGE_SECRET;
+  const res = await fetch(`${BASE}/auth/exchange`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(profile),
+  });
+  let json;
+  try {
+    json = await res.json();
+  } catch {
+    json = null;
+  }
+  return { status: res.status, body: json };
+}
+// Probe: ist der Exchange-Pfad mit unserem (evtl. fehlenden) Secret nutzbar?
+const probe = await exchange({
+  provider: 'KOMPETENZHUB',
+  externalId: `probe-${Date.now()}`,
+  email: `sec-probe-${Date.now()}@stud.gibb.ch`,
+  displayName: 'Probe',
+});
+if (!probe.body?.token) {
+  console.log(
+    `  SKIP Registrierungs-Domain-Tests (Exchange nicht nutzbar, status ${probe.status} – AUTH_EXCHANGE_SECRET im Testlauf setzen)`,
+  );
+} else {
+  const admin = await post('/auth/dev-login', {
+    email: `sec-admin-${Date.now()}@demo.ch`,
+    role: 'ADMIN',
+  });
+  const adminToken = admin.body?.token;
+  const set = await authReq(
+    'PATCH',
+    '/admin/settings',
+    { allowedRegistrationDomains: ['stud.gibb.ch'] },
+    adminToken,
+  );
+  check('Schuladmin kann Registrierungs-Domains setzen', set.status === 200, `status ${set.status}`);
+
+  const bad = await exchange({
+    provider: 'KOMPETENZHUB',
+    externalId: `bad-${Date.now()}`,
+    email: `sec-bad-${Date.now()}@nicht-erlaubt.ch`,
+    displayName: 'Fremd',
+  });
+  check('Registrierung mit fremder Domain → 403', bad.status === 403, `status ${bad.status}`);
+
+  const good = await exchange({
+    provider: 'KOMPETENZHUB',
+    externalId: `good-${Date.now()}`,
+    email: `sec-good-${Date.now()}@stud.gibb.ch`,
+    displayName: 'Erlaubt',
+  });
+  check('Registrierung mit erlaubter Domain → Token', !!good.body?.token, `status ${good.status}`);
+
+  const badDomain = await authReq(
+    'PATCH',
+    '/admin/settings',
+    { allowedRegistrationDomains: ['kein domain!'] },
+    adminToken,
+  );
+  check('Ungültige Domain wird abgelehnt → 400', badDomain.status === 400, `status ${badDomain.status}`);
+
+  // Einstellung zurücksetzen (keine Einschränkung), damit andere Läufe unbeeinflusst bleiben.
+  await authReq('PATCH', '/admin/settings', { allowedRegistrationDomains: [] }, adminToken);
+}
+
 // ── Rate Limiting (429) ───────────────────────────────────────────
 const burst = AUTH_LIMIT + 5;
 

@@ -1,4 +1,10 @@
-import { ConflictException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
 import {
   AuthProvider,
   InvitationStatus,
@@ -389,8 +395,41 @@ export class AuthService {
     const existing = await this.prisma.membership.count({ where: { tenantId, userId } });
     if (existing > 0) return;
 
-    // 4. Neue, nicht eingeladene Person → LERNENDE.
+    // 4. Neue, nicht eingeladene Person → LERNENDE. Sofern die Schule erlaubte
+    // Registrierungs-Domains hinterlegt hat, muss die E-Mail-Domain passen –
+    // sonst keine Selbstregistrierung (Einladungen bleiben davon unberührt).
+    const allowed = await this.allowedRegistrationDomains(tenantId);
+    if (allowed.length > 0 && !this.emailDomainAllowed(email, allowed)) {
+      await this.audit(tenantId, userId, 'auth.denied', { reason: 'domain_not_allowed' });
+      throw new ForbiddenException(
+        'Selbstregistrierung ist für diese E-Mail-Domain nicht freigegeben. ' +
+          'Bitte wenden Sie sich an Ihre Schuladministration.',
+      );
+    }
     await this.grantRole(tenantId, userId, Role.LEARNER);
+  }
+
+  /** Erlaubte Registrierungs-Domains der Schule (leer = keine Einschränkung). */
+  private async allowedRegistrationDomains(tenantId: string): Promise<string[]> {
+    const tenant = await this.prisma.tenant.findUnique({ where: { id: tenantId } });
+    const settings = (tenant?.settings ?? {}) as Record<string, unknown>;
+    const list = settings.allowedRegistrationDomains;
+    if (!Array.isArray(list)) return [];
+    return list
+      .filter((d): d is string => typeof d === 'string')
+      .map((d) => d.trim().toLowerCase().replace(/^@/, ''))
+      .filter(Boolean);
+  }
+
+  /** Ob die Domain einer E-Mail in der Freigabeliste steht (exakter Domain-Match). */
+  private emailDomainAllowed(email: string, allowed: string[]): boolean {
+    const at = email.lastIndexOf('@');
+    if (at < 0) return false;
+    const domain = email
+      .slice(at + 1)
+      .trim()
+      .toLowerCase();
+    return allowed.includes(domain);
   }
 
   /** Default-Sprache der Schule (Schuladmin-Einstellung; Fallback de). */

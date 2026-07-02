@@ -671,6 +671,12 @@ const de: Record<string, string> = {
   'admin.authGoogle': 'Google',
   'admin.authGithub': 'GitHub',
   'admin.authKompetenzhub': 'KompetenzHub (Logto)',
+  'admin.regDomains': 'Erlaubte Registrierungs-Domains',
+  'admin.regDomainsHint':
+    'Beschränkt die Selbstregistrierung Lernender auf diese E-Mail-Domains (z. B. stud.gibb.ch). Ohne Eintrag darf sich jede:r registrieren. Eingeladene Personen sind nicht betroffen.',
+  'admin.regDomainsNone': 'Keine Einschränkung – alle E-Mail-Domains erlaubt.',
+  'common.add': 'Hinzufügen',
+  'common.remove': 'Entfernen',
   'admin.devLogin': 'Dev-Login',
   'admin.devLoginOn': 'aktiv',
   'admin.devLoginOff': 'deaktiviert',
@@ -738,6 +744,16 @@ const de: Record<string, string> = {
 };
 
 const fr: Record<string, string> = {
+  'dash.csvExport': 'Export CSV',
+  'dash.csvEarned': 'Total atteint',
+  'dash.csvDone': 'CSV exporté.',
+  'mx.pointsSummaryHint':
+    'Points déjà corrigés par l’enseignant·e / points possibles dans le module',
+  'bw.late': 'en retard',
+  'bw.lateBanner': 'Rendu en retard',
+  'bw.lateSubmittedAt': 'Rendu le',
+  'bw.lateDueWas': 'Le délai était',
+  'sub.dueBy': 'À rendre avant',
   'nav.matrix': 'Ma matrice',
   'nav.lernpfad': 'Parcours',
   'nav.nachweise': 'Mes preuves',
@@ -1370,6 +1386,12 @@ const fr: Record<string, string> = {
   'admin.authGoogle': 'Google',
   'admin.authGithub': 'GitHub',
   'admin.authKompetenzhub': 'KompetenzHub (Logto)',
+  'admin.regDomains': 'Domaines d’inscription autorisés',
+  'admin.regDomainsHint':
+    'Limite l’auto-inscription des apprenant·e·s à ces domaines e-mail (p. ex. stud.gibb.ch). Sans entrée, tout le monde peut s’inscrire. Les personnes invitées ne sont pas concernées.',
+  'admin.regDomainsNone': 'Aucune restriction – tous les domaines e-mail sont autorisés.',
+  'common.add': 'Ajouter',
+  'common.remove': 'Retirer',
   'admin.devLogin': 'Connexion dev',
   'admin.devLoginOn': 'actif',
   'admin.devLoginOff': 'désactivé',
@@ -1436,6 +1458,15 @@ const fr: Record<string, string> = {
 };
 
 const it: Record<string, string> = {
+  'dash.csvExport': 'Esporta CSV',
+  'dash.csvEarned': 'Totale raggiunto',
+  'dash.csvDone': 'CSV esportato.',
+  'mx.pointsSummaryHint': 'Punti già corretti dal docente / punti possibili nel modulo',
+  'bw.late': 'in ritardo',
+  'bw.lateBanner': 'Consegnato in ritardo',
+  'bw.lateSubmittedAt': 'Consegnato il',
+  'bw.lateDueWas': 'La scadenza era',
+  'sub.dueBy': 'Consegna entro',
   'nav.matrix': 'La mia matrice',
   'nav.extensions': 'Estensioni',
   'nav.adminPlugins': 'Estensioni',
@@ -2067,6 +2098,12 @@ const it: Record<string, string> = {
   'admin.authGoogle': 'Google',
   'admin.authGithub': 'GitHub',
   'admin.authKompetenzhub': 'KompetenzHub (Logto)',
+  'admin.regDomains': 'Domini di registrazione consentiti',
+  'admin.regDomainsHint':
+    'Limita l’auto-registrazione degli studenti a questi domini e-mail (p. es. stud.gibb.ch). Senza voci, chiunque può registrarsi. Le persone invitate non sono interessate.',
+  'admin.regDomainsNone': 'Nessuna restrizione – tutti i domini e-mail sono consentiti.',
+  'common.add': 'Aggiungi',
+  'common.remove': 'Rimuovi',
   'admin.devLogin': 'Dev-Login',
   'admin.devLoginOn': 'attivo',
   'admin.devLoginOff': 'disattivato',
@@ -2133,6 +2170,15 @@ const it: Record<string, string> = {
 };
 
 const en: Record<string, string> = {
+  'dash.csvExport': 'CSV export',
+  'dash.csvEarned': 'Total achieved',
+  'dash.csvDone': 'CSV exported.',
+  'mx.pointsSummaryHint': 'Points already graded by the teacher / possible points in the module',
+  'bw.late': 'late',
+  'bw.lateBanner': 'Submitted late',
+  'bw.lateSubmittedAt': 'Submitted on',
+  'bw.lateDueWas': 'Deadline was',
+  'sub.dueBy': 'Due by',
   'nav.matrix': 'My matrix',
   'nav.extensions': 'Extensions',
   'nav.adminPlugins': 'Extensions',
@@ -2758,6 +2804,12 @@ const en: Record<string, string> = {
   'admin.authGoogle': 'Google',
   'admin.authGithub': 'GitHub',
   'admin.authKompetenzhub': 'KompetenzHub (Logto)',
+  'admin.regDomains': 'Allowed registration domains',
+  'admin.regDomainsHint':
+    'Restricts learner self-registration to these email domains (e.g. stud.gibb.ch). With no entries, anyone may register. Invited people are not affected.',
+  'admin.regDomainsNone': 'No restriction – all email domains allowed.',
+  'common.add': 'Add',
+  'common.remove': 'Remove',
   'admin.devLogin': 'Dev login',
   'admin.devLoginOn': 'enabled',
   'admin.devLoginOff': 'disabled',

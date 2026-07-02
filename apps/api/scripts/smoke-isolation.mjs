@@ -171,6 +171,53 @@ const aGrade = await req(
 );
 check('A kann eigene Einreichung bewerten', aGrade.status === 200 || aGrade.status === 201);
 
+// ── Klassen-/Modulanlass-Isolation ────────────────────────────────
+const bClasses = await req('GET', '/classes', null, teacherB);
+check(
+  'B sieht A-Modulanlass NICHT in der Klassenliste',
+  Array.isArray(bClasses.body) && !bClasses.body.some((c) => c.id === aClass.body.id),
+);
+const bOpenAClass = await req('GET', `/classes/${aClass.body.id}`, null, teacherB);
+check(
+  'B kann A-Modulanlass nicht öffnen → 403/404',
+  bOpenAClass.status === 403 || bOpenAClass.status === 404,
+  `status=${bOpenAClass.status}`,
+);
+const bMembersA = await req('GET', `/classes/${aClass.body.id}/members`, null, teacherB);
+check(
+  'B kann A-Teilnehmende nicht sehen → 403/404',
+  bMembersA.status === 403 || bMembersA.status === 404,
+  `status=${bMembersA.status}`,
+);
+const bDelAClass = await req('DELETE', `/classes/${aClass.body.id}`, null, teacherB);
+check(
+  'B kann A-Modulanlass nicht löschen → 403/404',
+  bDelAClass.status === 403 || bDelAClass.status === 404,
+  `status=${bDelAClass.status}`,
+);
+
+// ── Rollen-Isolation: Lernende dürfen keine Lehrer-Routen nutzen ───
+const stMod = await req('POST', '/modules', { number: `X${Date.now()}`, title: { de: 'X' } }, student);
+check('Lernende:r kann kein Modul anlegen → 403', stMod.status === 403, `status=${stMod.status}`);
+const stQueue = await req('GET', '/submissions', null, student);
+check(
+  'Lernende:r sieht die Bewertungs-Queue nicht → 403',
+  stQueue.status === 403,
+  `status=${stQueue.status}`,
+);
+const stAdmin = await req('GET', '/admin/users', null, student);
+check(
+  'Lernende:r kann Admin-Route nicht nutzen → 403',
+  stAdmin.status === 403,
+  `status=${stAdmin.status}`,
+);
+const teacherAdmin = await req('GET', '/admin/users', null, teacherA);
+check(
+  'Lehrperson kann Admin-Route nicht nutzen → 403',
+  teacherAdmin.status === 403,
+  `status=${teacherAdmin.status}`,
+);
+
 // ── Aufräumen ─────────────────────────────────────────────────────
 await req('DELETE', `/classes/${aClass.body.id}`, null, teacherA);
 await req('DELETE', `/modules/${aModuleId}`, null, teacherA);

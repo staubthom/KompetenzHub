@@ -30,6 +30,12 @@ FROM node:20-alpine AS runner
 RUN apk add --no-cache openssl libc6-compat
 WORKDIR /app
 ENV NODE_ENV=production
+# Versions-/Build-Info (Health-Endpoint & Admin-Betrieb). Version aus package.json,
+# Commit/Build-Zeit aus dem Build-Aufruf; als Laufzeit-ENV verfügbar.
+ARG APP_VERSION=0.0.0
+ARG GIT_SHA=dev
+ARG BUILD_TIME=
+ENV APP_VERSION=$APP_VERSION GIT_SHA=$GIT_SHA BUILD_TIME=$BUILD_TIME
 # Voller node_modules-Satz inkl. Prisma-CLI (für `migrate deploy` beim Start)
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json

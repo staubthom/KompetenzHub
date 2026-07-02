@@ -55,11 +55,26 @@ CREATE TABLE "Tenant" (
     "slug" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "active" BOOLEAN NOT NULL DEFAULT true,
+    "quotaBytes" BIGINT,
     "settings" JSONB NOT NULL DEFAULT '{}',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Tenant_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "StorageObject" (
+    "id" TEXT NOT NULL,
+    "tenantId" TEXT NOT NULL,
+    "key" TEXT NOT NULL,
+    "sizeBytes" INTEGER NOT NULL,
+    "kind" TEXT NOT NULL,
+    "classId" TEXT,
+    "uploaderId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "StorageObject_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -101,6 +116,7 @@ CREATE TABLE "Membership" (
     "userId" TEXT NOT NULL,
     "role" "Role" NOT NULL,
     "status" "MembershipStatus" NOT NULL DEFAULT 'ACTIVE',
+    "quotaBytes" BIGINT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Membership_pkey" PRIMARY KEY ("id")
@@ -511,6 +527,18 @@ CREATE TABLE "LearningPathStep" (
 CREATE UNIQUE INDEX "Tenant_slug_key" ON "Tenant"("slug");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "StorageObject_key_key" ON "StorageObject"("key");
+
+-- CreateIndex
+CREATE INDEX "StorageObject_tenantId_idx" ON "StorageObject"("tenantId");
+
+-- CreateIndex
+CREATE INDEX "StorageObject_classId_idx" ON "StorageObject"("classId");
+
+-- CreateIndex
+CREATE INDEX "StorageObject_uploaderId_idx" ON "StorageObject"("uploaderId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "TenantBranding_tenantId_key" ON "TenantBranding"("tenantId");
 
 -- CreateIndex
@@ -668,6 +696,9 @@ CREATE INDEX "LearningPathStep_pathId_sortOrder_idx" ON "LearningPathStep"("path
 
 -- CreateIndex
 CREATE INDEX "LearningPathStep_fieldId_idx" ON "LearningPathStep"("fieldId");
+
+-- AddForeignKey
+ALTER TABLE "StorageObject" ADD CONSTRAINT "StorageObject_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "TenantBranding" ADD CONSTRAINT "TenantBranding_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
