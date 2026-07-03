@@ -7,7 +7,13 @@ import {
   type SessionUser,
 } from './session';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+// Leerer Wert (Produktions-Build, Same-Origin): Der Browser ruft die API relativ
+// unter /api auf – der Cloudflare-Tunnel bzw. der Next-Rewrite routet weiter. So
+// ist EIN domain-agnostisches Image fuer alle Umgebungen (NAS, Sandbox, …) nutzbar,
+// ohne die API-Domain einzubacken. Nicht gesetzt (lokale Entwicklung): direkter
+// Zugriff auf den lokalen API-Port. Trailing-Slash wird entfernt, damit
+// `${API_BASE}/api/...` nie ein doppeltes `//` erzeugt.
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001').replace(/\/+$/, '');
 
 const RESERVED_SUBDOMAINS = new Set(['www', 'api', 'app', 'admin', 'static', 'assets']);
 

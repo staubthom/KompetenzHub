@@ -177,16 +177,26 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        # NEXT_PUBLIC_API_URL wird zur Build-Zeit ins Bundle gebacken (Browser-seitig).
-        NEXT_PUBLIC_API_URL: ${API_PUBLIC_URL:-https://api.kompetenzhub.ch}
+        # Same-Origin-Modus (Standard): LEER lassen -> der Browser ruft die API relativ
+        # unter /api auf. Dadurch ist DIESES Image domain-agnostisch und laeuft
+        # unveraendert auf NAS (demo/api.kompetenzhub.ch) UND Hetzner-Sandbox
+        # (sandbox/sbapi.kompetenzhub.ch) – die Trennung erfolgt nur ueber die
+        # jeweilige Tunnel-Config + .env, nicht ueber verschiedene Images.
+        # Nur setzen (absolute URL), wenn der Browser die API bewusst cross-origin
+        # ansprechen soll (dann wieder pro Umgebung ein eigener Build noetig).
+        NEXT_PUBLIC_API_URL: ${API_PUBLIC_URL:-}
         APP_VERSION: ${APP_VERSION:-}
         GIT_SHA: ${GIT_SHA:-dev}
         BUILD_TIME: ${BUILD_TIME:-}
     container_name: kompetenzhub-web
     restart: unless-stopped    
     environment:
-      NODE_ENV: production     
+      NODE_ENV: production
       PORT: 3000
+      # Interne Docker-Adresse des API-Containers (Service-Name im Compose-Netz).
+      # Wird serverseitig genutzt: NextAuth-Exchange (auth.ts) und der /api-Rewrite
+      # (next.config.mjs). In jeder Umgebung identisch -> keine Anpassung noetig.
+      API_INTERNAL_URL: ${API_INTERNAL_URL:-http://api:3001}
       # ----- Auth (OIDC) – Frontend (NextAuth), optional bis IdP angebunden -----
       AUTH_MICROSOFT_CLIENT_ID: ${AUTH_MICROSOFT_CLIENT_ID}
       AUTH_MICROSOFT_CLIENT_SECRET: ${AUTH_MICROSOFT_CLIENT_SECRET}

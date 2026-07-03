@@ -117,8 +117,10 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        # NEXT_PUBLIC_API_URL wird zur Build-Zeit ins Bundle gebacken (Browser-seitig).
-        NEXT_PUBLIC_API_URL: ${API_PUBLIC_URL:-http://localhost:3001}
+        # Same-Origin-Modus (Standard): LEER lassen -> Browser ruft die API relativ
+        # unter /api auf (siehe next.config.mjs-Rewrite + auth.ts). Ein absoluter Wert
+        # backt die API-Domain ins Bundle und macht das Image umgebungsspezifisch.
+        NEXT_PUBLIC_API_URL: ${API_PUBLIC_URL:-}
         # Version aus package.json (leer = Fallback im Code); Commit/Build-Zeit optional.
         APP_VERSION: ${APP_VERSION:-}
         GIT_SHA: ${GIT_SHA:-dev}
@@ -130,8 +132,8 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      NEXT_PUBLIC_API_URL: ${API_PUBLIC_URL:-http://localhost:3001}
-      API_INTERNAL_URL: http://api:3001
+      NEXT_PUBLIC_API_URL: ${API_PUBLIC_URL:-}
+      API_INTERNAL_URL: ${API_INTERNAL_URL:-http://api:3001}
       AUTH_EXCHANGE_SECRET: ${AUTH_EXCHANGE_SECRET:-}
       AUTH_MICROSOFT_CLIENT_ID: ${AUTH_MICROSOFT_CLIENT_ID:-}
       AUTH_MICROSOFT_CLIENT_SECRET: ${AUTH_MICROSOFT_CLIENT_SECRET:-}

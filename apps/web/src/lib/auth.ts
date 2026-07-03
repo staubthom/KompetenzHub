@@ -56,8 +56,14 @@ async function tenantSlugFromRequest(): Promise<string | null> {
  * Im Browser darf NEXT_PUBLIC_API_URL oeffentlich sein, im Container braucht
  * der NextAuth-Callback aber die interne Service-Adresse.
  */
+// Bewusst mit || statt ??: Im Same-Origin-Modus wird NEXT_PUBLIC_API_URL als
+// LEERSTRING gebaut (Browser nutzt dann relative /api-Aufrufe). Serverseitig darf
+// die API_BASE aber niemals leer sein – sonst zeigt der NextAuth-Exchange ins
+// Nichts. || behandelt '' wie fehlend und faellt auf die interne Adresse zurueck.
 const API_BASE =
-  process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+  process.env.API_INTERNAL_URL?.trim() ||
+  process.env.NEXT_PUBLIC_API_URL?.trim() ||
+  'http://localhost:3001';
 const MICROSOFT_CLIENT_ID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const microsoftClientId = process.env.AUTH_MICROSOFT_CLIENT_ID?.trim();
