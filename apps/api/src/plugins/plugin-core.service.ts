@@ -98,11 +98,20 @@ export class PluginCoreService {
         throw new ForbiddenException('Datei-Key liegt ausserhalb des Plugin-Storage.');
       }
     }
-    // teacherAttach erzwingt Nachweistyp + ACL (Besitz/Co-Leitung) selbst.
-    return this.evidence.teacherAttach(evidenceId, user.tenantId, user.userId, user.roles, {
-      enrollmentId,
-      files: files.map((f) => ({ key: f.key, name: f.name })),
-    });
+    // teacherAttach erzwingt Nachweistyp + ACL (Besitz/Co-Leitung) selbst. Die Keys
+    // sind oben bereits gegen den Plugin-Storage-Präfix (inkl. Tenant) geprüft, daher
+    // keysPreValidated: der StorageObject-Ownership-Check greift für Plugin-Uploads nicht.
+    return this.evidence.teacherAttach(
+      evidenceId,
+      user.tenantId,
+      user.userId,
+      user.roles,
+      {
+        enrollmentId,
+        files: files.map((f) => ({ key: f.key, name: f.name })),
+      },
+      { keysPreValidated: true },
+    );
   }
 
   private async listMyClasses(user: RequestContext): Promise<CoreClassRef[]> {

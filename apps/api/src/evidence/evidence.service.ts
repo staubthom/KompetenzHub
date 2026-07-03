@@ -489,6 +489,10 @@ export class EvidenceService {
       level?: AchievedLevel;
       feedback?: string;
     },
+    // `keysPreValidated`: der interne Aufrufer (Plugin-Kern) hat die Datei-Keys bereits
+    // gegen seinen tenant-gescopten Storage-Präfix geprüft. Dann entfällt der
+    // StorageObject-Ownership-Check (Plugin-Uploads werden dort nicht verbucht).
+    opts: { keysPreValidated?: boolean } = {},
   ) {
     const ev = await this.prisma.competenceEvidence.findFirst({
       where: { id: evidenceId, tenantId },
@@ -538,7 +542,8 @@ export class EvidenceService {
       .map((f) => ({ key: String(f.key), name: f.name?.trim() || 'Datei', kind: 'file' as const }));
     // Nur eigene, in diesem Mandanten hochgeladene Anhänge dürfen referenziert werden
     // (verhindert das Unterschieben fremder Objekt-Keys über die spätere Download-URL).
-    if (files !== undefined) {
+    // Ausnahme: der Plugin-Kern hat die Keys bereits gegen seinen Storage-Präfix geprüft.
+    if (files !== undefined && !opts.keysPreValidated) {
       await this.storageObjects.assertUploadedBy({
         tenantId,
         uploaderId: userId,
