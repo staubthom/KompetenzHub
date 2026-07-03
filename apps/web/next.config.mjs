@@ -39,24 +39,31 @@ const nextConfig = {
   outputFileTracingRoot: join(__dirname, '../../'),
 
   // Same-Origin-Modus: Wurde das Bundle mit LEEREM NEXT_PUBLIC_API_URL gebaut, ruft
-  // der Browser die API relativ unter /api auf. Der Next-Server leitet /api dann
-  // serverseitig an den internen API-Container weiter. Damit genuegt EIN
-  // domain-agnostisches Image pro Umgebung – die API-URL wird nicht mehr ins Bundle
-  // gebacken. Fuer die NAS-/Sandbox-Trennung reicht so pro Host eine eigene .env +
-  // Tunnel-Config; das Image ist identisch.
+  // der Browser die NestJS-API relativ unter /api/v1 auf. Der Next-Server leitet
+  // NUR diesen Prefix serverseitig an den internen API-Container weiter. Damit
+  // genuegt EIN domain-agnostisches Image pro Umgebung – die API-URL wird nicht mehr
+  // ins Bundle gebacken. Fuer die NAS-/Sandbox-Trennung reicht so pro Host eine
+  // eigene .env + Tunnel-Config; das Image ist identisch.
   //
-  // Zwei Topologien werden dadurch unterstuetzt:
-  //   B1: Der Cloudflare-Tunnel routet host/api/* direkt auf den API-Container
-  //       (dieser Rewrite bleibt ungenutzt – /api erreicht den Web-Server nie).
+  // WICHTIG: Nur /api/v1 umleiten, NICHT das ganze /api. NextAuth bedient
+  // /api/auth/* auf DIESEM Next-Server (Google/Logto-Login: signin, callback,
+  // error, session). Ein breiter /api-Rewrite wuerde diese Routen an die NestJS-API
+  // verschleppen -> OAuth bricht mit "Cannot GET /api/auth/error" (404 im
+  // Problem-JSON der API). Der Dev-Login (/api/v1/auth/dev-login) laeuft korrekt
+  // ueber die API und ist daher nie betroffen.
+  //
+  // Zwei Topologien werden unterstuetzt:
+  //   B1: Der Cloudflare-Tunnel routet host/api/v1/* direkt auf den API-Container
+  //       (dieser Rewrite bleibt ungenutzt – /api/v1 erreicht den Web-Server nie).
   //   B2: Der Tunnel routet ALLES auf den Web-Container; dieser Rewrite proxied
-  //       /api intern an den API-Container (API muss dann nicht oeffentlich sein).
+  //       /api/v1 intern an den API-Container (API muss dann nicht oeffentlich sein).
   //
   // Die Ziel-Adresse ist die interne Docker-Service-Adresse und in jeder Umgebung
   // gleich (`http://api:3001`), daher unkritisch, dass sie zur Build-Zeit feststeht.
   async rewrites() {
     if (process.env.NEXT_PUBLIC_API_URL !== '') return [];
     const target = process.env.API_INTERNAL_URL || 'http://api:3001';
-    return [{ source: '/api/:path*', destination: `${target}/api/:path*` }];
+    return [{ source: '/api/v1/:path*', destination: `${target}/api/v1/:path*` }];
   },
 
   experimental: {
