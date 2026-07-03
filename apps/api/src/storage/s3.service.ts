@@ -11,6 +11,7 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'node:crypto';
+import { sanitizeRichText } from '../common/html-sanitize';
 
 /** Präfix für öffentlich lesbare Rich-Text-Bilder. */
 const PUBLIC_PREFIX = 'rte';
@@ -177,7 +178,9 @@ export class S3Service implements OnModuleInit {
         out[k] = v;
         continue;
       }
-      let html = v;
+      // Erst sanitisieren (neutralisiert auch bereits gespeicherte Alt-Payloads),
+      // dann die eigenen (kanonischen) Objekt-URLs presignen.
+      let html = sanitizeRichText(v);
       for (const url of Array.from(new Set(html.match(re) ?? []))) {
         const key = url.slice(base.length);
         const signed = await this.presignDownload(key);
@@ -205,7 +208,8 @@ export class S3Service implements OnModuleInit {
     if (!json || typeof json !== 'object') return json;
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(json as Record<string, unknown>)) {
-      out[k] = typeof v === 'string' ? this.canonicalize(v) : v;
+      // Sanitisieren (XSS-Schutz) und danach Objekt-URLs kanonisieren.
+      out[k] = typeof v === 'string' ? this.canonicalize(sanitizeRichText(v)) : v;
     }
     return out;
   }
