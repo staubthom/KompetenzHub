@@ -6,6 +6,9 @@ import { LocaleProvider } from '../lib/i18n';
 export const metadata: Metadata = {
   title: 'KompetenzHub',
   description: 'Kompetenzorientierte Lern- und Bewertungsplattform',
+  icons: {
+    icon: '/icon.svg',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }): JSX.Element {

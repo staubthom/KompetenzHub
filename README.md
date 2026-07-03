@@ -46,9 +46,16 @@ Zusätzlich bietet KompetenzHub **Lernpfade** (empfohlene Reihenfolge), **KI-Unt
 
 Die Oberfläche ist vollständig **mehrsprachig** (Deutsch, Französisch, Italienisch, Englisch).
 
-### Demoseite 🌐
 
-[Demo! Keine persönlichen Daten hochladen ⚠️](https://demo.kompetenzhub.ch/)
+### InfoWebseite 🌐
+
+[kompetenzhub.ch ](https://kompetenzhub.ch/)
+Hier findest du Infos zu dieser Software
+
+
+### Demoseite 👩🏻‍💻
+
+[Demo! Keine persönlichen Daten hochladen ⚠️](https://sandbox.kompetenzhub.ch/login)
 Hier gibt es eine Demo welche immer zur vollen Stunde zurückgesetzt wird.
 
 ---
