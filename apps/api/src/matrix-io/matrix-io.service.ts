@@ -36,6 +36,9 @@ interface ExportEvidence {
   maxPoints: number | null;
   targetLevel: string | null;
   isVisible: boolean;
+  /** UTC-ISO; optional, da ältere Exporte (vor Schema-Erweiterung) sie nicht enthalten. */
+  availableFrom?: string | null;
+  dueAt?: string | null;
   sortOrder: number;
   config: Json; // ohne attachmentKey/attachmentName
   attachment: { path: string; name: string } | null;
@@ -165,6 +168,8 @@ export class MatrixIoService {
         maxPoints: e.maxPoints != null ? Number(e.maxPoints) : null,
         targetLevel: e.targetLevel,
         isVisible: e.isVisible,
+        availableFrom: e.availableFrom?.toISOString() ?? null,
+        dueAt: e.dueAt?.toISOString() ?? null,
         sortOrder: e.sortOrder,
         config,
         attachment,
@@ -377,6 +382,8 @@ export class MatrixIoService {
           maxPoints: e.maxPoints ?? null,
           targetLevel: (e.targetLevel as CompetenceLevel | null) ?? null,
           isVisible: e.isVisible ?? false,
+          availableFrom: this.parseDate(e.availableFrom),
+          dueAt: this.parseDate(e.dueAt),
           sortOrder: e.sortOrder ?? 0,
           config: config as Prisma.InputJsonValue,
         } as never,
@@ -481,6 +488,13 @@ export class MatrixIoService {
     out.evidences = Array.isArray(out.evidences) ? out.evidences : [];
     out.learningPaths = Array.isArray(out.learningPaths) ? out.learningPaths : [];
     return out;
+  }
+
+  /** UTC-ISO aus der Importdatei → Date. Fehlende oder kaputte Werte ergeben null. */
+  private parseDate(value: string | null | undefined): Date | null {
+    if (typeof value !== 'string' || !value) return null;
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d;
   }
 
   private appendImported(title: Json): Json {

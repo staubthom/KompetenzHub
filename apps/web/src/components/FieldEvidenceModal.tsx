@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import RichTextEditor from './RichTextEditor';
+import DueDatePicker, { localDayKey } from './DueDatePicker';
 import TrashIcon from './TrashIcon';
 import { useToast } from './ToastProvider';
 import { useI18n } from '../lib/i18n';
@@ -47,6 +48,20 @@ function emptyDraft(): Draft {
     attachmentKey: '',
     attachmentName: '',
   };
+}
+
+/**
+ * UTC-ISO vom Server → lokale Wandzeit `YYYY-MM-DDTHH:mm` fürs Eingabefeld.
+ * Ein `slice(0, 16)` auf dem ISO-String würde die UTC-Zeit anzeigen und den
+ * Termin bei jedem erneuten Speichern um den Zonen-Offset verschieben.
+ */
+function isoToLocalInput(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${localDayKey(d)}T${hh}:${mm}`;
 }
 
 export default function FieldEvidenceModal({
@@ -121,7 +136,7 @@ export default function FieldEvidenceModal({
       title: ev.title?.de ?? '',
       instructions: ev.instructions?.de ?? '',
       isVisible: ev.isVisible,
-      dueAt: ev.dueAt ? ev.dueAt.slice(0, 16) : '',
+      dueAt: isoToLocalInput(ev.dueAt),
       allowFile: ev.config.allowFile !== false,
       allowLink: ev.config.allowLink !== false,
       allowText: ev.config.allowText !== false,
@@ -513,14 +528,13 @@ export default function FieldEvidenceModal({
                     onChange={(e) => setDraft({ ...draft, maxPoints: e.target.value })}
                   />
                 </label>
-                <label style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  {t('fe.dueUntil')}
-                  <input
-                    type="datetime-local"
+                <div className="dtp-field">
+                  <span>{t('fe.dueUntil')}</span>
+                  <DueDatePicker
                     value={draft.dueAt}
-                    onChange={(e) => setDraft({ ...draft, dueAt: e.target.value })}
+                    onChange={(v) => setDraft({ ...draft, dueAt: v })}
                   />
-                </label>
+                </div>
                 <label className="goal-check" style={{ fontWeight: 600 }}>
                   <input
                     type="checkbox"

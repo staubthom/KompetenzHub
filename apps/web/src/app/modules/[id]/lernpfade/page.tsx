@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { use, useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import AppShell from '../../../../components/AppShell';
 import TrashIcon from '../../../../components/TrashIcon';
@@ -21,8 +21,8 @@ interface FlatField {
   descriptor: string;
 }
 
-export default function LearningPathsPage({ params }: { params: { id: string } }) {
-  const moduleId = params.id;
+export default function LearningPathsPage({ params }: { params: Promise<{ id: string }> }) {
+  const moduleId = use(params).id;
   const toast = useToast();
   const { t } = useI18n();
   const [data, setData] = useState<MatrixResponse | null>(null);
