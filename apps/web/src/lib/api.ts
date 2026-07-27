@@ -778,6 +778,8 @@ export interface ActivePathStep {
     id: string;
     title: Record<string, string>;
     status: 'OPEN' | 'SUBMITTED' | 'GRADED' | 'REJECTED';
+    dueAt: string | null;
+    maxPoints: number | null;
   }[];
 }
 

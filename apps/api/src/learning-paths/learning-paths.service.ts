@@ -4,6 +4,15 @@ import { PrismaService } from '../prisma/prisma.service';
 
 type FieldStatus = 'OPEN' | 'SUBMITTED' | 'GRADED' | 'REJECTED';
 
+/** Nachweis-Chip im Lernpfad – inhaltlich identisch zur Kompetenzmatrix. */
+interface PathEvidenceView {
+  id: string;
+  title: Record<string, string>;
+  status: FieldStatus;
+  dueAt: string | null;
+  maxPoints: number | null;
+}
+
 @Injectable()
 export class LearningPathsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -163,22 +172,8 @@ export class LearningPathsService {
     tenantId: string,
     userId: string,
     isTeacher: boolean,
-  ): Promise<
-    Map<
-      string,
-      {
-        status: FieldStatus;
-        evidences: { id: string; title: Record<string, string>; status: FieldStatus }[];
-      }
-    >
-  > {
-    const result = new Map<
-      string,
-      {
-        status: FieldStatus;
-        evidences: { id: string; title: Record<string, string>; status: FieldStatus }[];
-      }
-    >();
+  ): Promise<Map<string, { status: FieldStatus; evidences: PathEvidenceView[] }>> {
+    const result = new Map<string, { status: FieldStatus; evidences: PathEvidenceView[] }>();
     if (fieldIds.length === 0) return result;
 
     const evidences = await this.prisma.competenceEvidence.findMany({
@@ -191,6 +186,9 @@ export class LearningPathsService {
       select: {
         id: true,
         title: true,
+        // Abgabetermin & Punkte: im Lernpfad genauso sichtbar wie in der Matrix.
+        dueAt: true,
+        maxPoints: true,
         fields: { select: { fieldId: true } },
         submissions: isTeacher
           ? false
@@ -216,6 +214,8 @@ export class LearningPathsService {
           id: ev.id,
           title: ev.title as Record<string, string>,
           status: evStatus,
+          dueAt: ev.dueAt ? ev.dueAt.toISOString() : null,
+          maxPoints: ev.maxPoints != null ? Number(ev.maxPoints) : null,
         });
         const arr = collect.get(f.fieldId) ?? [];
         if (last) arr.push(last);

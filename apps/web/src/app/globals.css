@@ -2468,3 +2468,9 @@ button.hm-cell {
   align-items: center;
   flex-wrap: wrap;
 }
+/* Punkte/Abgabetermin im Chip dürfen nicht abgeschnitten werden. */
+.path .step .evidence-chip {
+  white-space: normal;
+  text-align: left;
+  max-width: 100%;
+}

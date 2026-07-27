@@ -35,6 +35,15 @@ function chipIcon(status: string): string {
   }
 }
 
+/** Kurzes Abgabedatum (TT.MM.JJ) für die Chip-Anzeige – wie in der Kompetenzmatrix. */
+function shortDate(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, {
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit',
+  });
+}
+
 export default function LernpfadPage() {
   const toast = useToast();
   const { t, locale } = useI18n();
@@ -204,16 +213,36 @@ export default function LernpfadPage() {
                           </span>
                         ) : (
                           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                            {s.evidences.map((ev) => (
-                              <button
-                                key={ev.id}
-                                className={`evidence-chip evidence-chip-btn chip-${ev.status.toLowerCase()}`}
-                                title={`${t(`pathstatus.${ev.status}`)}: ${localized(ev.title, locale)}`}
-                                onClick={() => void openEvidenceDetail(ev.id)}
-                              >
-                                {chipIcon(ev.status)} {localized(ev.title, locale)}
-                              </button>
-                            ))}
+                            {s.evidences.map((ev) => {
+                              const overdue =
+                                !!ev.dueAt &&
+                                new Date(ev.dueAt) < new Date() &&
+                                ev.status !== 'GRADED';
+                              return (
+                                <button
+                                  key={ev.id}
+                                  className={`evidence-chip evidence-chip-btn chip-${ev.status.toLowerCase()}`}
+                                  title={`${t(`pathstatus.${ev.status}`)}: ${localized(ev.title, locale)}`}
+                                  onClick={() => void openEvidenceDetail(ev.id)}
+                                >
+                                  {chipIcon(ev.status)} {localized(ev.title, locale)}
+                                  {(ev.maxPoints != null || ev.dueAt) && (
+                                    <span className="chip-meta">
+                                      {ev.maxPoints != null && (
+                                        <span className="chip-meta-pts">
+                                          {ev.maxPoints} {t('common.points')}
+                                        </span>
+                                      )}
+                                      {ev.dueAt && (
+                                        <span className={overdue ? 'overdue' : undefined}>
+                                          📅 {shortDate(ev.dueAt)}
+                                        </span>
+                                      )}
+                                    </span>
+                                  )}
+                                </button>
+                              );
+                            })}
                           </div>
                         )}
                       </div>
