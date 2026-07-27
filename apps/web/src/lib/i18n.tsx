@@ -541,6 +541,7 @@ const de: Record<string, string> = {
   'me.noGoals': 'Noch keine Handlungsziele. Füge das erste HZ hinzu.',
   'me.confirmDeleteGoal': 'Handlungsziel löschen?',
   'me.matrix': 'Kompetenzmatrix',
+  'me.pointsTotalHint': 'Total der möglichen Punkte aller Nachweise dieser Matrix',
   'me.addBand': '+ Band hinzufügen',
   'me.needGoalsFirst':
     'Lege zuerst Handlungsziele an – jedes Band muss mindestens eines referenzieren.',
@@ -1268,6 +1269,7 @@ const fr: Record<string, string> = {
   'me.noGoals': 'Aucun objectif d’action. Ajoutez le premier.',
   'me.confirmDeleteGoal': 'Supprimer l’objectif d’action ?',
   'me.matrix': 'Matrice de compétences',
+  'me.pointsTotalHint': 'Total des points possibles de toutes les preuves de cette matrice',
   'me.addBand': '+ Ajouter une bande',
   'me.needGoalsFirst':
     'Créez d’abord des objectifs d’action – chaque bande doit en référencer au moins un.',
@@ -1994,6 +1996,7 @@ const it: Record<string, string> = {
   'me.noGoals': 'Ancora nessun obiettivo operativo. Aggiungi il primo.',
   'me.confirmDeleteGoal': 'Eliminare l’obiettivo operativo?',
   'me.matrix': 'Matrice delle competenze',
+  'me.pointsTotalHint': 'Totale dei punti possibili di tutte le prove di questa matrice',
   'me.addBand': '+ Aggiungi banda',
   'me.needGoalsFirst':
     'Crea prima gli obiettivi operativi – ogni banda deve referenziarne almeno uno.',
@@ -2714,6 +2717,7 @@ const en: Record<string, string> = {
   'me.noGoals': 'No action goals yet. Add the first one.',
   'me.confirmDeleteGoal': 'Delete action goal?',
   'me.matrix': 'Competence matrix',
+  'me.pointsTotalHint': 'Total possible points across all evidence in this matrix',
   'me.addBand': '+ Add band',
   'me.needGoalsFirst': 'Create action goals first – each band must reference at least one.',
   'me.code': 'Code',

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import AppShell from '../../../../components/AppShell';
 import TrashIcon from '../../../../components/TrashIcon';
 import { useToast } from '../../../../components/ToastProvider';
-import { useI18n } from '../../../../lib/i18n';
+import { useI18n, localized } from '../../../../lib/i18n';
 import {
   matrix as matrixApi,
   learningPaths,
@@ -13,18 +13,36 @@ import {
   type MatrixResponse,
 } from '../../../../lib/api';
 
+/** Kurzes Abgabedatum (TT.MM.JJ) – gleiche Darstellung wie in der Matrix. */
+function shortDate(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, {
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit',
+  });
+}
+
+interface FieldEvidenceRef {
+  id: string;
+  title: string;
+  isVisible: boolean;
+  dueAt: string | null;
+}
+
 interface FlatField {
   id: string;
   code: string;
   level: string;
   bandCode: string;
   descriptor: string;
+  /** Nachweise des Felds – die Abgabetermine bestimmen die sinnvolle Reihenfolge. */
+  evidences: FieldEvidenceRef[];
 }
 
 export default function LearningPathsPage({ params }: { params: Promise<{ id: string }> }) {
   const moduleId = use(params).id;
   const toast = useToast();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [data, setData] = useState<MatrixResponse | null>(null);
   const [paths, setPaths] = useState<LearningPath[] | null>(null);
   const [editId, setEditId] = useState<string | null>(null); // null = kein Editor, 'new' via separate state
@@ -45,11 +63,17 @@ export default function LearningPathsPage({ params }: { params: Promise<{ id: st
           level: f.level,
           bandCode: band.code,
           descriptor: f.descriptor?.text?.de ?? '',
+          evidences: (f.evidences ?? []).map((e) => ({
+            id: e.evidence.id,
+            title: localized(e.evidence.title, locale),
+            isVisible: e.evidence.isVisible,
+            dueAt: e.evidence.dueAt,
+          })),
         });
       }
     }
     return list;
-  }, [data]);
+  }, [data, locale]);
 
   const fieldById = useMemo(() => new Map(fields.map((f) => [f.id, f])), [fields]);
 
@@ -75,6 +99,31 @@ export default function LearningPathsPage({ params }: { params: Promise<{ id: st
       }
     })();
   }, [moduleId, loadPaths, toast, t]);
+
+  /** Nachweise eines Felds mit ihrem Abgabetermin – Grundlage für die Reihenfolge. */
+  function renderDueChips(evidences: FieldEvidenceRef[]) {
+    if (evidences.length === 0) return null;
+    const now = new Date();
+    return (
+      <span className="pe-due">
+        {evidences.map((ev) => (
+          <span key={ev.id} className="evidence-chip" title={ev.title}>
+            📎 {ev.title}
+            {!ev.isVisible && <span className="ev-hidden"> {t('me.hidden')}</span>}
+            <span className="chip-meta">
+              {ev.dueAt ? (
+                <span className={new Date(ev.dueAt) < now ? 'overdue' : undefined}>
+                  📅 {shortDate(ev.dueAt)}
+                </span>
+              ) : (
+                <span>{t('dp.none')}</span>
+              )}
+            </span>
+          </span>
+        ))}
+      </span>
+    );
+  }
 
   function resetForm() {
     setEditId(null);
@@ -234,6 +283,7 @@ export default function LearningPathsPage({ params }: { params: Promise<{ id: st
                               <span className="kh-muted" style={{ fontSize: 12 }}>
                                 {f.descriptor || f.level}
                               </span>
+                              {renderDueChips(f.evidences)}
                             </span>
                             <button
                               className="btn sm"
@@ -274,6 +324,7 @@ export default function LearningPathsPage({ params }: { params: Promise<{ id: st
                                 <span className="kh-muted" style={{ fontSize: 12 }}>
                                   {f?.descriptor || f?.level}
                                 </span>
+                                {renderDueChips(f?.evidences ?? [])}
                               </span>
                               <button
                                 className="btn-icon"

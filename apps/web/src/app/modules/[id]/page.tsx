@@ -1,6 +1,6 @@
 'use client';
 import * as React from 'react'; // Wichtig: React importieren, falls noch nicht da
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AppShell from '../../../components/AppShell';
@@ -21,6 +21,15 @@ import {
 } from '../../../lib/api';
 
 const LEVELS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'] as const;
+
+/** Kurzes Abgabedatum (TT.MM.JJ) für die Chip-Anzeige – wie in der Lernenden-Matrix. */
+function shortDate(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, {
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit',
+  });
+}
 
 export default function ModuleDetailPage({ params }: { params: Promise<{ id: string }> }) {
   // Wir packen das Promise mit React.use() aus
@@ -305,6 +314,23 @@ export default function ModuleDetailPage({ params }: { params: Promise<{ id: str
     }
   }
 
+  // Mögliche Punkte der ganzen Matrix. Ein Nachweis kann an mehreren Feldern
+  // hängen → nach ID entdoppeln, sonst wird er mehrfach gezählt.
+  const pointsTotal = useMemo(() => {
+    const seen = new Set<string>();
+    let total = 0;
+    for (const band of mod?.matrix?.bands ?? []) {
+      for (const field of band.fields) {
+        for (const e of field.evidences ?? []) {
+          if (seen.has(e.evidence.id)) continue;
+          seen.add(e.evidence.id);
+          if (e.evidence.maxPoints) total += Number(e.evidence.maxPoints);
+        }
+      }
+    }
+    return total;
+  }, [mod]);
+
   if (!mod) {
     return (
       <AppShell>
@@ -543,13 +569,20 @@ export default function ModuleDetailPage({ params }: { params: Promise<{ id: str
       <div className="panel">
         <div className="panel-head">
           <h2>{t('me.matrix')}</h2>
-          <button
-            className="btn sm"
-            onClick={() => setAddingBand(true)}
-            disabled={goals.length === 0}
-          >
-            {t('me.addBand')}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {pointsTotal > 0 && (
+              <span className="badge b-archived" title={t('me.pointsTotalHint')}>
+                Σ {pointsTotal} {t('common.points')}
+              </span>
+            )}
+            <button
+              className="btn sm"
+              onClick={() => setAddingBand(true)}
+              disabled={goals.length === 0}
+            >
+              {t('me.addBand')}
+            </button>
+          </div>
         </div>
 
         {goals.length === 0 && (
@@ -699,18 +732,39 @@ export default function ModuleDetailPage({ params }: { params: Promise<{ id: str
                             )}
                           </button>
                           <div className="field-evidence">
-                            {(field.evidences ?? []).map((e) => (
-                              <span
-                                key={e.evidence.id}
-                                className="evidence-chip"
-                                title={e.evidence.title?.de}
-                              >
-                                📎 {e.evidence.title?.de}
-                                {!e.evidence.isVisible && (
-                                  <span className="ev-hidden"> {t('me.hidden')}</span>
-                                )}
-                              </span>
-                            ))}
+                            {(field.evidences ?? []).map((e) => {
+                              const maxPoints = e.evidence.maxPoints
+                                ? Number(e.evidence.maxPoints)
+                                : null;
+                              const due = e.evidence.dueAt;
+                              const overdue = !!due && new Date(due) < new Date();
+                              return (
+                                <span
+                                  key={e.evidence.id}
+                                  className="evidence-chip"
+                                  title={e.evidence.title?.de}
+                                >
+                                  📎 {e.evidence.title?.de}
+                                  {!e.evidence.isVisible && (
+                                    <span className="ev-hidden"> {t('me.hidden')}</span>
+                                  )}
+                                  {(maxPoints != null || due) && (
+                                    <span className="chip-meta">
+                                      {maxPoints != null && (
+                                        <span className="chip-meta-pts">
+                                          {maxPoints} {t('common.points')}
+                                        </span>
+                                      )}
+                                      {due && (
+                                        <span className={overdue ? 'overdue' : undefined}>
+                                          📅 {shortDate(due)}
+                                        </span>
+                                      )}
+                                    </span>
+                                  )}
+                                </span>
+                              );
+                            })}
                             <button
                               className="evidence-add"
                               onClick={() =>

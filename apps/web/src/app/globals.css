@@ -989,8 +989,17 @@ a {
   opacity: 0.3;
   cursor: not-allowed;
 }
+/*
+ * Button-Inhalte werden von Browsern vertikal zentriert. Da ".field-btn" per
+ * "flex: 1" die Restfläche der Spalte füllt und die Nachweis-Leisten darunter
+ * unterschiedlich hoch sind, standen die Feldcodes (2B/2I/2A) sonst je Spalte
+ * auf einer anderen Höhe. Flex-Layout mit "flex-start" hebt die Zentrierung auf
+ * und macht die Zeile oben bündig – wie in der Lernenden-Matrix.
+ */
 .field-btn {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
   width: 100%;
   height: auto;
   flex: 1;
@@ -2012,6 +2021,20 @@ button.hm-cell {
 }
 /* Lehrer-Matrix-Editor: lange Nachweistitel umbrechen statt abschneiden */
 .level-col .evidence-chip {
+  white-space: normal;
+  text-align: left;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+/* Lernpfad-Verwaltung: Nachweise samt Abgabetermin je Kompetenzfeld */
+.pe-due {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+.pe-due .evidence-chip {
   white-space: normal;
   text-align: left;
   max-width: 100%;
