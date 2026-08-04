@@ -57,6 +57,26 @@ export class EvidenceController {
   }
 
   /**
+   * Bewertungskriterien-Dokument hinterlegen (FA-70/72). Erwartet den S3-Key eines
+   * bereits hochgeladenen Anhangs; der Text wird serverseitig extrahiert.
+   */
+  @Put(':id/rubric')
+  @Roles(Role.TEACHER, Role.ADMIN)
+  setRubric(
+    @Param('id') id: string,
+    @Body() dto: { key?: string; name?: string },
+    @CurrentUser() user: RequestContext,
+  ) {
+    return this.evidence.setRubric(id, user.tenantId, dto ?? {});
+  }
+
+  @Delete(':id/rubric')
+  @Roles(Role.TEACHER, Role.ADMIN)
+  removeRubric(@Param('id') id: string, @CurrentUser() user: RequestContext) {
+    return this.evidence.removeRubric(id, user.tenantId);
+  }
+
+  /**
    * Einreichungsart „von Lehrperson angefügt": die Lehrperson fügt für eine
    * lernende Person eine Datei an und trägt optional Punkte/Level/Feedback ein.
    */

@@ -332,6 +332,13 @@ export const evidence = {
   update: (id: string, data: Partial<EvidenceInput>) =>
     apiFetch<Evidence>(`/evidence/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   remove: (id: string) => apiFetch<void>(`/evidence/${id}`, { method: 'DELETE' }),
+  /** Bewertungskriterien-Dokument für die KI-Assistenz hinterlegen bzw. entfernen. */
+  setRubric: (id: string, key: string, name: string) =>
+    apiFetch<Evidence>(`/evidence/${id}/rubric`, {
+      method: 'PUT',
+      body: JSON.stringify({ key, name }),
+    }),
+  removeRubric: (id: string) => apiFetch<Evidence>(`/evidence/${id}/rubric`, { method: 'DELETE' }),
   // Lernende
   studentList: () => apiFetch<StudentEvidence[]>('/evidence/student/list'),
   studentGet: (id: string) => apiFetch<StudentEvidence>(`/evidence/student/${id}`),
@@ -594,12 +601,19 @@ export const submissions = {
       body: JSON.stringify({ reason }),
     }),
   // KI (FA-70/72)
-  aiAssessment: (id: string) =>
-    apiFetch<AiAssessment>(`/submissions/${id}/ai-assessment`, { method: 'POST' }),
+  /** `guidance`: freie Zusatzvorgabe der Lehrperson (z. B. eigene Bewertungskriterien). */
+  aiAssessment: (id: string, guidance?: string) =>
+    apiFetch<AiAssessment>(`/submissions/${id}/ai-assessment`, {
+      method: 'POST',
+      body: JSON.stringify({ guidance: guidance ?? '' }),
+    }),
   getAiAssessment: (id: string) =>
     apiFetch<AiAssessment | null>(`/submissions/${id}/ai-assessment`),
-  aiFeedback: (id: string) =>
-    apiFetch<{ feedback: string }>(`/submissions/${id}/ai-feedback`, { method: 'POST' }),
+  aiFeedback: (id: string, guidance?: string) =>
+    apiFetch<{ feedback: string }>(`/submissions/${id}/ai-feedback`, {
+      method: 'POST',
+      body: JSON.stringify({ guidance: guidance ?? '' }),
+    }),
 };
 
 /**
@@ -996,6 +1010,9 @@ export interface Evidence {
   config: EvidenceConfig;
   fields: { evidenceId: string; fieldId: string }[];
   _count?: { submissions: number };
+  /** Bewertungskriterien-Dokument für die KI (Dateiname; Text bleibt serverseitig). */
+  rubricName?: string | null;
+  hasRubric?: boolean;
 }
 
 export interface LastSubmission {

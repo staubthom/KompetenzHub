@@ -11,6 +11,8 @@ const STATUS_BADGE: Record<string, string> = {
   REJECTED: 'b-archived',
 };
 const LEVELS = ['NOT_MET', 'BEGINNER', 'INTERMEDIATE', 'ADVANCED'];
+/** Muss zu GUIDANCE_MAX_CHARS im API-Service passen. */
+const AI_GUIDANCE_MAX = 4000;
 
 /** Wurde nach Ablauf der Frist eingereicht? */
 function isLate(submittedAt: string | null, dueAt: string | null): boolean {
@@ -47,6 +49,8 @@ export default function SubmissionGrader({
   const [busy, setBusy] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
   const [assessment, setAssessment] = useState<AiAssessment | null>(null);
+  /** Freie Zusatzvorgabe an die KI (eigene Kriterien, Schwerpunkt, Tonalität …). */
+  const [guidance, setGuidance] = useState('');
 
   const back = backLabel ?? t('bw.title');
 
@@ -96,7 +100,7 @@ export default function SubmissionGrader({
   async function genAssessment() {
     setAiBusy(true);
     try {
-      const a = await submissions.aiAssessment(id);
+      const a = await submissions.aiAssessment(id, guidance.trim() || undefined);
       setAssessment(a);
       toast.success(t('toast.aiGradeSuggested'));
     } catch (e: unknown) {
@@ -109,7 +113,7 @@ export default function SubmissionGrader({
   async function genFeedback() {
     setAiBusy(true);
     try {
-      const r = await submissions.aiFeedback(id);
+      const r = await submissions.aiFeedback(id, guidance.trim() || undefined);
       setFeedback(r.feedback);
       toast.success(t('toast.aiFeedbackInserted'));
     } catch (e: unknown) {
@@ -309,6 +313,23 @@ export default function SubmissionGrader({
               className="panel-body"
               style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
             >
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span className="kh-muted" style={{ fontSize: 12, fontWeight: 600 }}>
+                  {t('bw.aiGuidance')}
+                </span>
+                <textarea
+                  className="text-input"
+                  rows={3}
+                  maxLength={AI_GUIDANCE_MAX}
+                  value={guidance}
+                  onChange={(e) => setGuidance(e.target.value)}
+                  placeholder={t('bw.aiGuidancePlaceholder')}
+                />
+                <span className="kh-muted" style={{ fontSize: 11 }}>
+                  {t('bw.aiGuidanceHint')} · {guidance.length}/{AI_GUIDANCE_MAX}
+                </span>
+              </label>
+
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button
                   className="btn sm"

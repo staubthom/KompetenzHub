@@ -514,6 +514,13 @@ model CompetenceEvidence {
   dueAt         DateTime?
   sortOrder     Int              @default(0)
   config        Json             @default("{}") // Upload-Constraints (Datei/Link/Text)
+
+  // Bewertungskriterien für die KI-Assistenz (FA-70/72). Nur für Lehrpersonen
+  // sichtbar – NIE in Lernenden-Views ausgeben.
+  rubricKey     String? // S3-Key des hochgeladenen Dokuments
+  rubricName    String? // Originaldateiname für die Anzeige
+  rubricText    String? // extrahierter Text, geht in den KI-Prompt
+
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 

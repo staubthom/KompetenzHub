@@ -25,6 +25,12 @@ export interface AiConfigView {
 
 const PROVIDERS = ['openai', 'openai-compatible', 'azure', 'local'];
 
+/** Parameter, die nicht jedes Modell unterstützt und die bei einem 400 entfallen dürfen. */
+const OPTIONAL_PARAMS = ['temperature', 'response_format'] as const;
+
+/** Obergrenze für die Modell-Liste aus dem Verbindungstest (Proxys listen teils hunderte). */
+const MAX_LISTED_MODELS = 250;
+
 @Injectable()
 export class AiService {
   constructor(private readonly prisma: PrismaService) {}
@@ -167,10 +173,18 @@ export class AiService {
         };
       }
       const json = (await res.json().catch(() => null)) as { data?: { id?: string }[] } | null;
-      const models = (json?.data ?? [])
-        .map((m) => m.id)
-        .filter((id): id is string => !!id)
-        .slice(0, 10);
+      // Vollständige, sortierte Liste: sie füllt in den Einstellungen die
+      // Modell-Auswahl. Cap nur als Schutz vor sehr grossen Proxy-Katalogen.
+      const models = [
+        ...new Set(
+          (json?.data ?? [])
+            .map((m) => m.id)
+            .filter((id): id is string => !!id)
+            .map((id) => id.replace(/^models\//, '')),
+        ),
+      ]
+        .sort((a, b) => a.localeCompare(b))
+        .slice(0, MAX_LISTED_MODELS);
       return { ok: true, message: 'Verbindung erfolgreich.', models };
     } catch (e: unknown) {
       const aborted = (e as { name?: string })?.name === 'AbortError';
@@ -274,6 +288,13 @@ export class AiService {
     });
   }
 
+  private upstreamError(status: number, upstream: string): ConflictException {
+    const detail = upstream.slice(0, 300);
+    return new ConflictException(
+      `KI-Anfrage fehlgeschlagen (HTTP ${status})${detail ? `: ${detail}` : ''}.`,
+    );
+  }
+
   /** Führt den eigentlichen Completion-Call aus (oder liefert im Stub-Modus `stub`). */
   private async callCompletion(
     cfg: { apiKeyEnc: string | null; baseUrl: string; model: string },
@@ -297,27 +318,42 @@ export class AiService {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30_000);
     try {
-      const res = await fetch(`${baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
-        },
-        signal: controller.signal,
-        body: JSON.stringify({
-          model,
-          temperature: opts.json ? 0.2 : 0.6,
-          ...(opts.json ? { response_format: { type: 'json_object' } } : {}),
-          messages,
-        }),
-      });
+      const body: Record<string, unknown> = {
+        model,
+        temperature: opts.json ? 0.2 : 0.6,
+        ...(opts.json ? { response_format: { type: 'json_object' } } : {}),
+        messages,
+      };
+      const send = () =>
+        fetch(`${baseUrl}/chat/completions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`,
+          },
+          signal: controller.signal,
+          body: JSON.stringify(body),
+        });
+
+      let res = await send();
+      if (res.status === 400) {
+        // Nicht jedes Modell akzeptiert unsere optionalen Parameter: Claude- und
+        // Reasoning-Modelle erlauben z. B. nur temperature=1 und antworten sonst mit
+        // 400 („does not support temperature=0.2"). Statt zu scheitern, die vom
+        // Upstream bemängelten Parameter einmalig weglassen und erneut senden.
+        const complaint = (await res.text().catch(() => '')).trim();
+        const dropped = OPTIONAL_PARAMS.filter((p) => p in body && complaint.includes(p));
+        if (dropped.length > 0) {
+          for (const p of dropped) delete body[p];
+          res = await send();
+        } else {
+          throw this.upstreamError(res.status, complaint);
+        }
+      }
       if (!res.ok) {
         // Upstream-Begründung mitnehmen (z. B. „model not found", ungültiger Key,
         // nicht unterstütztes response_format) – sonst bleibt der Fehler undurchsichtig.
-        const upstream = (await res.text().catch(() => '')).trim().slice(0, 300);
-        throw new ConflictException(
-          `KI-Anfrage fehlgeschlagen (HTTP ${res.status})${upstream ? `: ${upstream}` : ''}.`,
-        );
+        throw this.upstreamError(res.status, (await res.text().catch(() => '')).trim());
       }
       const json = (await res.json()) as {
         choices?: { message?: { content?: string } }[];

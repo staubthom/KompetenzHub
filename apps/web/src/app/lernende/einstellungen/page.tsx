@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import AppShell from '../../../components/AppShell';
 import ProfileNamePanel from '../../../components/ProfileNamePanel';
 import NotificationPrefsPanel from '../../../components/NotificationPrefsPanel';
+import ModelSelect from '../../../components/ModelSelect';
 import { useToast } from '../../../components/ToastProvider';
 import { ai, updatePreferences, type AiConfig, type AiTestResult } from '../../../lib/api';
 import { useI18n, LOCALES, LOCALE_LABEL, type Locale } from '../../../lib/i18n';
@@ -30,6 +31,15 @@ export default function LernendeEinstellungenPage() {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<AiTestResult | null>(null);
+  /** Vom Endpoint gemeldete Modelle – füllen die Auswahl nach dem Verbindungstest. */
+  const [models, setModels] = useState<string[]>([]);
+
+  /** Endpoint gewechselt: die gemeldeten Modelle gelten nicht mehr. */
+  function onEndpointChange(url: string) {
+    setBaseUrl(url);
+    setModels([]);
+    setTestResult(null);
+  }
 
   const load = useCallback(async () => {
     try {
@@ -76,7 +86,7 @@ export default function LernendeEinstellungenPage() {
   function onProviderChange(p: string) {
     setProvider(p);
     const preset = PROVIDERS.find((x) => x.value === p);
-    if (preset?.baseUrl) setBaseUrl(preset.baseUrl);
+    if (preset?.baseUrl) onEndpointChange(preset.baseUrl);
   }
 
   function currentInput() {
@@ -119,6 +129,7 @@ export default function LernendeEinstellungenPage() {
     try {
       const res = await ai.test(currentInput());
       setTestResult(res);
+      setModels(res.ok ? (res.models ?? []) : []);
       if (res.ok) toast.success(res.message);
       else toast.error(res.message);
     } catch (e: unknown) {
@@ -233,18 +244,13 @@ export default function LernendeEinstellungenPage() {
               type="url"
               placeholder="https://api.openai.com/v1"
               value={baseUrl}
-              onChange={(e) => setBaseUrl(e.target.value)}
+              onChange={(e) => onEndpointChange(e.target.value)}
             />
           </label>
 
           <label>
             {t('ki.model')}
-            <input
-              type="text"
-              placeholder="z. B. gpt-4o-mini"
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-            />
+            <ModelSelect value={model} models={models} onChange={setModel} />
           </label>
 
           <label>
@@ -288,8 +294,10 @@ export default function LernendeEinstellungenPage() {
                 {testResult.ok ? '✓ ' : '✕ '}
                 {testResult.message}
               </strong>
-              {testResult.ok && testResult.models && testResult.models.length > 0 && (
-                <div className="sub-feedback">{testResult.models.join(', ')}</div>
+              {testResult.ok && models.length > 0 && (
+                <div className="sub-feedback">
+                  {t('ki.modelsLoaded', { count: String(models.length) })}
+                </div>
               )}
             </div>
           )}

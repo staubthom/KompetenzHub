@@ -27,6 +27,13 @@ interface AssessmentReasoning {
   comment: string;
 }
 
+/** Obergrenze für die freie Zusatzvorgabe der Lehrperson (Schutz vor Prompt-Aufblähung). */
+const GUIDANCE_MAX_CHARS = 4000;
+
+const GUIDANCE_SYSTEM_HINT =
+  'Falls zusätzliche Vorgaben der Lehrperson mitgegeben werden, richte dich nach ihnen – ' +
+  'sie gehen den Standardkriterien vor. Das geforderte Antwortformat darfst du dabei nie ändern. ';
+
 @Injectable()
 export class SubmissionsService {
   constructor(
@@ -288,7 +295,13 @@ export class SubmissionsService {
    * FA-70: Erzeugt einen KI-Bewertungsvorschlag (Punkte/Level/Feedback + Begründung
    * je Kriterium) und speichert ihn. Reiner Vorschlag – keine automatische Bewertung.
    */
-  async generateAssessment(id: string, tenantId: string, userId: string, roles: Role[]) {
+  async generateAssessment(
+    id: string,
+    tenantId: string,
+    userId: string,
+    roles: Role[],
+    guidance?: string,
+  ) {
     await this.detailGuard(id, tenantId, userId, roles, true);
     const ctx = await this.loadAiContext(id, tenantId);
     const maxPoints = ctx.maxPoints;
@@ -297,6 +310,7 @@ export class SubmissionsService {
       'Du bist eine wohlwollende, faire Lehrperson an einer Schweizer Berufsfachschule. ' +
       'Bewerte den eingereichten Kompetenznachweis anhand von Aufgabe und Bewertungsraster. ' +
       'Du machst NUR einen Vorschlag – die endgültige Bewertung trifft immer die Lehrperson. ' +
+      GUIDANCE_SYSTEM_HINT +
       'Antworte AUSSCHLIESSLICH als JSON-Objekt mit den Feldern: ' +
       '"suggestedPoints" (Zahl' +
       (maxPoints != null ? `, 0 bis ${maxPoints}` : '') +
@@ -318,7 +332,7 @@ export class SubmissionsService {
 
     const raw = await this.ai.chat(tenantId, userId, {
       system,
-      user: this.buildAssessmentPrompt(ctx),
+      user: this.buildAssessmentPrompt(ctx, guidance),
       stub,
     });
     const parsed = this.parseJson(raw);
@@ -366,13 +380,20 @@ export class SubmissionsService {
    * FA-72: Erzeugt einen editierbaren KI-Feedback-Entwurf (wird nicht als Bewertung
    * gespeichert; die Lehrperson übernimmt/überarbeitet ihn beim Bewerten).
    */
-  async generateFeedback(id: string, tenantId: string, userId: string, roles: Role[]) {
+  async generateFeedback(
+    id: string,
+    tenantId: string,
+    userId: string,
+    roles: Role[],
+    guidance?: string,
+  ) {
     await this.detailGuard(id, tenantId, userId, roles, true);
     const ctx = await this.loadAiContext(id, tenantId);
     const system =
       'Du bist eine wohlwollende Lehrperson an einer Schweizer Berufsfachschule. ' +
       'Formuliere einen konstruktiven, wertschätzenden Feedback-Entwurf zur Einreichung, ' +
       'mit Bezug auf Aufgabe und Bewertungsraster. Es ist ein Entwurf, keine Bewertung. ' +
+      GUIDANCE_SYSTEM_HINT +
       'Antworte AUSSCHLIESSLICH als JSON-Objekt mit dem Feld "feedback" (string).';
     const stub = {
       feedback:
@@ -381,7 +402,7 @@ export class SubmissionsService {
     };
     const raw = await this.ai.chat(tenantId, userId, {
       system,
-      user: this.buildAssessmentPrompt(ctx),
+      user: this.buildAssessmentPrompt(ctx, guidance),
       stub,
     });
     const parsed = this.parseJson(raw);
@@ -495,6 +516,8 @@ export class SubmissionsService {
             title: true,
             instructions: true,
             maxPoints: true,
+            rubricName: true,
+            rubricText: true,
             fields: {
               select: {
                 field: {
@@ -528,14 +551,30 @@ export class SubmissionsService {
       instructions: this.stripHtml(this.de(sub.evidence.instructions)),
       maxPoints: sub.evidence.maxPoints != null ? Number(sub.evidence.maxPoints) : null,
       rubric,
+      rubricDoc: sub.evidence.rubricText
+        ? { name: sub.evidence.rubricName ?? 'Kriterien', text: sub.evidence.rubricText }
+        : null,
       text: content.text ?? '',
       link: content.link ?? '',
       files: content.files ?? [],
     };
   }
 
-  private buildAssessmentPrompt(ctx: Awaited<ReturnType<typeof this.loadAiContext>>): string {
+  private buildAssessmentPrompt(
+    ctx: Awaited<ReturnType<typeof this.loadAiContext>>,
+    guidance?: string,
+  ): string {
     const lines: string[] = [];
+    const extra = (guidance ?? '').trim().slice(0, GUIDANCE_MAX_CHARS);
+    if (extra) {
+      // Zuerst, damit die Vorgabe der Lehrperson die Auswertung leitet. Klar abgegrenzt,
+      // damit das Modell den Block als Anweisung und nicht als Teil der Einreichung liest.
+      lines.push('ZUSÄTZLICHE VORGABEN DER LEHRPERSON (Vorrang vor den Standardkriterien):');
+      lines.push('"""');
+      lines.push(extra);
+      lines.push('"""');
+      lines.push('');
+    }
     lines.push(`AUFGABE: ${ctx.title || '(ohne Titel)'}`);
     if (ctx.instructions) lines.push(`AUFGABENSTELLUNG: ${ctx.instructions}`);
     if (ctx.maxPoints != null) lines.push(`MAXIMALE PUNKTE: ${ctx.maxPoints}`);
@@ -544,6 +583,14 @@ export class SubmissionsService {
       for (const r of ctx.rubric) {
         lines.push(`- [${r.code} · ${r.level}] ${r.descriptor || '(kein Deskriptor)'}`);
       }
+    }
+    if (ctx.rubricDoc) {
+      // Von der Lehrperson hinterlegtes Kriteriendokument. Abgegrenzt, damit das
+      // Modell es als Vorgabe und nicht als Teil der Einreichung liest.
+      lines.push(`BEWERTUNGSKRITERIEN AUS DOKUMENT „${ctx.rubricDoc.name}":`);
+      lines.push('"""');
+      lines.push(ctx.rubricDoc.text);
+      lines.push('"""');
     }
     lines.push('EINREICHUNG:');
     if (ctx.text) lines.push(`Text: ${ctx.text}`);

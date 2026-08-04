@@ -18,6 +18,11 @@ import { PrismaService } from '../prisma/prisma.service';
 import { S3Service } from '../storage/s3.service';
 import { StorageObjectsService } from '../storage/storage-objects.service';
 import { SubmissionsService } from '../submissions/submissions.service';
+import {
+  RUBRIC_EXTENSIONS,
+  extractRubricText,
+  isSupportedRubricFile,
+} from './rubric-text.util';
 
 interface UploadConfig {
   allowedFileTypes?: string[];
@@ -90,7 +95,7 @@ export class EvidenceService {
         ev.instructions,
       );
     }
-    return rows;
+    return rows.map((ev) => this.withoutRubricText(ev));
   }
 
   async findOneForTeacher(id: string, tenantId: string) {
@@ -102,7 +107,76 @@ export class EvidenceService {
     (ev as { instructions: unknown }).instructions = await this.s3.presignHtmlForRead(
       ev.instructions,
     );
-    return ev;
+    return this.withoutRubricText(ev);
+  }
+
+  // ── Bewertungskriterien-Dokument (FA-70/72) ───────────────────
+
+  /**
+   * Der extrahierte Kriterientext ist nur für den KI-Prompt gedacht und kann sehr
+   * lang sein – aus den API-Antworten fliegt er raus, `hasRubric` genügt der UI.
+   */
+  private withoutRubricText<T extends { rubricText?: string | null }>(ev: T) {
+    const { rubricText, ...rest } = ev;
+    return { ...rest, hasRubric: !!rubricText };
+  }
+
+  /**
+   * Hinterlegt ein Kriteriendokument am Nachweis: liest den Text aus dem bereits
+   * hochgeladenen S3-Objekt und speichert ihn für die KI-Assistenz.
+   */
+  async setRubric(id: string, tenantId: string, dto: { key?: string; name?: string }) {
+    const ev = await this.prisma.competenceEvidence.findFirst({
+      where: { id, tenantId },
+      select: { id: true, rubricKey: true },
+    });
+    if (!ev) throw new NotFoundException('Nachweis nicht gefunden.');
+
+    const key = (dto.key ?? '').trim();
+    const name = (dto.name ?? '').trim();
+    if (!key || !name) throw new BadRequestException('„key" und „name" sind erforderlich.');
+    // Der Key kommt vom Client – er muss im Präfix des eigenen Mandanten liegen.
+    if (!key.startsWith(this.s3.tenantPrefix(tenantId))) {
+      throw new BadRequestException('Ungültiger Datei-Key.');
+    }
+    if (!isSupportedRubricFile(name)) {
+      throw new BadRequestException(
+        `Nicht unterstütztes Format. Erlaubt: ${RUBRIC_EXTENSIONS.join(', ')}.`,
+      );
+    }
+
+    let bytes: Buffer;
+    try {
+      bytes = await this.s3.getBytes(key);
+    } catch {
+      throw new BadRequestException('Die hochgeladene Datei wurde nicht gefunden.');
+    }
+    const rubricText = await extractRubricText(bytes, name);
+
+    // Vorgänger erst entfernen, wenn die Extraktion geklappt hat.
+    if (ev.rubricKey && ev.rubricKey !== key) {
+      await this.storageObjects.deleteKeys([ev.rubricKey]);
+    }
+    await this.prisma.competenceEvidence.update({
+      where: { id },
+      data: { rubricKey: key, rubricName: name, rubricText },
+    });
+    return this.findOneForTeacher(id, tenantId);
+  }
+
+  /** Entfernt das Kriteriendokument samt Datei. */
+  async removeRubric(id: string, tenantId: string) {
+    const ev = await this.prisma.competenceEvidence.findFirst({
+      where: { id, tenantId },
+      select: { id: true, rubricKey: true },
+    });
+    if (!ev) throw new NotFoundException('Nachweis nicht gefunden.');
+    if (ev.rubricKey) await this.storageObjects.deleteKeys([ev.rubricKey]);
+    await this.prisma.competenceEvidence.update({
+      where: { id },
+      data: { rubricKey: null, rubricName: null, rubricText: null },
+    });
+    return this.findOneForTeacher(id, tenantId);
   }
 
   async create(dto: CreateEvidenceDto, tenantId: string) {
@@ -173,7 +247,8 @@ export class EvidenceService {
     // liegen unter dem Nachweis-Präfix; dazu der optionale Lehrer-Anhang.
     await this.storageObjects.deletePrefix(`t/${tenantId}/evidence/${id}/`);
     const cfg = (ev.config ?? {}) as UploadConfig;
-    if (cfg.attachmentKey) await this.storageObjects.deleteKeys([cfg.attachmentKey]);
+    const orphans = [cfg.attachmentKey, ev.rubricKey].filter((k): k is string => !!k);
+    if (orphans.length > 0) await this.storageObjects.deleteKeys(orphans);
   }
 
   /** Kompetenzfeld-Zuordnung setzen (n:m), validiert Tenant-Zugehörigkeit. */

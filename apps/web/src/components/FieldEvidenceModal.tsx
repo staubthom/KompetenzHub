@@ -83,6 +83,10 @@ export default function FieldEvidenceModal({
   const [draft, setDraft] = useState<Draft | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [attBusy, setAttBusy] = useState(false);
+  // Kriteriendokument hängt am gespeicherten Nachweis und wird sofort persistiert,
+  // nicht erst beim Speichern des Formulars – darum ausserhalb von `draft`.
+  const [rubricName, setRubricName] = useState('');
+  const [rubricBusy, setRubricBusy] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -125,13 +129,47 @@ export default function FieldEvidenceModal({
     }
   }
 
+  /** Kriteriendokument hochladen: Datei nach S3, danach Text serverseitig extrahieren. */
+  async function uploadRubric(file: File) {
+    if (!editId) return;
+    setRubricBusy(true);
+    try {
+      const { key, name } = await uploadAttachment(file);
+      const updated = await evidence.setRubric(editId, key, name);
+      setRubricName(updated.rubricName ?? name);
+      toast.success(t('fe.rubricUploaded'));
+      await load();
+    } catch (e: unknown) {
+      showError(e);
+    } finally {
+      setRubricBusy(false);
+    }
+  }
+
+  async function deleteRubric() {
+    if (!editId) return;
+    setRubricBusy(true);
+    try {
+      await evidence.removeRubric(editId);
+      setRubricName('');
+      toast.success(t('fe.rubricRemoved'));
+      await load();
+    } catch (e: unknown) {
+      showError(e);
+    } finally {
+      setRubricBusy(false);
+    }
+  }
+
   function startCreate() {
     setEditId(null);
+    setRubricName('');
     setDraft(emptyDraft());
   }
 
   function startEdit(ev: Evidence) {
     setEditId(ev.id);
+    setRubricName(ev.rubricName ?? '');
     setDraft({
       title: ev.title?.de ?? '',
       instructions: ev.instructions?.de ?? '',
@@ -517,6 +555,50 @@ export default function FieldEvidenceModal({
                     </span>
                   )}
                 </div>
+              </div>
+
+              {/* Bewertungskriterien für die KI-Assistenz (FA-70/72) */}
+              <div>
+                <div className="field-label">{t('fe.rubric')}</div>
+                {editId ? (
+                  <div
+                    style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}
+                  >
+                    <label className="btn sm" style={{ cursor: 'pointer' }}>
+                      {rubricBusy ? '…' : t('fe.rubricUpload')}
+                      <input
+                        type="file"
+                        accept=".pdf,.docx,.txt,.md"
+                        style={{ display: 'none' }}
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) void uploadRubric(f);
+                          e.target.value = '';
+                        }}
+                      />
+                    </label>
+                    {rubricName && (
+                      <span className="kh-muted" style={{ fontSize: 13 }}>
+                        📋 {rubricName}
+                        <button
+                          className="btn-icon"
+                          title={t('fe.rubricRemove')}
+                          disabled={rubricBusy}
+                          onClick={() => void deleteRubric()}
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <p className="kh-muted" style={{ fontSize: 12, margin: 0 }}>
+                    {t('fe.rubricSaveFirst')}
+                  </p>
+                )}
+                <p className="kh-muted" style={{ fontSize: 11, margin: '6px 0 0' }}>
+                  {t('fe.rubricHint')}
+                </p>
               </div>
 
               <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>

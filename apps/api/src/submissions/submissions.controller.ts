@@ -62,8 +62,18 @@ export class SubmissionsController {
   @Post(':id/ai-assessment')
   @HttpCode(200)
   @Roles(Role.TEACHER, Role.ADMIN)
-  aiAssessment(@Param('id') id: string, @CurrentUser() user: RequestContext) {
-    return this.submissions.generateAssessment(id, user.tenantId, user.userId, user.roles);
+  aiAssessment(
+    @Param('id') id: string,
+    @Body() dto: { guidance?: string } | undefined,
+    @CurrentUser() user: RequestContext,
+  ) {
+    return this.submissions.generateAssessment(
+      id,
+      user.tenantId,
+      user.userId,
+      user.roles,
+      dto?.guidance,
+    );
   }
 
   /** Letzten KI-Vorschlag abrufen (FA-70). */
@@ -77,7 +87,17 @@ export class SubmissionsController {
   @Post(':id/ai-feedback')
   @HttpCode(200)
   @Roles(Role.TEACHER, Role.ADMIN)
-  aiFeedback(@Param('id') id: string, @CurrentUser() user: RequestContext) {
-    return this.submissions.generateFeedback(id, user.tenantId, user.userId, user.roles);
+  aiFeedback(
+    @Param('id') id: string,
+    @Body() dto: { guidance?: string } | undefined,
+    @CurrentUser() user: RequestContext,
+  ) {
+    return this.submissions.generateFeedback(
+      id,
+      user.tenantId,
+      user.userId,
+      user.roles,
+      dto?.guidance,
+    );
   }
 }
